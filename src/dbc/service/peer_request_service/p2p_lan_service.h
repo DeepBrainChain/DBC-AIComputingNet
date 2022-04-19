@@ -12,6 +12,7 @@
 
 #define AI_MULTICAST_MACHINE_TIMER                                   "multicast_machine_task"
 #define AI_MULTICAST_NETWORK_TIMER                                   "multicast_network_task"
+#define AI_MULTICAST_NETWORK_RESUME_TIMER                            "multicast_network_resume_task"
 
 struct lan_machine_info {
     std::string machine_id;
@@ -50,6 +51,8 @@ public:
 
     void send_network_delete_request(const std::string& network_name);
 
+    void send_network_query_request();
+
     void send_network_list_request();
 
     void send_network_move_request(std::shared_ptr<dbc::networkInfo> info);
@@ -71,6 +74,10 @@ protected:
 
     void on_multicast_network_task_timer(const std::shared_ptr<core_timer>& timer);
 
+    void on_multicast_network_move_task_timer(const std::shared_ptr<core_timer>& timer);
+
+    void on_multicast_network_resume_task_timer(const std::shared_ptr<core_timer>& timer);
+
     void send_machine_exit_request() const;
 
 private:
@@ -82,6 +89,9 @@ private:
 
     mutable RwMutex m_mtx;
     std::map<std::string, lan_machine_info> m_lan_nodes;
+
+    mutable RwMutex m_mtx_timer;
+    std::map<std::string, int32_t> m_network_move_timer_id;
 };
 
 #endif

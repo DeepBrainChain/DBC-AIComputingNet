@@ -9,11 +9,39 @@
 #define REQUEST_MACHINE_EXIT      "machine exit"
 #define REQUEST_NETWORK_CREATE    "network create"
 #define REQUEST_NETWORK_DELETE    "network delete"
+#define REQUEST_NETWORK_QUERY     "network query"
 #define REQUEST_NETWORK_LIST      "network list"
 #define REQUEST_NETWORK_MOVE      "network move"
 #define REQUEST_NETWORK_MOVE_ACK  "network move ack"
 #define REQUEST_NETWORK_JOIN      "network join"
 #define REQUEST_NETWORK_LEAVE     "network leave"
+
+class TopN {
+public:
+    TopN(int n) : num(n) {}
+
+    const std::multimap<int64_t, std::string>& GetData() const {
+        return mm;
+    }
+
+    void Insert(int64_t first, const std::string &str) {
+        mm.insert(std::make_pair(first, str));
+        if (mm.size() > num && num > 0) {
+            mm.erase(mm.begin());
+            // mm.erase(mm.rbegin()->first);
+        }
+    }
+
+    void Output() const {
+        std::cout << "output map:" << std::endl;
+        for (const auto &iter : mm) {
+            std::cout << iter.first << "  " << iter.second << std::endl;
+        }
+    }
+private:
+    std::multimap<int64_t, std::string> mm;
+    int num;
+};
 
 bool lan_machine_info::validate() const {
     if (machine_id.empty() || local_address.empty() || local_port == 0) return false;
@@ -91,6 +119,8 @@ ERRCODE p2p_lan_service::init() {
         }
 
         init_local_machine_info();
+
+        send_network_query_request();
     }
     catch (std::exception& e)
     {
@@ -222,6 +252,26 @@ void p2p_lan_service::on_multicast_receive(const std::string& data, const std::s
         JSON_PARSE_STRING(v_data, "machine_id", machine_id);
         JSON_PARSE_STRING(v_data, "network_name", network_name);
         VxlanManager::instance().DeleteNetworkFromMulticast(network_name, machine_id);
+    } else if (request_type == REQUEST_NETWORK_QUERY) {
+        std::string machine_id, network_name;
+        JSON_PARSE_STRING(v_data, "machine_id", machine_id);
+        if (machine_id == m_local_machine_info.machine_id) return;
+        // JSON_PARSE_STRING(v_data, "network_name", network_name);
+        bool bFind = false;
+        if (v_data.HasMember("networks") && v_data["networks"].IsArray()) {
+            const rapidjson::Value& v_networks = v_data["networks"];
+            for (size_t i = 0; i < v_networks.Size(); i++) {
+                const rapidjson::Value& v_network = v_networks[i];
+                if (v_network.IsString())
+                    network_name = v_network.GetString();
+                std::shared_ptr<dbc::networkInfo> info = VxlanManager::instance().GetNetwork(network_name);
+                if (info && info->machineId == m_local_machine_info.machine_id) {
+                    bFind = true;
+                    break;
+                }
+            }
+        }
+        if (bFind) send_network_list_request();
     } else if (request_type == REQUEST_NETWORK_LIST) {
         std::string machine_id;
         JSON_PARSE_STRING(v_data, "machine_id", machine_id);
@@ -269,17 +319,56 @@ void p2p_lan_service::on_multicast_receive(const std::string& data, const std::s
                 info->__set_nativeFlags(0);
                 info->__set_lastUpdateTime(time(NULL));
                 FResult fret = VxlanManager::instance().AddNetworkFromMulticast(std::move(info));
+                RwMutex::WriteLock wlock(m_mtx_timer);
+                auto iter = m_network_move_timer_id.find(network_name);
+                if (iter != m_network_move_timer_id.end()) {
+                    remove_timer(iter->second);
+                    m_network_move_timer_id.erase(network_name);
+                }
             }
         }
     } else if (request_type == REQUEST_NETWORK_MOVE) {
         std::string machine_id, network_name, new_machine_id;
         JSON_PARSE_STRING(v_data, "machine_id", machine_id);
         JSON_PARSE_STRING(v_data, "network_name", network_name);
+        // 2022-04-19 新版本的REQUEST_NETWORK_MOVE消息中已删除new_machine_id字段
         JSON_PARSE_STRING(v_data, "new_machine_id", new_machine_id);
         if (new_machine_id == ConfManager::instance().GetNodeId()) {
             FResult fret = VxlanManager::instance().MoveNetwork(network_name, new_machine_id);
             if (fret.errcode != 0)
                 send_network_move_request(VxlanManager::instance().GetNetwork(network_name));
+        }
+        if (v_data.HasMember("candidate_queue") && v_data["candidate_queue"].IsArray()) {
+            const rapidjson::Value& v_candidates = v_data["candidate_queue"];
+            for (size_t i = 0; i < v_candidates.Size(); i++) {
+                new_machine_id.clear();
+                const rapidjson::Value& candidate = v_candidates[i];
+                if (candidate.IsString()) {
+                    new_machine_id = candidate.GetString();
+                }
+                if (new_machine_id == ConfManager::instance().GetNodeId()) {
+                    RwMutex::WriteLock wlock(m_mtx_timer);
+                    switch (i) {
+                        case 0:
+                            m_network_move_timer_id[network_name] = add_timer(network_name, 100, 100, 1, "",
+                                std::bind(&p2p_lan_service::on_multicast_network_move_task_timer,
+                                    this, std::placeholders::_1));
+                            break;
+                        case 1:
+                            m_network_move_timer_id[network_name] = add_timer(network_name, 30 * 1000, 100, 1, "",
+                                std::bind(&p2p_lan_service::on_multicast_network_move_task_timer,
+                                    this, std::placeholders::_1));
+                            break;
+                        case 2:
+                            m_network_move_timer_id[network_name] = add_timer(network_name, 60 * 1000, 100, 1, "",
+                                std::bind(&p2p_lan_service::on_multicast_network_move_task_timer,
+                                    this, std::placeholders::_1));
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
         }
     } else if (request_type == REQUEST_NETWORK_MOVE_ACK) {
         std::string machine_id, network_name, new_machine_id;
@@ -287,6 +376,12 @@ void p2p_lan_service::on_multicast_receive(const std::string& data, const std::s
         JSON_PARSE_STRING(v_data, "network_name", network_name);
         JSON_PARSE_STRING(v_data, "new_machine_id", new_machine_id);
         VxlanManager::instance().MoveNetworkAck(network_name, new_machine_id);
+        RwMutex::WriteLock wlock(m_mtx_timer);
+        auto iter = m_network_move_timer_id.find(network_name);
+        if (iter != m_network_move_timer_id.end()) {
+            remove_timer(iter->second);
+            m_network_move_timer_id.erase(network_name);
+        }
     } else if (request_type == REQUEST_NETWORK_JOIN) {
         std::string machine_id, network_name, task_id;
         JSON_PARSE_STRING(v_data, "machine_id", machine_id);
@@ -362,8 +457,40 @@ void p2p_lan_service::send_network_delete_request(const std::string& network_nam
     }
 }
 
+void p2p_lan_service::send_network_query_request() {
+    if (m_sender) {
+        int count = 0;
+        rapidjson::StringBuffer strBuf;
+        rapidjson::Writer<rapidjson::StringBuffer> write(strBuf);
+        write.SetMaxDecimalPlaces(2);
+        write.StartObject();
+        write.Key("request");
+        write.String(REQUEST_NETWORK_QUERY);
+        write.Key("data");
+        write.StartObject();
+        write.Key("machine_id");
+        write.String(m_local_machine_info.machine_id.c_str());
+        write.Key("networks");
+        write.StartArray();
+        const std::map<std::string, std::shared_ptr<dbc::networkInfo>> networks = VxlanManager::instance().GetNetworks();
+        for (const auto& iter : networks) {
+            // if (iter.second->machineId.empty()) {
+            if (iter.second->machineId != m_local_machine_info.machine_id) {
+                write.String(iter.first.c_str());
+                count++;
+            }
+        }
+        write.EndArray();
+        write.EndObject();
+        write.EndObject();
+        if (count > 0)
+            m_sender->send(strBuf.GetString());
+    }
+}
+
 void p2p_lan_service::send_network_list_request() {
     if (m_sender) {
+        int count = 0;
         rapidjson::StringBuffer strBuf;
         rapidjson::Writer<rapidjson::StringBuffer> write(strBuf);
         write.SetMaxDecimalPlaces(2);
@@ -409,32 +536,32 @@ void p2p_lan_service::send_network_list_request() {
                 write.Key("lastUseTime");
                 write.Int64(iter.second->lastUseTime);
                 write.EndObject();
+                count++;
             }
         }
         write.EndArray();
         write.EndObject();
         write.EndObject();
-        m_sender->send(strBuf.GetString());
+        if (count > 0)
+            m_sender->send(strBuf.GetString());
     }
 }
 
 void p2p_lan_service::send_network_move_request(std::shared_ptr<dbc::networkInfo> info) {
     if (m_sender) {
-        std::string new_machine_id;
-        int64_t max_time = 0;
+        // 在符合要求的机器列表中，取时间最近的3个，作为候选的转移目标
+        TopN topn(3);
         {
             RwMutex::ReadLock rlock(m_mtx);
             for (const auto& iter : m_lan_nodes) {
                 if (iter.second.net_flag != m_local_machine_info.net_flag) continue;
-                // if (iter.first == info->machineId) continue;
+                if (iter.first == info->machineId) continue;
                 if (iter.first == m_local_machine_info.machine_id) continue;
-                if (iter.second.cur_time > max_time) {
-                    max_time = iter.second.cur_time;
-                    new_machine_id = iter.first;
-                }
+                topn.Insert(iter.second.cur_time, iter.first);
             }
         }
-        if (new_machine_id.empty()) {
+        const std::multimap<int64_t, std::string>& topmap = topn.GetData();
+        if (topmap.empty()) {
             LOG_ERROR << "can not find other machine to move network";
             return;
         }
@@ -450,8 +577,13 @@ void p2p_lan_service::send_network_move_request(std::shared_ptr<dbc::networkInfo
         write.String(info->machineId.c_str());
         write.Key("network_name");
         write.String(info->networkId.c_str());
-        write.Key("new_machine_id");
-        write.String(new_machine_id.c_str());
+        // write.Key("new_machine_id");
+        // write.String(new_machine_id.c_str());
+        write.Key("candidate_queue");
+        write.StartArray();
+        for (auto iter = topmap.rbegin(); iter != topmap.rend(); iter++)
+            write.String(iter->second.c_str());
+        write.EndArray();
         write.EndObject();
         write.EndObject();
         m_sender->send(strBuf.GetString());
@@ -525,12 +657,15 @@ void p2p_lan_service::send_network_leave_request(const std::string& network_name
 }
 
 void p2p_lan_service::init_timer() {
-    // 30second
+    // 30 second
     add_timer(AI_MULTICAST_MACHINE_TIMER, 5 * 1000, 30 * 1000, ULLONG_MAX, "",
         std::bind(&p2p_lan_service::on_multicast_machine_task_timer, this, std::placeholders::_1));
-    // 3min
+    // 3 min
     add_timer(AI_MULTICAST_NETWORK_TIMER, 180 * 1000, 180 * 1000, ULLONG_MAX, "",
         std::bind(&p2p_lan_service::on_multicast_network_task_timer, this, std::placeholders::_1));
+    // 2 min latter
+    add_timer(AI_MULTICAST_NETWORK_RESUME_TIMER, 120 * 1000, 1000, 1, "",
+        std::bind(&p2p_lan_service::on_multicast_network_resume_task_timer, this, std::placeholders::_1));
 }
 
 void p2p_lan_service::init_invoker() {
@@ -573,6 +708,34 @@ void p2p_lan_service::on_multicast_network_task_timer(const std::shared_ptr<core
     // 删除长时间没有虚拟机使用的网络
     VxlanManager::instance().ClearEmptyNetwork();
     VxlanManager::instance().ClearExpiredNetwork();
+}
+
+void p2p_lan_service::on_multicast_network_move_task_timer(const std::shared_ptr<core_timer>& timer) {
+    FResult fret = VxlanManager::instance().MoveNetwork(timer->get_name(), m_local_machine_info.machine_id);
+    if (fret.errcode == ERR_SUCCESS)
+        send_network_list_request();
+    RwMutex::WriteLock wlock(m_mtx_timer);
+    auto iter = m_network_move_timer_id.find(timer->get_name());
+    if (iter != m_network_move_timer_id.end()) {
+        // remove_timer(iter->second);
+        m_network_move_timer_id.erase(timer->get_name());
+    }
+}
+
+void p2p_lan_service::on_multicast_network_resume_task_timer(const std::shared_ptr<core_timer>& timer) {
+    std::vector<std::string> network_resumes;
+    {
+        const std::map<std::string, std::shared_ptr<dbc::networkInfo>> networks = VxlanManager::instance().GetNetworks();
+        for (const auto& iter : networks) {
+            if (iter.second->machineId.empty())
+                network_resumes.push_back(iter.first);
+        }
+    }
+    for (const auto &network_name : network_resumes) {
+        FResult fret = VxlanManager::instance().MoveNetwork(network_name, m_local_machine_info.machine_id);
+        if (fret.errcode == ERR_SUCCESS)
+            send_network_list_request();
+    }
 }
 
 void p2p_lan_service::send_machine_exit_request() const {

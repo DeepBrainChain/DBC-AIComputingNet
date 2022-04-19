@@ -368,6 +368,7 @@ const std::map<std::string, std::shared_ptr<dbc::networkInfo> > VxlanManager::Ge
 }
 
 std::shared_ptr<dbc::networkInfo> VxlanManager::GetNetwork(const std::string &networkName) const {
+    if (networkName.empty()) return nullptr;
     RwMutex::ReadLock rlock(m_mtx);
     auto it = m_networks.find(networkName);
     if (it != m_networks.end()) return it->second;
@@ -427,10 +428,16 @@ void VxlanManager::MoveNetworkAck(const std::string &networkName, const std::str
     if (!info) return ;
 
     if (newMachineId == ConfManager::instance().GetNodeId()) return ;
+    
+    bool isSameHost = p2p_lan_service::instance().is_same_host(newMachineId);
 
     {
+        if (!isSameHost/* && (info->nativeFlags & NATIVE_FLAGS_DHCPSERVER) != 0*/) {
+            StopDhcpServer(info->bridgeName, info->vxlanName);
+        }
         RwMutex::WriteLock wlock(m_mtx);
         info->__set_machineId(newMachineId);
+        info->__set_nativeFlags(info->nativeFlags & ~NATIVE_FLAGS_DHCPSERVER);
         m_networks[networkName] = info;
     }
 
@@ -486,7 +493,7 @@ void VxlanManager::ClearEmptyNetwork() {
                 continue;
             if (!iter.second->members.empty())
                 continue;
-            if (difftime(cur_time, iter.second->lastUseTime) > 1296000)// 60s * 60 * 24 * 15
+            if (difftime(cur_time, iter.second->lastUseTime) > 259200)// 60s * 60 * 24 * 3
                 networks.push_back(std::make_pair(iter.first, iter.second->rentWallet));
         }
     }
@@ -505,8 +512,8 @@ void VxlanManager::ClearExpiredNetwork() {
         for (const auto& iter : m_networks) {
             if (iter.second->machineId == ConfManager::instance().GetNodeId())
                 continue;
-            // if (!iter.second->members.empty())
-            //     continue;
+            if (!iter.second->members.empty())
+                continue;
             if (difftime(cur_time, iter.second->lastUpdateTime) > 259200)// 60s * 60 * 24 * 3
                 networks.push_back(iter.first);
         }
