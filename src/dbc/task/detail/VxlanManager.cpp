@@ -124,10 +124,11 @@ void VxlanManager::Exit() {
         if (iter.second->ipCidr.empty())
             continue;
         StopDhcpServer(iter.second->bridgeName, iter.second->vxlanName);
-        p2p_lan_service::instance().send_network_move_request(iter.second);
+        std::string old_machine_id = iter.second->machineId;
         iter.second->__set_machineId(std::string());
         iter.second->__set_nativeFlags(iter.second->nativeFlags & ~NATIVE_FLAGS_DHCPSERVER);
         UpdateNetworkDb(iter.second);
+        p2p_lan_service::instance().send_network_move_request(iter.first, old_machine_id);
     }
 }
 
@@ -415,9 +416,9 @@ FResult VxlanManager::MoveNetwork(const std::string &networkName, const std::str
         m_networks[networkName] = info;
     }
 
-    p2p_lan_service::instance().send_network_move_ack_request(networkName, newMachineId);
-
     UpdateNetworkDb(info);
+
+    p2p_lan_service::instance().send_network_move_ack_request(networkName, newMachineId);
 
     LOG_INFO << "network: " << networkName << " move from " << oldMachineId << " to " << newMachineId;
     return FResultOk;

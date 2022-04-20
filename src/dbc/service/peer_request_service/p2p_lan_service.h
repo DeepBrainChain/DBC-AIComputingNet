@@ -55,7 +55,7 @@ public:
 
     void send_network_list_request();
 
-    void send_network_move_request(std::shared_ptr<dbc::networkInfo> info);
+    void send_network_move_request(const std::string& network_name, const std::string& old_machine_id);
 
     void send_network_move_ack_request(const std::string& network_name, const std::string& machine_id);
 

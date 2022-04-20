@@ -336,7 +336,7 @@ void p2p_lan_service::on_multicast_receive(const std::string& data, const std::s
         if (new_machine_id == ConfManager::instance().GetNodeId()) {
             FResult fret = VxlanManager::instance().MoveNetwork(network_name, new_machine_id);
             if (fret.errcode != 0)
-                send_network_move_request(VxlanManager::instance().GetNetwork(network_name));
+                send_network_move_request(network_name, machine_id);
         }
         if (v_data.HasMember("candidate_queue") && v_data["candidate_queue"].IsArray()) {
             const rapidjson::Value& v_candidates = v_data["candidate_queue"];
@@ -350,7 +350,7 @@ void p2p_lan_service::on_multicast_receive(const std::string& data, const std::s
                     RwMutex::WriteLock wlock(m_mtx_timer);
                     switch (i) {
                         case 0:
-                            m_network_move_timer_id[network_name] = add_timer(network_name, 100, 100, 1, "",
+                            m_network_move_timer_id[network_name] = add_timer(network_name, 1000, 100, 1, "",
                                 std::bind(&p2p_lan_service::on_multicast_network_move_task_timer,
                                     this, std::placeholders::_1));
                             break;
@@ -547,7 +547,7 @@ void p2p_lan_service::send_network_list_request() {
     }
 }
 
-void p2p_lan_service::send_network_move_request(std::shared_ptr<dbc::networkInfo> info) {
+void p2p_lan_service::send_network_move_request(const std::string& network_name, const std::string& old_machine_id) {
     if (m_sender) {
         // 在符合要求的机器列表中，取时间最近的3个，作为候选的转移目标
         TopN topn(3);
@@ -555,7 +555,7 @@ void p2p_lan_service::send_network_move_request(std::shared_ptr<dbc::networkInfo
             RwMutex::ReadLock rlock(m_mtx);
             for (const auto& iter : m_lan_nodes) {
                 if (iter.second.net_flag != m_local_machine_info.net_flag) continue;
-                if (iter.first == info->machineId) continue;
+                if (iter.first == old_machine_id) continue;
                 if (iter.first == m_local_machine_info.machine_id) continue;
                 topn.Insert(iter.second.cur_time, iter.first);
             }
@@ -574,9 +574,9 @@ void p2p_lan_service::send_network_move_request(std::shared_ptr<dbc::networkInfo
         write.Key("data");
         write.StartObject();
         write.Key("machine_id");
-        write.String(info->machineId.c_str());
+        write.String(m_local_machine_info.machine_id.c_str());
         write.Key("network_name");
-        write.String(info->networkId.c_str());
+        write.String(network_name.c_str());
         // write.Key("new_machine_id");
         // write.String(new_machine_id.c_str());
         write.Key("candidate_queue");
@@ -712,8 +712,11 @@ void p2p_lan_service::on_multicast_network_task_timer(const std::shared_ptr<core
 
 void p2p_lan_service::on_multicast_network_move_task_timer(const std::shared_ptr<core_timer>& timer) {
     FResult fret = VxlanManager::instance().MoveNetwork(timer->get_name(), m_local_machine_info.machine_id);
-    if (fret.errcode == ERR_SUCCESS)
+    if (fret.errcode == ERR_SUCCESS) {
         send_network_list_request();
+    } else {
+        LOG_ERROR << "move network " << timer->get_name() << " to myself failed: " << fret.errmsg;
+    }
     RwMutex::WriteLock wlock(m_mtx_timer);
     auto iter = m_network_move_timer_id.find(timer->get_name());
     if (iter != m_network_move_timer_id.end()) {
