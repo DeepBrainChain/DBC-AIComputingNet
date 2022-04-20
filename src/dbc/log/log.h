@@ -54,7 +54,7 @@ extern const char* get_short_func_name(const char* func_name);
     do { \
         auto dbclogger = dbclog::instance().get_task_logger(task); \
         if (dbclogger != nullptr) { \
-            BOOST_LOG_SEV(*dbclogger.get(), ::boost::log::trivial::lvl) << msg; \
+            BOOST_LOG_SEV(*dbclogger.get(), ::boost::log::trivial::lvl) << __SHORT_FILE__ << " | " << __LINE__ << " | " << __SHORT_FUNC__  << " | " << msg; \
         } \
     } while(0)
 

@@ -52,6 +52,10 @@ FResult TaskManager::init() {
     TaskResourceMgr::instance().init(taskids);
     SnapshotManager::instance().init(taskids);
 
+    m_udp_fd = socket(PF_INET, SOCK_DGRAM, 0);
+    int optval = 1;
+    setsockopt(m_udp_fd, SOL_SOCKET, SO_BROADCAST | SO_REUSEADDR, &optval, sizeof(int));
+
 	m_running = true;
 	if (m_process_thread == nullptr) {
 		m_process_thread = new std::thread(&TaskManager::process_task_thread_func, this);
@@ -78,6 +82,38 @@ void TaskManager::exit() {
 	}
 	delete m_prune_thread;
 	m_prune_thread = nullptr;
+
+    if (m_udp_fd != -1) {
+        close(m_udp_fd);
+    }
+}
+
+void TaskManager::broadcast_message(const std::string& msg) {
+    if (m_udp_fd == -1) {
+        m_udp_fd = socket(PF_INET, SOCK_DGRAM, 0);
+        int optval = 1;
+        setsockopt(m_udp_fd, SOL_SOCKET, SO_BROADCAST | SO_REUSEADDR, &optval, sizeof(int));
+    }
+
+    if (m_udp_fd != -1) {
+        // json by base64
+        // { "node_id": "xxx", "status": "renting" }
+        // { "node_id": "xxx", "status": "empty" }
+        std::string strjson = "{\"node_id\":\"" + ConfManager::instance().GetNodeId() + "\", \"status\":\"" + msg + "\"}";
+        std::string strbase64 = base64_encode((unsigned char*)strjson.c_str(), strjson.size());
+
+        struct sockaddr_in theirAddr;
+        memset(&theirAddr, 0, sizeof(struct sockaddr_in));
+        theirAddr.sin_family = AF_INET;
+        theirAddr.sin_addr.s_addr = inet_addr("255.255.255.255");
+        theirAddr.sin_port = htons(55555);
+
+        int sendBytes;
+        if ((sendBytes = sendto(m_udp_fd, strbase64.c_str(), strbase64.size(), 0,
+            (struct sockaddr*)&theirAddr, sizeof(struct sockaddr))) == -1) {
+            LOG_ERROR << "udp broadcast fail, errno=" << errno;
+        }
+    }
 }
 
 FResult TaskManager::listImages(const std::shared_ptr<dbc::node_list_images_req_data>& data,
@@ -2221,12 +2257,11 @@ FResult TaskManager::createSnapshot(const std::string& wallet, const std::string
     if (fret.errcode != ERR_SUCCESS) {
         return fret;
     }
-
-    //TODO： check task resource
-    SnapshotManager::instance().addCreatingSnapshot(task_id, sInfo);
-
+    
     virDomainState vm_status = VmClient::instance().GetDomainStatus(task_id);
     if (/*vm_status == VIR_DOMAIN_RUNNING || */vm_status == VIR_DOMAIN_SHUTOFF) {
+        SnapshotManager::instance().addCreatingSnapshot(task_id, sInfo);
+
         taskinfo->__set_status(TS_CreatingSnapshot);
         taskinfo->__set_last_stop_time(time(nullptr));
         TaskInfoMgr::instance().update(taskinfo);
@@ -2633,6 +2668,7 @@ void TaskManager::process_create_snapshot(const ETaskEvent& ev) {
         LOG_ERROR << "can not find snapshot:" << info->name << " info when creating a snapshot on vm:" << taskinfo->task_id;
         return;
     }
+
     FResult result = VmClient::instance().CreateSnapshot(taskinfo->task_id, info);
     if (result.errcode != ERR_SUCCESS) {
         taskinfo->status = TS_CreateSnapshotError;
@@ -2741,6 +2777,13 @@ void TaskManager::prune_task_thread_func() {
                     }
                 }
             }
+        }
+
+        if (cur_rent_end <= 0) {
+            broadcast_message("empty");
+        }
+        else {
+            broadcast_message("renting");
         }
     }
 }

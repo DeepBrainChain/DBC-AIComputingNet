@@ -45,7 +45,6 @@ set(service_src_dir
         dbc/config
         dbc/db/db_types
         dbc/db
-        dbc/data
         dbc/network/utils
         dbc/network/compress
         dbc/network/protocol
