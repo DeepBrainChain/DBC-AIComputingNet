@@ -99,6 +99,8 @@ public:
 
     std::shared_ptr<dbc::snapshotInfo> getCreatingSnapshot(const std::string& wallet, const std::string& task_id);
 
+    void broadcast_message(const std::string& msg);
+
 protected:
     bool restore_tasks();
 
@@ -196,6 +198,8 @@ protected:
     std::thread* m_prune_thread = nullptr;
     std::mutex m_prune_mtx;
     std::condition_variable m_prune_cond;
+
+    int32_t m_udp_fd = -1;
 };
 
 typedef TaskManager TaskMgr;

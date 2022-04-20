@@ -417,7 +417,7 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
         return;
     }
 
-    // 未验证
+    // 验证中
     if (str_status == MACHINE_STATUS::Verify) {
         result.machine_status = MACHINE_STATUS::Verify;
         auto wallets = parse_wallet(params);
@@ -433,7 +433,7 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
             bool ret = HttpDBCChainClient::instance().in_verify_time(ConfManager::instance().GetNodeId(), strMultisigWallet);
             if (!ret) {
                 result.success = false;
-                result.errmsg = "not in verify time period";
+                result.errmsg = "not in verify time";
             } else {
                 m_task_scheduler.deleteOtherCheckTasks(strMultisigWallet);
 
@@ -447,7 +447,7 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
             bool ret = HttpDBCChainClient::instance().in_verify_time(ConfManager::instance().GetNodeId(), strWallet);
             if (!ret) {
                 result.success = false;
-                result.errmsg = "not in verify time period";
+                result.errmsg = "not in verify time";
             } else {
                 m_task_scheduler.deleteOtherCheckTasks(strWallet);
 
@@ -458,7 +458,7 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
         }
 
         if (!result.success) {
-            result.errmsg = "not in verify time period";
+            result.errmsg = "not in verify time";
         }
     }
     // 验证完，已上线，但未租用
@@ -536,10 +536,14 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
     // 未知状态
     else {
         result.success = false;
-        result.errmsg = "unknowned machine status";
+        result.errmsg = "unknown machine status";
+    }
+
+    // UDP 广播
+    if (result.success) {
+        m_task_scheduler.broadcast_message("renting");
     }
 }
-
 
 void node_request_service::on_node_list_images_req(const std::shared_ptr<network::message> &msg) {
     auto node_req_msg = std::dynamic_pointer_cast<dbc::node_list_images_req>(msg->get_content());
