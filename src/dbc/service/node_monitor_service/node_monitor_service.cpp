@@ -255,7 +255,7 @@ void node_monitor_service::on_monitor_data_sender_task_timer(const std::shared_p
                     send_monitor_data(dmData, server);
                 }
             }
-            send_monitor_data(dmData, m_dbc_monitor_server);
+            // send_monitor_data(dmData, m_dbc_monitor_server);
         }
     }
     const std::map<std::string, std::shared_ptr<dbc::TaskInfo>> task_list = TaskInfoMgr::instance().getTasks();

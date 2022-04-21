@@ -28,8 +28,6 @@ static std::string g_internal_ip_seeds[] = {
         "116.169.53.131:5031"
 };
 
-static const char* g_internal_zabbix_server = "116.169.53.132:10051";
-
 ConfManager::ConfManager() {
     m_proto_capacity.add(network::matrix_capacity::THRIFT_BINARY_C_NAME);
     m_proto_capacity.add(network::matrix_capacity::THRIFT_COMPACT_C_NAME);
@@ -80,7 +78,7 @@ ERRCODE ConfManager::ParseConf() {
         ("http_port", bpo::value<int32_t>()->default_value(5050), "")
         ("dbc_chain_domain", bpo::value<std::vector<std::string>>(), "")
         ("image_server", bpo::value<std::vector<std::string>>(), "")
-        ("dbc_monitor_server", bpo::value<std::string>()->default_value(g_internal_zabbix_server), "")
+        ("dbc_monitor_server", bpo::value<std::string>()->default_value("monitor.dbcwallet.io:10051"), "")
         ("miner_monitor_server", bpo::value<std::string>(), "")
         ("multicast_address", bpo::value<std::string>()->default_value("239.255.0.1"), "")
         ("multicast_port", bpo::value<int32_t>()->default_value(30001), "");
