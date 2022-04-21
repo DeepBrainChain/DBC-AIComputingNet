@@ -532,16 +532,16 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
                 result.errmsg = "machine has already expired";
             }
         }
+
+        // 广播租用状态
+        if (result.success) {
+            m_task_scheduler.broadcast_message("renting");
+        }
     }
     // 未知状态
     else {
         result.success = false;
         result.errmsg = "unknown machine status";
-    }
-
-    // UDP 广播
-    if (result.success) {
-        m_task_scheduler.broadcast_message("renting");
     }
 }
 
@@ -2095,7 +2095,8 @@ void node_request_service::on_node_start_task_req(const std::shared_ptr<network:
 }
 
 void node_request_service::task_start(const network::base_header& header,
-                                      const std::shared_ptr<dbc::node_start_task_req_data>& data, const AuthoriseResult& result) {
+                                      const std::shared_ptr<dbc::node_start_task_req_data>& data, 
+                                      const AuthoriseResult& result) {
     int ret_code = ERR_SUCCESS;
     std::string ret_msg = "ok";
 
@@ -2289,7 +2290,8 @@ void node_request_service::on_node_restart_task_req(const std::shared_ptr<networ
 }
 
 void node_request_service::task_restart(const network::base_header& header,
-                                        const std::shared_ptr<dbc::node_restart_task_req_data>& data, const AuthoriseResult& result) {
+                                        const std::shared_ptr<dbc::node_restart_task_req_data>& data, 
+                                        const AuthoriseResult& result) {
     int ret_code = ERR_SUCCESS;
     std::string ret_msg = "ok";
 
