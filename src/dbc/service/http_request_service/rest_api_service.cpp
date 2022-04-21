@@ -6961,6 +6961,7 @@ void vxlan_network_list(const std::map<std::string, std::shared_ptr<dbc::network
     ss << "\"networks\":[";
     int count = 0;
     for (auto &it : networks) {
+        if (count > 50) break;
         if (count > 0) ss << ",";
         ss << "{";
         ss << "\"network_name\":" << "\"" << it.second->networkId << "\"";

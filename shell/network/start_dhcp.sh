@@ -59,7 +59,7 @@ if [ $? -ne 0 ];then
     exit 1
 fi
 
-MESSAGE=$(ip netns exec ${DHCPNS} sh -c 'dnsmasq --except-interface lo --bind-interfaces --interface '${DHCPNAME_NS}' --port=0 --pid-file=/var/run/'${VXLAN_NAME}'.pid --dhcp-range '${IP_START}','${IP_END}','${NETMASK}',10h --dhcp-no-override --dhcp-leasefile=/var/lib/misc/'${DHCPNS}'.leases --dhcp-lease-max='${IP_LEASE_NUM}' --dhcp-option=3' 2>&1)
+MESSAGE=$(ip netns exec ${DHCPNS} sh -c '/usr/sbin/dnsmasq --except-interface lo --bind-interfaces --interface '${DHCPNAME_NS}' --port=0 --pid-file=/var/run/'${VXLAN_NAME}'.pid --dhcp-range '${IP_START}','${IP_END}','${NETMASK}',10h --dhcp-no-override --dhcp-leasefile=/var/lib/misc/'${DHCPNS}'.leases --dhcp-lease-max='${IP_LEASE_NUM}' --dhcp-option=3' 2>&1)
 if [ $? -ne 0 ];then
     printf "{\"errcode\":-1,\"message\":\"${MESSAGE}\"}\n"
     exit 1
