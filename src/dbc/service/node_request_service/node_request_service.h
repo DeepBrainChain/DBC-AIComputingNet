@@ -181,6 +181,8 @@ private:
 
     void check_authority(const AuthorityParams& params, AuthoriseResult& result);
 
+    void udp_broadcast_rent_status();
+
 protected:
     TaskMgr m_task_scheduler;
     bloomlru_filter m_nonce_filter{ 1000000 };

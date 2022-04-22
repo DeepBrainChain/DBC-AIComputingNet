@@ -1143,7 +1143,18 @@ int32_t VmClient::ResetDomain(const std::string &domain_name) {
 }
 
 void VmClient::ListAllDomains(std::vector<std::string> &domains) {
+    virDomainPtr* pdomains = nullptr;
+    int count = virConnectListAllDomains(m_connPtr, &pdomains, 0);
+    if (count < 0) {
+        return;
+    }
 
+    for (size_t i = 0; i < count; i++) {
+        virDomainPtr dom = pdomains[i];
+        const char* dom_name = virDomainGetName(dom);
+        domains.push_back(dom_name);
+        virDomainFree(dom);
+    }
 }
 
 void VmClient::ListAllRunningDomains(std::vector<std::string> &domains) {
