@@ -181,7 +181,7 @@ private:
 
     void check_authority(const AuthorityParams& params, AuthoriseResult& result);
 
-    void udp_broadcast_rent_status();
+    bool udp_broadcast_rent_status();
 
 protected:
     TaskMgr m_task_scheduler;
