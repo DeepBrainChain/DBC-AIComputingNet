@@ -532,17 +532,29 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
                 result.errmsg = "machine has already expired";
             }
         }
-
-        // 广播租用状态
-        if (result.success) {
-            m_task_scheduler.broadcast_message("renting");
-        }
     }
     // 未知状态
     else {
         result.success = false;
         result.errmsg = "unknown machine status";
     }
+}
+
+//广播租用状态
+bool node_request_service::udp_broadcast_rent_status() {
+    m_task_scheduler.broadcast_message("renting");
+
+    bool found = false;
+    std::vector<std::string> domains;
+    VmClient::instance().ListAllRunningDomains(domains);
+    for (size_t i = 0; i < domains.size(); i++) {
+        if (!TaskInfoMgr::instance().isExist(domains[i])) {
+            found = true;
+            break;
+        }
+    }
+
+    return found;
 }
 
 void node_request_service::on_node_list_images_req(const std::shared_ptr<network::message> &msg) {
@@ -1951,6 +1963,11 @@ void node_request_service::on_node_create_task_req(const std::shared_ptr<network
             return;
         }
 
+        if (udp_broadcast_rent_status()) {
+            send_response_error<dbc::node_create_task_rsp>(NODE_CREATE_TASK_RSP, node_req_msg->header, E_DEFAULT, "create task failed, please try again in a minute");
+            return;
+        }
+        
         task_create(node_req_msg->header, data, result);
     } else {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
@@ -2084,6 +2101,11 @@ void node_request_service::on_node_start_task_req(const std::shared_ptr<network:
         if (!result.success) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_start_task_rsp>(NODE_START_TASK_RSP, node_req_msg->header, E_DEFAULT, "check authority failed: " + result.errmsg);
+            return;
+        }
+
+        if (udp_broadcast_rent_status()) {
+            send_response_error<dbc::node_start_task_rsp>(NODE_START_TASK_RSP, node_req_msg->header, E_DEFAULT, "start task failed, please try again in a minute");
             return;
         }
 
@@ -2279,6 +2301,11 @@ void node_request_service::on_node_restart_task_req(const std::shared_ptr<networ
         if (!result.success) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_restart_task_rsp>(NODE_RESTART_TASK_RSP, node_req_msg->header, E_DEFAULT, "check authority failed: " + result.errmsg);
+            return;
+        }
+
+        if (udp_broadcast_rent_status()) {
+            send_response_error<dbc::node_restart_task_rsp>(NODE_RESTART_TASK_RSP, node_req_msg->header, E_DEFAULT, "restart task failed, please try again in a minute");
             return;
         }
 
