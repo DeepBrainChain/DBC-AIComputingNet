@@ -314,12 +314,15 @@ int virNWFilterImpl::getNWFilterUUIDString(char * buf) {
   return virNWFilterGetUUIDString(nwfilter_.get(), buf);
 }
 
-int virNWFilterImpl::getNWFilterXMLDesc(std::string &desc, unsigned int flags) {
-  if (!nwfilter_) return -1;
+std::string virNWFilterImpl::getNWFilterXMLDesc(unsigned int flags) {
+  std::string desc;
+  if (!nwfilter_) return desc;
   char *xml = virNWFilterGetXMLDesc(nwfilter_.get(), flags);
-  desc = xml;
-  free(xml);
-  return desc.empty() ? -1 : 0;
+  if (xml) {
+    desc = xml;
+    free(xml);
+  }
+  return desc;
 }
 
 int virNWFilterImpl::undefineNWFilter() {
@@ -359,12 +362,15 @@ std::shared_ptr<virDomainSnapshotImpl> virDomainSnapshotImpl::getSnapshotParent(
   return std::make_shared<virDomainSnapshotImpl>(snap);
 }
 
-int virDomainSnapshotImpl::getSnapshotXMLDesc(std::string &desc) {
-  if (!snapshot_) return -1;
-  char *xml = virDomainSnapshotGetXMLDesc(snapshot_.get(), 0);
-  desc = xml;
-  free(xml);
-  return desc.empty() ? -1 : 0;
+std::string virDomainSnapshotImpl::getSnapshotXMLDesc(unsigned int flags) {
+  std::string desc;
+  if (!snapshot_) return desc;
+  char *xml = virDomainSnapshotGetXMLDesc(snapshot_.get(), flags);
+  if (xml) {
+    desc = xml;
+    free(xml);
+  }
+  return desc;
 }
 
 int virDomainSnapshotImpl::listAllSnapshotChilden() {
@@ -448,6 +454,18 @@ int virDomainImpl::resetDomain() {
 
 int virDomainImpl::undefineDomain() {
   if (!domain_) return -1;
+  int32_t snaps = getSnapshotNums(1 << 10);
+  int32_t has_nvram = hasNvram();
+  unsigned int flags = 0;
+  if (snaps > 0) {
+    flags |= VIR_DOMAIN_UNDEFINE_SNAPSHOTS_METADATA;
+  }
+  if (has_nvram > 0) {
+    flags |= VIR_DOMAIN_UNDEFINE_NVRAM;
+  }
+  if (flags > 0) {
+    return virDomainUndefineFlags(domain_.get(), flags);
+  }
   return virDomainUndefine(domain_.get());
 }
 
@@ -473,14 +491,49 @@ int virDomainImpl::deleteDomain() {
   return 0;
 }
 
+std::string virDomainImpl::getDomainXMLDesc(unsigned int flags) {
+  std::string desc;
+  if (!domain_) return desc;
+  char* xml = virDomainGetXMLDesc(domain_.get(), flags);
+  if (xml) {
+    desc = xml;
+    free(xml);
+  }
+  return desc;
+}
+
+int virDomainImpl::hasNvram() {
+  int32_t ret = -1;
+  if (!domain_) return ret;
+  std::string xmlDesc = getDomainXMLDesc(0);
+  if (xmlDesc.empty()) return ret;
+  do {
+    tinyxml2::XMLDocument doc;
+    tinyxml2::XMLError err = doc.Parse(xmlDesc.c_str());
+    if (err != tinyxml2::XML_SUCCESS) break;
+    tinyxml2::XMLElement* root = doc.RootElement();
+    tinyxml2::XMLElement* os_node = root->FirstChildElement("os");
+    if (os_node) {
+      tinyxml2::XMLElement* os_nvram_node = os_node->FirstChildElement("nvram");
+      if (os_nvram_node && os_nvram_node->GetText() != NULL) {
+        ret = 1;
+        break;
+      }
+    }
+    ret = 0;
+  } while(0);
+
+  return ret;
+}
+
 int virDomainImpl::getDomainDisks(std::vector<domainDiskInfo> &disks) {
   int ret = -1;
   if (!domain_) return ret;
-  char* pContent = virDomainGetXMLDesc(domain_.get(), VIR_DOMAIN_XML_SECURE);
-  if (!pContent) return ret;
+  std::string xmlDesc = getDomainXMLDesc(VIR_DOMAIN_XML_SECURE);
+  if (xmlDesc.empty()) return ret;
   do {
     tinyxml2::XMLDocument doc;
-    tinyxml2::XMLError err = doc.Parse(pContent);
+    tinyxml2::XMLError err = doc.Parse(xmlDesc.c_str());
     if (err != tinyxml2::XML_SUCCESS) break;
     tinyxml2::XMLElement* root = doc.RootElement();
     tinyxml2::XMLElement* devices_node = root->FirstChildElement("devices");
@@ -508,7 +561,6 @@ int virDomainImpl::getDomainDisks(std::vector<domainDiskInfo> &disks) {
     ret = 0;
   } while(0);
 
-  free(pContent);
   return ret;
 }
 
@@ -899,9 +951,21 @@ bool virHelper::openConnectReadOnly(const char *name) {
   return false;
 }
 
-int virHelper::listAllDomains(virDomainPtr **domains, unsigned int flags) {
+int virHelper::listAllDomains(std::vector<std::shared_ptr<virDomainImpl>> &domains, unsigned int flags) {
   if (!conn_) return -1;
-  return virConnectListAllDomains(conn_.get(), domains, flags);
+  virDomainPtr *domainsPtr = NULL;
+  int ret;
+  // unsigned int flags = VIR_CONNECT_LIST_DOMAINS_RUNNING |
+  //                      VIR_CONNECT_LIST_DOMAINS_PERSISTENT;
+  ret = virConnectListAllDomains(conn_.get(), &domainsPtr, flags);
+  for (int i = 0; i < ret; i++) {
+    // do_something_with_domain(domains[i]);
+    // // here or in a separate loop if needed
+    // virDomainFree(domainsPtr[i]);
+    domains.push_back(std::make_shared<virDomainImpl>(domainsPtr[i]));
+  }
+  free(domainsPtr);
+  return ret;
 }
 
 int virHelper::listDomains(int *ids, int maxids) {

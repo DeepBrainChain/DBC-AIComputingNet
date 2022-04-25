@@ -122,8 +122,8 @@ BOOST_AUTO_TEST_CASE(testCreateSnapshot) {
                                VIR_DOMAIN_SNAPSHOT_CREATE_QUIESCE | VIR_DOMAIN_SNAPSHOT_CREATE_ATOMIC;
     std::shared_ptr<virDomainSnapshotImpl> snapshot = domain->createSnapshot(snapXMLDesc.c_str(), createFlags);
     BOOST_REQUIRE(snapshot);
-    std::string xmlDesc;
-    BOOST_CHECK(snapshot->getSnapshotXMLDesc(xmlDesc) != -1);
+    std::string xmlDesc = snapshot->getSnapshotXMLDesc(0);
+    BOOST_CHECK(!xmlDesc.empty());
     // std::cout << "snapshot xml desc: " << xmlDesc << std::endl;
     std::cout << "create snapshot successful" << std::endl;
 }

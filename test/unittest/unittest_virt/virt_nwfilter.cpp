@@ -150,8 +150,8 @@ BOOST_AUTO_TEST_CASE(testDefineNWFilter) {
     std::string name;
     BOOST_CHECK(nwfilter->getNWFilterName(name) == 0);
     std::cout << "   " << std::setw(25) << std::setfill(' ') << std::left << name << std::endl;
-    std::string xmlDesc;
-    BOOST_REQUIRE(nwfilter->getNWFilterXMLDesc(xmlDesc, 0) == 0);
+    std::string xmlDesc = nwfilter->getNWFilterXMLDesc();
+    BOOST_REQUIRE(!xmlDesc.empty());
     std::cout << xmlDesc << std::endl;
 }
 

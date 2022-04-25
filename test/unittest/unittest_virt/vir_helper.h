@@ -90,12 +90,11 @@ public:
   /**
    * @brief Provide an XML description of the network filter.
    * The description may be reused later to redefine the network filter with virNWFilterCreateXML().
-   * @param desc   a 0 terminated UTF-8 encoded XML instance, or empty in case of error
    * @param flags  extra flags; not used yet, so callers should always pass 0
    *
-   * @return -1 in case of error, 0 in case of success
+   * @return a 0 terminated UTF-8 encoded XML instance, or empty string in case of error
    */
-  int getNWFilterXMLDesc(std::string &desc, unsigned int flags);
+  std::string getNWFilterXMLDesc(unsigned int flags = 0);
 
   /**
    * @brief Undefine the nwfilter object.
@@ -156,7 +155,15 @@ public:
 
   std::shared_ptr<virDomainSnapshotImpl> getSnapshotParent();
 
-  int getSnapshotXMLDesc(std::string &desc);
+  /**
+   * @brief Provide an XML description of the domain snapshot, with a top-level element of <domainsnapshot>.
+   * No security-sensitive data will be included unless flags contains VIR_DOMAIN_SNAPSHOT_XML_SECURE;
+   * this flag is rejected on read-only connections.
+   * @param flags   bitwise-OR of supported virDomainSnapshotXMLFlags
+   *
+   * @return a 0 terminated UTF-8 encoded XML instance or empty string in case of error.
+   */
+  std::string getSnapshotXMLDesc(unsigned int flags);
 
   int listAllSnapshotChilden();
 
@@ -213,8 +220,23 @@ public:
 
   int undefineDomain();
 
-  // destroy, undefine domain and delete image file
+  /**
+   * @brief destroy, undefine domain and delete image file
+   *
+   * @return 0 in case of success and -1 in case of failure.
+   */
   int deleteDomain();
+
+  /**
+   * @brief Provide an XML description of the domain.
+   * The description may be reused later to relaunch the domain with virDomainCreateXML().
+   * @param flags  bitwise-OR of virDomainXMLFlags
+   *
+   * @return a 0 terminated UTF-8 encoded XML instance, or empty string in case of error.
+   */
+  std::string getDomainXMLDesc(unsigned int flags);
+
+  int hasNvram();
 
   int getDomainDisks(std::vector<domainDiskInfo> &disks);
 
@@ -229,7 +251,13 @@ public:
    */
   int isDomainActive();
 
-  // returns 0 in case of success and -1 in case of failure.
+  /**
+   * @brief Extract information about a domain.
+   * Note that if the connection used to get the domain is limited only a partial set of the information can be extracted.
+   * @param info    pointer to a virDomainInfo structure allocated by the user
+   *
+   * @return 0 in case of success and -1 in case of failure.
+   */
   int getDomainInfo(virDomainInfoPtr info);
 
   int getDomainCPUStats(virTypedParameterPtr params, unsigned int nparams, int start_cpu, unsigned int ncpus, unsigned int flags);
@@ -244,12 +272,24 @@ public:
 
   std::string QemuAgentCommand(const char *cmd, int timeout, unsigned int flags);
 
-  // returns 0 in case of success and -1 in case of failure.
+  /**
+   * @brief Extract domain state. Each state can be accompanied with a reason (if known) which led to the state.
+   * @param state    returned state of the domain (one of virDomainState)
+   * @param reason   returned reason which led to state (one of virDomain*Reason corresponding to the current state); it is allowed to be NULL
+   * @param flags    extra flags; not used yet, so callers should always pass 0
+   *
+   * @return 0 in case of success and -1 in case of failure.
+   */
   int getDomainState(int *state, int *reason, unsigned int flags);
 
   int getDomainStatsList(unsigned int stats);
 
-  // Extract information about a domain's block device.
+  /**
+   * @brief Extract information about a domain's block device.
+   * @param disk    path to the block device, or device shorthand
+   *
+   * @return 0 in case of success and -1 in case of failure.
+   */
   int getDomainBlockInfo(const char *disk);
 
   /**
@@ -282,10 +322,19 @@ public:
   int getDomainBlockParameters();
   int getDomainBlockIoTune(const char *disk);
 
-  // Get a list of mapping information for each mounted file systems within the specified guest and the disks.
+  /**
+   * @brief Get a list of mapping information for each mounted file systems within the specified guest and the disks.
+   *
+   * @return the number of returned mount points, or -1 in case of error.
+   */
   int getDomainFSInfo();
 
-  // Queries the guest agent for the various information about the guest system. The reported data depends on the guest agent implementation.
+  /**
+   * @brief Queries the guest agent for the various information about the guest system.
+   * The reported data depends on the guest agent implementation.
+   *
+   * @return 0 on success, -1 on error.
+   */
   int getDomainGuestInfo();
 
   /**
@@ -466,10 +515,30 @@ public:
   bool openConnectReadOnly(const char *name);
 
   // domain
-  // returns the number of domains found or -1 and sets domains to NULL in case of error.
-  int listAllDomains(virDomainPtr **domains, unsigned int flags);
-  // returns -1 in case of error
+  /**
+   * @brief Collect a possibly-filtered list of all domains, and return an allocated array of information for each.
+   * @param domains  a variable to store the array containing domain objects
+   * @param flags    bitwise-OR of virConnectListAllDomainsFlags
+   *
+   * @return the number of domains found or -1 and sets domains to NULL in case of error.
+   */
+  int listAllDomains(std::vector<std::shared_ptr<virDomainImpl>> &domains, unsigned int flags);
+
+  /**
+   * @brief Collect the list of active domains, and store their IDs in array ids
+   * The use of this function is discouraged. Instead, use virConnectListAllDomains().
+   * @param ids       array to collect the list of IDs of active domains
+   * @param maxids    size of ids
+   *
+   * @return the number of domains found or -1 in case of error.
+   */
   int listDomains(int *ids, int maxids);
+
+  /**
+   * @brief Provides the number of active domains.
+   *
+   * @return the number of domain found or -1 in case of error
+   */
   int numOfDomains();
 
   std::shared_ptr<virDomainImpl> openDomainByID(int id);
@@ -482,6 +551,12 @@ public:
   std::shared_ptr<virDomainImpl> createDomain(const char *xml_content);
 
   // nwfilter
+  /**
+   * @brief Define a new network filter, based on an XML description similar to the one returned by virNWFilterGetXMLDesc()
+   * @param xmlDesc     an XML description of the nwfilter
+   *
+   * @return a new nwfilter object or NULL in case of failure
+   */
   std::shared_ptr<virNWFilterImpl> defineNWFilter(const char * xmlDesc);
 
   /**
