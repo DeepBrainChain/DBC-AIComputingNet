@@ -489,24 +489,31 @@ void TaskManager::add_iptable_to_system(const std::string &task_id) {
         std::string rdp_port = iptable->rdp_port;
         std::vector<std::string> custom_port = iptable->custom_port;
         std::string vm_local_ip = iptable->vm_local_ip;
+        std::string public_ip = iptable->public_ip;
 
-        shell_add_iptable_to_system(task_id, host_ip, ssh_port, rdp_port, custom_port, vm_local_ip);
+        shell_add_iptable_to_system(task_id, host_ip, ssh_port, rdp_port, custom_port, vm_local_ip, public_ip);
     }
 }
 
-void TaskManager::shell_remove_iptable_from_system(const std::string& task_id, const std::string &public_ip,
+void TaskManager::shell_remove_iptable_from_system(const std::string& task_id, const std::string &host_ip,
                                                    const std::string &ssh_port, const std::string &vm_local_ip) {
+    auto func_remove_chain = [](std::string main_chain, std::string task_chain) {
+        std::string cmd = "sudo iptables -t nat -F " + task_chain;
+        run_shell(cmd);
+        cmd = "sudo iptables -t nat -D " + main_chain + " -j " + task_chain;
+        run_shell(cmd);
+        cmd = "sudo iptables -t nat -X " + task_chain;
+        run_shell(cmd);
+    };
+
     // remove chain
     std::string chain_name = "chain_" + task_id;
-    std::string cmd = "sudo iptables -t nat -F " + chain_name;
-    run_shell(cmd);
-    cmd = "sudo iptables -t nat -D PREROUTING -j " + chain_name;
-    run_shell(cmd);
-    cmd = "sudo iptables -t nat -X " + chain_name;
-    run_shell(cmd);
+    func_remove_chain("PREROUTING", chain_name);
+    func_remove_chain("PREROUTING", chain_name + "_dnat");
+    func_remove_chain("POSTROUTING", chain_name + "_snat");
 
     // remove old rules
-    cmd = "sudo iptables --table nat -D PREROUTING --protocol tcp --destination " + public_ip +
+    std::string cmd = "sudo iptables --table nat -D PREROUTING --protocol tcp --destination " + host_ip +
                       " --destination-port " + ssh_port + " --jump DNAT --to-destination " + vm_local_ip + ":22";
     run_shell(cmd.c_str());
 
@@ -529,112 +536,144 @@ void TaskManager::shell_remove_iptable_from_system(const std::string& task_id, c
     run_shell(cmd.c_str());
 
     cmd = "sudo iptables -t nat -D POSTROUTING -d " + vm_local_ip +
-          " -p tcp -m tcp --dport 20000:60000 -j SNAT --to-source " + public_ip;
+          " -p tcp -m tcp --dport 20000:60000 -j SNAT --to-source " + host_ip;
     run_shell(cmd.c_str());
 
     cmd = "sudo iptables -t nat -D POSTROUTING -d " + vm_local_ip +
-          " -p udp -m udp --dport 20000:60000 -j SNAT --to-source " + public_ip;
+          " -p udp -m udp --dport 20000:60000 -j SNAT --to-source " + host_ip;
     run_shell(cmd.c_str());
 
-    cmd = "sudo iptables -t nat -D PREROUTING -p tcp -d " + public_ip + " --dport " + ssh_port
+    cmd = "sudo iptables -t nat -D PREROUTING -p tcp -d " + host_ip + " --dport " + ssh_port
                       + " -j DNAT --to-destination " + vm_local_ip + ":22";
     run_shell(cmd.c_str());
 
     pos = vm_local_ip.rfind('.');
     ip = vm_local_ip.substr(0, pos) + ".0/24";
-    cmd = "sudo iptables -t nat -D POSTROUTING -s " + ip + " -j SNAT --to-source " + public_ip;
+    cmd = "sudo iptables -t nat -D POSTROUTING -s " + ip + " -j SNAT --to-source " + host_ip;
     run_shell(cmd.c_str());
 
-    cmd = "sudo iptables -t nat -D PREROUTING -p tcp -d " + public_ip + " --dport 6000:60000 -j DNAT --to-destination "
+    cmd = "sudo iptables -t nat -D PREROUTING -p tcp -d " + host_ip + " --dport 6000:60000 -j DNAT --to-destination "
           + vm_local_ip + ":6000-60000";
     run_shell(cmd.c_str());
 }
 
-void TaskManager::shell_add_iptable_to_system(const std::string& task_id, const std::string &public_ip,
+void TaskManager::shell_add_iptable_to_system(const std::string& task_id, const std::string &host_ip,
                                               const std::string &ssh_port, const std::string &rdp_port,
                                               const std::vector<std::string>& custom_port,
-                                              const std::string &vm_local_ip) {
+                                              const std::string &vm_local_ip, const std::string &public_ip) {
+    auto func_remove_chain = [](std::string main_chain, std::string task_chain) {
+        std::string cmd = "sudo iptables -t nat -F " + task_chain;
+        run_shell(cmd);
+        cmd = "sudo iptables -t nat -D " + main_chain + " -j " + task_chain;
+        run_shell(cmd);
+        cmd = "sudo iptables -t nat -X " + task_chain;
+        run_shell(cmd);
+    };
+
     // remove chain
     std::string chain_name = "chain_" + task_id;
-    std::string cmd = "sudo iptables -t nat -F " + chain_name;
-    run_shell(cmd);
-    cmd = "sudo iptables -t nat -D PREROUTING -j " + chain_name;
-    run_shell(cmd);
-    cmd = "sudo iptables -t nat -X " + chain_name;
-    run_shell(cmd);
+    func_remove_chain("PREROUTING", chain_name);
+    func_remove_chain("PREROUTING", chain_name + "_dnat");
+    func_remove_chain("POSTROUTING", chain_name + "_snat");
 
-    // add chain and rules
-    cmd = "sudo iptables -t nat -N " + chain_name;
-    run_shell(cmd);
-    if (!ssh_port.empty() && atoi(ssh_port) > 0) {
-        cmd = "sudo iptables -t nat -A " + chain_name + " -p tcp --destination " + public_ip + " --dport " + ssh_port +
-              " --jump DNAT --to-destination " + vm_local_ip + ":22";
+    if (public_ip.empty()) {
+        chain_name += "_dnat";
+
+        // add chain and rules
+        std::string cmd = "sudo iptables -t nat -N " + chain_name;
         run_shell(cmd);
-    }
-    if (!rdp_port.empty() && atoi(rdp_port) > 0) {
-        cmd = "sudo iptables -t nat -A " + chain_name + " -p tcp --destination " + public_ip + " --dport " + rdp_port +
-              " --jump DNAT --to-destination " + vm_local_ip + ":3389";
-        run_shell(cmd);
-    }
-
-    for (auto& str : custom_port) {
-        std::vector<std::string> v_protocol_port = util::split(str, ",");
-        if (v_protocol_port.size() != 2 || (v_protocol_port[0] != "tcp" && v_protocol_port[0] != "udp")) {
-            continue;
-        }
-
-        std::string s_protocol = v_protocol_port[0];
-        util::trim(s_protocol);
-        std::string s_port = v_protocol_port[1];
-        util::trim(s_port);
-
-        if (util::is_digits(s_port)) {
-            cmd = "sudo iptables -t nat -A " + chain_name + " -p " + s_protocol + " --destination " + public_ip + " --dport " + s_port +
-                  " --jump DNAT --to-destination " + vm_local_ip + ":" + s_port;
+        if (!ssh_port.empty() && atoi(ssh_port) > 0) {
+            cmd = "sudo iptables -t nat -A " + chain_name + " -p tcp --destination " + host_ip + " --dport " + ssh_port +
+                " --jump DNAT --to-destination " + vm_local_ip + ":22";
             run_shell(cmd);
-            continue;
+        }
+        if (!rdp_port.empty() && atoi(rdp_port) > 0) {
+            cmd = "sudo iptables -t nat -A " + chain_name + " -p tcp --destination " + host_ip + " --dport " + rdp_port +
+                " --jump DNAT --to-destination " + vm_local_ip + ":3389";
+            run_shell(cmd);
         }
 
-        if (s_port.find(':') != std::string::npos) {
-            std::vector<std::string> vec = util::split(s_port, ":");
-            if (vec.size() == 2 && util::is_digits(vec[0]) && util::is_digits(vec[1])) {
-                cmd = "sudo iptables -t nat -A " + chain_name + " -p " + s_protocol + " --destination " + public_ip + " --dport " + vec[0] +
-                      " --jump DNAT --to-destination " + vm_local_ip + ":" + vec[1];
+        for (auto& str : custom_port) {
+            std::vector<std::string> v_protocol_port = util::split(str, ",");
+            if (v_protocol_port.size() != 2 || (v_protocol_port[0] != "tcp" && v_protocol_port[0] != "udp")) {
+                continue;
+            }
+
+            std::string s_protocol = v_protocol_port[0];
+            util::trim(s_protocol);
+            std::string s_port = v_protocol_port[1];
+            util::trim(s_port);
+
+            if (util::is_digits(s_port)) {
+                cmd = "sudo iptables -t nat -A " + chain_name + " -p " + s_protocol + " --destination " + host_ip + " --dport " + s_port +
+                    " --jump DNAT --to-destination " + vm_local_ip + ":" + s_port;
                 run_shell(cmd);
                 continue;
             }
-        }
 
-        if (s_port.find('-') != std::string::npos) {
-            std::vector<std::string> vec = util::split(s_port, "-");
-            if (vec.size() == 2 && util::is_digits(vec[0]) && util::is_digits(vec[1])) {
-                cmd = "sudo iptables -t nat -A " + chain_name + " -p " + s_protocol + " --destination " + public_ip + " --dport " +
-                        vec[0] + ":" + vec[1] + " -j DNAT --to-destination " + vm_local_ip + ":" +
-                        vec[0] + "-" + vec[1];
-                run_shell(cmd);
-                continue;
-            }
-        }
-
-        if (s_port.find(':') != std::string::npos && s_port.find('-') != std::string::npos) {
-            std::vector<std::string> vec = util::split(s_port, ":");
-            if (vec.size() == 2) {
-                std::vector<std::string> vec1 = util::split(vec[0], "-");
-                std::vector<std::string> vec2 = util::split(vec[1], "-");
-                if (vec1.size() == 2 && vec2.size() == 2) {
-                    cmd = "sudo iptables -t nat -A " + chain_name + " -p " + s_protocol + " --destination " + public_ip + " --dport " +
-                            vec1[0] + ":" + vec1[1] + " -j DNAT --to-destination " + vm_local_ip + ":" +
-                            vec2[0] + "-" + vec2[1];
+            if (s_port.find(':') != std::string::npos) {
+                std::vector<std::string> vec = util::split(s_port, ":");
+                if (vec.size() == 2 && util::is_digits(vec[0]) && util::is_digits(vec[1])) {
+                    cmd = "sudo iptables -t nat -A " + chain_name + " -p " + s_protocol + " --destination " + host_ip + " --dport " + vec[0] +
+                        " --jump DNAT --to-destination " + vm_local_ip + ":" + vec[1];
                     run_shell(cmd);
                     continue;
                 }
             }
-        }
-    }
 
-    // add ref
-    cmd = "sudo iptables -t nat -I PREROUTING -j " + chain_name;
-    run_shell(cmd);
+            if (s_port.find('-') != std::string::npos) {
+                std::vector<std::string> vec = util::split(s_port, "-");
+                if (vec.size() == 2 && util::is_digits(vec[0]) && util::is_digits(vec[1])) {
+                    cmd = "sudo iptables -t nat -A " + chain_name + " -p " + s_protocol + " --destination " + host_ip + " --dport " +
+                            vec[0] + ":" + vec[1] + " -j DNAT --to-destination " + vm_local_ip + ":" +
+                            vec[0] + "-" + vec[1];
+                    run_shell(cmd);
+                    continue;
+                }
+            }
+
+            if (s_port.find(':') != std::string::npos && s_port.find('-') != std::string::npos) {
+                std::vector<std::string> vec = util::split(s_port, ":");
+                if (vec.size() == 2) {
+                    std::vector<std::string> vec1 = util::split(vec[0], "-");
+                    std::vector<std::string> vec2 = util::split(vec[1], "-");
+                    if (vec1.size() == 2 && vec2.size() == 2) {
+                        cmd = "sudo iptables -t nat -A " + chain_name + " -p " + s_protocol + " --destination " + host_ip + " --dport " +
+                                vec1[0] + ":" + vec1[1] + " -j DNAT --to-destination " + vm_local_ip + ":" +
+                                vec2[0] + "-" + vec2[1];
+                        run_shell(cmd);
+                        continue;
+                    }
+                }
+            }
+        }
+
+        // add ref
+        cmd = "sudo iptables -t nat -I PREROUTING -j " + chain_name;
+        run_shell(cmd);
+    } else {
+        std::string chain_name_dnat = chain_name + "_dnat";
+        std::string chain_name_snat = chain_name + "_snat";
+
+        // add chain and rules
+        std::string cmd = "sudo iptables -t nat -N " + chain_name_dnat;
+        run_shell(cmd);
+        cmd = "sudo iptables -t nat -A " + chain_name_dnat + " --destination " + public_ip +
+            " --jump DNAT --to-destination " + vm_local_ip;
+        run_shell(cmd);
+
+        cmd = "sudo iptables -t nat -N " + chain_name_snat;
+        run_shell(cmd);
+        cmd = "sudo iptables -t nat -I " + chain_name_snat + " --source " + vm_local_ip +
+            " --jump SNAT --to-source " + public_ip;
+        run_shell(cmd);
+
+        // add ref
+        cmd = "sudo iptables -t nat -I PREROUTING -j " + chain_name_dnat;
+        run_shell(cmd);
+        cmd = "sudo iptables -t nat -I POSTROUTING -j " + chain_name_snat;
+        run_shell(cmd);
+    }
 }
 
 void TaskManager::shell_remove_reject_iptable_from_system() {
@@ -703,6 +742,8 @@ void TaskManager::delete_task(const std::string &task_id) {
         }
     }
     SnapshotManager::instance().delTaskSnapshot(task_id);
+
+    VmClient::instance().UndefineNWFilter(task_id);
     TASK_LOG_INFO(task_id, "delete task successful");
 }
 
@@ -775,6 +816,8 @@ FResult TaskManager::createTask(const std::string& wallet, const std::shared_ptr
     taskinfo->__set_bios_mode(createparams.bios_mode);
     taskinfo->__set_multicast(createparams.multicast);
     taskinfo->__set_network_name(createparams.network_name);
+    taskinfo->__set_public_ip(createparams.public_ip);
+    taskinfo->__set_nwfilter(createparams.nwfilter);
     TaskInfoMgr::instance().addTaskInfo(taskinfo);
 
     std::shared_ptr<TaskResource> task_resource = std::make_shared<TaskResource>();
@@ -816,8 +859,8 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
 
     std::string image_name, s_ssh_port, s_rdp_port, s_gpu_count, s_cpu_cores, s_mem_size,
             s_disk_size, vm_xml, vm_xml_url, s_vnc_port, data_file_name, operation_system, bios_mode,
-            custom_image_name, network_name;
-    std::vector<std::string> custom_ports, multicast;
+            custom_image_name, network_name, public_ip;
+    std::vector<std::string> custom_ports, multicast, nwfilter;
 
     JSON_PARSE_STRING(doc, "image_name", image_name) //image name
     JSON_PARSE_STRING(doc, "custom_image_name", custom_image_name) //custom image name
@@ -857,6 +900,23 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
             }
         }
     }
+    //"nwfilter": [
+    //    "in,tcp,22,0.0.0.0/0,accept",
+    //    "in,all,all,0.0.0.0/0,drop",
+    //    "out,all,all,0.0.0.0/0,accept"
+    //]
+    if (doc.HasMember("network_filters")) {
+        const rapidjson::Value& v_nwfilters = doc["network_filters"];
+        if (v_nwfilters.IsArray()) {
+            for (rapidjson::SizeType i = 0; i < v_nwfilters.Size(); i++) {
+                const rapidjson::Value& v_item = v_nwfilters[i];
+                if (v_item.IsString()) {
+                    std::string str = v_item.GetString();
+                    nwfilter.push_back(str);
+                }
+            }
+        }
+    }
     JSON_PARSE_STRING(doc, "gpu_count", s_gpu_count)
     JSON_PARSE_STRING(doc, "cpu_cores", s_cpu_cores)
     JSON_PARSE_STRING(doc, "mem_size", s_mem_size)     //G
@@ -868,6 +928,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     JSON_PARSE_STRING(doc, "operation_system", operation_system)
     JSON_PARSE_STRING(doc, "bios_mode", bios_mode)
     JSON_PARSE_STRING(doc, "network_name", network_name)
+    JSON_PARSE_STRING(doc, "public_ip", public_ip)
     //operation_system: "win"/"ubuntu"/""
     if (operation_system.empty()) {
         operation_system = "generic";
@@ -907,13 +968,19 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     }
 
     if (!network_name.empty()) {
-        params.network_name = network_name;
         FResult fret = VxlanManager::instance().CreateNetworkClient(network_name);
         if (fret.errcode == ERR_SUCCESS) {
             // do nothing
         } else {
             return fret;
         }
+    }
+
+    if (!public_ip.empty()) {
+        ip_validator ip_vdr;
+        variable_value val_ip(public_ip, false);
+        if (!ip_vdr.validate(val_ip))
+            return FResult(ERR_ERROR, "invalid public ip");
     }
 
     std::string login_password = genpwd();
@@ -1115,6 +1182,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
         operation_system = xml_params.operation_system;
         bios_mode = xml_params.bios_mode;
         multicast = xml_params.multicast;
+        network_name = xml_params.network_name;
 
         // check image
         fret = check_image(image_name);
@@ -1179,6 +1247,9 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     params.operation_system = operation_system;
     params.bios_mode = bios_mode;
     params.multicast = multicast;
+    params.network_name = network_name;
+    params.public_ip = public_ip;
+    params.nwfilter = nwfilter;
 
     return FResultOk;
 }
@@ -1382,6 +1453,18 @@ FResult TaskManager::parse_vm_xml(const std::string& xml_file_path, ParseVmXmlPa
                 std::string mcast_address = ele_interface_source->Attribute("address");
                 std::string mcast_port = ele_interface_source->Attribute("port");
                 params.multicast.push_back(mcast_address + ":" + mcast_port);
+            }
+        } else if (interface_type == "bridge") {
+            tinyxml2::XMLElement* ele_interface_source = ele_interface->FirstChildElement("source");
+            if (ele_interface_source != nullptr) {
+                std::string bridge_name = ele_interface_source->Attribute("bridge");
+                if (bridge_name.length() > 3) {
+                    std::string network_name = bridge_name.substr(2, bridge_name.length());
+                    FResult fret = VxlanManager::instance().CreateNetworkClient(network_name);
+                    if (fret.errcode == ERR_SUCCESS) {
+                        params.network_name = network_name;
+                    }
+                }
             }
         }
         ele_interface = ele_interface->NextSiblingElement("interface");
@@ -1954,6 +2037,48 @@ FResult TaskManager::modifyTask(const std::string& wallet, const std::shared_ptr
         //shell_add_iptable_to_system(task_id, taskIptablePtr->host_ip, new_ssh_port, new_rdp_port, new_custom_port, taskIptablePtr->vm_local_ip);
     }
 
+    std::string new_public_ip;
+    JSON_PARSE_STRING(doc, "new_public_ip", new_public_ip);
+    if (!new_public_ip.empty()) {
+        ip_validator ip_vdr;
+        variable_value val_ip(new_public_ip, false);
+        if (!ip_vdr.validate(val_ip))
+            return FResult(ERR_ERROR, "invalid new public ip");
+        
+        taskinfoPtr->__set_public_ip(new_public_ip);
+        TaskInfoManager::instance().update(taskinfoPtr);
+
+        auto taskIptablePtr = TaskIptableManager::instance().getIptable(task_id);
+        if (taskIptablePtr != nullptr) {
+            taskIptablePtr->__set_public_ip(new_rdp_port);
+            TaskIptableManager::instance().update(taskIptablePtr);
+        }
+    }
+
+    std::vector<std::string> new_nwfiter;
+    if (doc.HasMember("new_network_filters")) {
+        const rapidjson::Value& v_nwfilters = doc["new_network_filters"];
+        if (v_nwfilters.IsArray()) {
+            for (rapidjson::SizeType i = 0; i < v_nwfilters.Size(); i++) {
+                const rapidjson::Value& v_item = v_nwfilters[i];
+                if (v_item.IsString()) {
+                    std::string str = v_item.GetString();
+                    new_nwfiter.push_back(str);
+                }
+            }
+
+            if (!new_nwfiter.empty()) {
+                taskinfoPtr->__set_nwfilter(new_nwfiter);
+                TaskInfoManager::instance().update(taskinfoPtr);
+
+                ERRCODE ret = VmClient::instance().DefineNWFilter(task_id, new_nwfiter);
+                if (ret != ERR_SUCCESS) {
+                    return FResult(ERR_ERROR, "modify network filter error");
+                }
+            }
+        }
+    }
+
 	std::string new_vnc_port;
 	JSON_PARSE_STRING(doc, "new_vnc_port", new_vnc_port);
 	if (!new_vnc_port.empty()) {
@@ -2444,7 +2569,15 @@ void TaskManager::process_create(const ETaskEvent& ev) {
         }
     }
 
-    ERRCODE ret = VmClient::instance().CreateDomain(taskinfo, task_resource);
+    ERRCODE ret = VmClient::instance().DefineNWFilter(taskinfo->task_id, taskinfo->nwfilter);
+    if (ret != ERR_SUCCESS) {
+        taskinfo->status = TS_CreateError;
+        TaskInfoMgr::instance().update(taskinfo);
+        TASK_LOG_ERROR(taskinfo->task_id, "create network filter failed");
+        return;
+    }
+
+    ret = VmClient::instance().CreateDomain(taskinfo, task_resource);
     if (ret != ERR_SUCCESS) {
         taskinfo->status = TS_CreateError;
         TaskInfoMgr::instance().update(taskinfo);
@@ -2464,7 +2597,7 @@ void TaskManager::process_create(const ETaskEvent& ev) {
             }
 
             if (!create_task_iptable(taskinfo->task_id, taskinfo->ssh_port, taskinfo->rdp_port,
-                                     taskinfo->custom_port, local_ip)) {
+                                     taskinfo->custom_port, local_ip, taskinfo->public_ip)) {
                 VmClient::instance().DestroyDomain(taskinfo->task_id);
 
                 taskinfo->status = TS_CreateError;
@@ -2488,28 +2621,29 @@ void TaskManager::process_create(const ETaskEvent& ev) {
 
 bool TaskManager::create_task_iptable(const std::string &domain_name, const std::string &ssh_port,
                                       const std::string& rdp_port, const std::vector<std::string>& custom_port,
-                                      const std::string &vm_local_ip) {
-    // std::string public_ip = SystemInfo::instance().publicip();
-    std::string public_ip = SystemInfo::instance().GetDefaultRouteIp();
-    if (!public_ip.empty() && !vm_local_ip.empty()) {
-        shell_add_iptable_to_system(domain_name, public_ip, ssh_port, rdp_port, custom_port, vm_local_ip);
+                                      const std::string &vm_local_ip, const std::string &public_ip) {
+    // std::string host_ip = SystemInfo::instance().publicip();
+    std::string host_ip = SystemInfo::instance().GetDefaultRouteIp();
+    if (!host_ip.empty() && !vm_local_ip.empty()) {
+        shell_add_iptable_to_system(domain_name, host_ip, ssh_port, rdp_port, custom_port, vm_local_ip, public_ip);
 
         std::shared_ptr<dbc::task_iptable> iptable = std::make_shared<dbc::task_iptable>();
         iptable->task_id = domain_name;
-        iptable->__set_host_ip(public_ip);
+        iptable->__set_host_ip(host_ip);
         iptable->__set_vm_local_ip(vm_local_ip);
         iptable->__set_ssh_port(ssh_port);
         iptable->__set_rdp_port(rdp_port);
         iptable->__set_custom_port(custom_port);
+        iptable->__set_public_ip(public_ip);
         TaskIptableMgr::instance().addIptable(iptable);
 
         TASK_LOG_INFO(domain_name, "transform ssh_port successful, "
-                                   "public_ip:" << public_ip << " ssh_port:" << ssh_port
+                                   "host_ip:" << host_ip << " ssh_port:" << ssh_port
                                    << " rdp_port:" << rdp_port << " custom_port.size:" << custom_port.size()
-                                   << " local_ip:" << vm_local_ip);
+                                   << " local_ip:" << vm_local_ip << " public_ip:" << public_ip);
         return true;
     } else {
-        TASK_LOG_ERROR(domain_name, "transform ssh_port failed, public_ip or vm_local_ip is empty: " << public_ip << ":" << vm_local_ip);
+        TASK_LOG_ERROR(domain_name, "transform ssh_port failed, host_ip or vm_local_ip is empty: " << host_ip << ":" << vm_local_ip);
         return false;
     }
 }

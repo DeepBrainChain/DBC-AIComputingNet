@@ -150,6 +150,9 @@ struct TaskCreateParams {
     std::vector<std::string> multicast; //组播地址(如："230.0.0.1:5558")
 
     std::string network_name;  // vxlan network name
+
+    std::string public_ip;  // 公网ip
+    std::vector<std::string> nwfilter;  // 安全组，只有设置了公网ip才会使用
 };
 
 struct ParseVmXmlParams {
@@ -174,6 +177,8 @@ struct ParseVmXmlParams {
     std::string bios_mode; //BIOS模式(如legacy,uefi)，默认传统BIOS，必须全小写。
 
     std::vector<std::string> multicast; //组播地址(如："230.0.0.1:5558")
+
+    std::string network_name;  // vxlan network name
 };
 
 

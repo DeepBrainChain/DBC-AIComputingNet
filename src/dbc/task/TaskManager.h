@@ -112,13 +112,13 @@ protected:
 
     void add_iptable_to_system(const std::string& task_id);
 
-    void shell_remove_iptable_from_system(const std::string& task_id, const std::string &public_ip,
+    void shell_remove_iptable_from_system(const std::string& task_id, const std::string &host_ip,
                                           const std::string &ssh_port, const std::string &vm_local_ip);
 
-    void shell_add_iptable_to_system(const std::string& task_id, const std::string &public_ip,
+    void shell_add_iptable_to_system(const std::string& task_id, const std::string &host_ip,
                                      const std::string &ssh_port, const std::string &rdp_port,
                                      const std::vector<std::string>& custom_port,
-                                     const std::string &vm_local_ip);
+                                     const std::string &vm_local_ip, const std::string &public_ip);
 
     void shell_remove_reject_iptable_from_system();
 
@@ -168,7 +168,7 @@ protected:
 
     bool create_task_iptable(const std::string &domain_name, const std::string &ssh_port,
                              const std::string& rdp_port, const std::vector<std::string>& custom_port,
-                             const std::string &vm_local_ip);
+                             const std::string &vm_local_ip, const std::string &public_ip);
 
     static void getNeededBackingImage(const std::string &image_name, std::vector<std::string> &backing_images);
 
