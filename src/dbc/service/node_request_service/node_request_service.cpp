@@ -1772,7 +1772,8 @@ void node_request_service::task_list(const network::base_header& header,
             ss_tasks << "{";
             ss_tasks << "\"task_id\":" << "\"" << task->task_id << "\"";
             ss_tasks << ", \"os\":" << "\"" << task->operation_system << "\"";
-            ss_tasks << ", \"ssh_ip\":" << "\"" << SystemInfo::instance().GetPublicip() << "\"";
+            ss_tasks << ", \"ssh_ip\":" << "\"" <<
+                     (task->public_ip.empty() ? SystemInfo::instance().GetPublicip() : task->public_ip) << "\"";
             bool is_windows = task->operation_system.find("win") != std::string::npos;
             if (!is_windows) {
                 ss_tasks << ", \"ssh_port\":" << "\"" << task->ssh_port << "\"";
@@ -1848,6 +1849,17 @@ void node_request_service::task_list(const network::base_header& header,
                     }
                     ss_tasks << ", \"source_file\":" << "\"" << boost::filesystem::path(disk.second.sourceFile).filename().string() << "\"";
                     ss_tasks << "}";
+                    idx++;
+                }
+                ss_tasks << "]";
+            }
+            if (!task->nwfilter.empty()) {
+                ss_tasks << ", \"network_filters\":[";
+                int idx = 0;
+                for (const auto& filter_item : task->nwfilter) {
+                    if (idx > 0)
+                        ss_tasks << ",";
+                    ss_tasks << "\"" << filter_item << "\"";
                     idx++;
                 }
                 ss_tasks << "]";
@@ -4015,28 +4027,10 @@ void node_request_service::create_lan(const network::base_header& header, const 
         fret = VxlanManager::instance().CreateNetworkServer(networkName, ipCidr, result.rent_wallet);
     }
 
-    std::stringstream ss;
-    ss << "{";
-    ss << "\"errcode\":" << (fret.errcode == ERR_SUCCESS ? 0 : fret.errcode);
-    ss << ", \"message\":\"" << (fret.errcode == ERR_SUCCESS ? "ok" : fret.errmsg);
-    ss << "\"}";
-
-    const std::map<std::string, std::string>& mp = header.exten_info;
-    auto it = mp.find("pub_key");
-    if (it != mp.end()) {
-        std::string pub_key = it->second;
-        std::string priv_key = ConfManager::instance().GetPrivKey();
-
-        if (!pub_key.empty() && !priv_key.empty()) {
-            std::string s_data = encrypt_data((unsigned char*) ss.str().c_str(), ss.str().size(), pub_key, priv_key);
-            send_response_json<dbc::node_create_lan_rsp>(NODE_CREATE_LAN_RSP, header, s_data);
-        } else {
-            LOG_ERROR << "pub_key or priv_key is empty";
-            send_response_error<dbc::node_create_lan_rsp>(NODE_CREATE_LAN_RSP, header, E_DEFAULT, "pub_key or priv_key is empty");
-        }
+    if (fret.errcode == ERR_SUCCESS) {
+        send_response_ok<dbc::node_create_lan_rsp>(NODE_CREATE_LAN_RSP, header);
     } else {
-        LOG_ERROR << "request no pub_key";
-        send_response_error<dbc::node_create_lan_rsp>(NODE_CREATE_LAN_RSP, header, E_DEFAULT, "request no pub_key");
+        send_response_error<dbc::node_create_lan_rsp>(NODE_CREATE_LAN_RSP, header, E_DEFAULT, fret.errmsg);
     }
 }
 
