@@ -289,6 +289,10 @@ void SystemInfo::init_gpu_info() {
     }
 }
 
+void SystemInfo::GetDiskInfo(const std::string& path, disk_info& info) {
+    update_disk_info(path, info);
+}
+
 void SystemInfo::update_disk_info(const std::string &path, disk_info &info) {
     char dpath[256] = "/"; //设置默认位置
 

@@ -5,7 +5,7 @@
 #include <leveldb/db.h>
 #include <leveldb/write_batch.h>
 #include <boost/filesystem.hpp>
-#include "db_types/peer_candidate_types.h"
+#include "db_types/db_peer_candidate_types.h"
 
 namespace bfs = boost::filesystem;
 
@@ -20,15 +20,15 @@ public:
 
     void load_datas(std::map<std::string, std::shared_ptr<dbc::db_peer_candidate>>& datas);
 
-    std::shared_ptr<dbc::db_peer_candidate> read(const std::string& ip);
+    std::shared_ptr<dbc::db_peer_candidate> read_data(const std::string& ip);
 
-    bool write(const std::shared_ptr<dbc::db_peer_candidate>& item);
+    bool write_data(const std::shared_ptr<dbc::db_peer_candidate>& item);
 
-    bool write(const std::vector<std::shared_ptr<dbc::db_peer_candidate>>& items);
+    bool write_datas(const std::vector<std::shared_ptr<dbc::db_peer_candidate>>& items);
 
-    bool write(const std::list<std::shared_ptr<dbc::db_peer_candidate>>& items);
+    bool write_datas(const std::list<std::shared_ptr<dbc::db_peer_candidate>>& items);
 
-    bool del(const std::string& ip);
+    bool delete_data(const std::string& ip);
 
     void clear();
 

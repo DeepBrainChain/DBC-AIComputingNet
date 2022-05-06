@@ -73,109 +73,7 @@ struct AuthoriseResult {
     int64_t rent_end = 0;
 };
 
-
-enum ETaskOp {
-    T_OP_None,
-    T_OP_Create,    //创建
-    T_OP_Start,     //启动
-    T_OP_Stop,      //停止
-    T_OP_ReStart,   //重启(reboot domain)
-    T_OP_ForceReboot,  //强制重启(destroy domain && start domain)
-    T_OP_Reset,     //reset
-    T_OP_Delete,    //删除
-    T_OP_CreateSnapshot  //创建快照
-};
-
-struct ETaskEvent {
-    std::string task_id;
-    ETaskOp op;
-    std::string image_server;
-};
-
-enum ETaskStatus {
-    TS_ShutOff,     //关闭状态
-    TS_Creating,    //正在创建
-    TS_Running,     //正在运行中
-    TS_Starting,    //正在启动
-    TS_Stopping,    //正在停止
-    TS_Restarting,  //正在重启
-    TS_Resetting,   //正在reset
-    TS_Deleting,    //正在删除
-    TS_CreatingSnapshot,  //正在创建快照
-    TS_PMSuspended, //虚拟机已进入睡眠状态
-
-    TS_Error = 100,   //出错
-    TS_CreateError,
-    TS_StartError,
-    TS_StopError,
-    TS_RestartError,
-    TS_ResetError,
-    TS_DeleteError,
-    TS_CreateSnapshotError
-};
-
-std::string task_status_string(int32_t status);
-std::string task_operation_string(int32_t op);
 std::string vm_status_string(virDomainState status);
-
-
-struct TaskCreateParams {
-    std::string task_id;
-    std::string login_password;
-    std::string image_name;     // system disk image name
-    std::string custom_image_name;
-    std::string data_file_name; // data disk file name
-    int16_t ssh_port;
-    int16_t rdp_port;
-    std::vector<std::string> custom_port;
-    int32_t cpu_sockets = 0;
-    int32_t cpu_cores = 0;
-    int32_t cpu_threads = 0;
-
-    std::map<std::string, std::list<std::string>> gpus;
-
-    uint64_t mem_size; // KB
-
-    std::map<int32_t, uint64_t> disks; //数据盘(单位：KB)，index从1开始
-
-    std::string vm_xml;
-    std::string vm_xml_url;
-
-    int16_t vnc_port;
-    std::string vnc_password;
-
-    std::string operation_system; //操作系统(如generic, ubuntu 18.04, windows 10)，默认ubuntu，带有win则认为是windows系统，必须全小写。
-    std::string bios_mode; //BIOS模式(如legacy,uefi)，默认传统BIOS，必须全小写。
-
-    std::vector<std::string> multicast; //组播地址(如："230.0.0.1:5558")
-
-    std::string network_name;  // vxlan network name
-};
-
-struct ParseVmXmlParams {
-    std::string task_id;
-    std::string image_name;
-    std::string data_file_name;
-
-    int32_t cpu_sockets;
-    int32_t cpu_cores;
-    int32_t cpu_threads;
-
-    std::map<std::string, std::list<std::string>> gpus;
-
-    uint64_t mem_size; // KB
-
-    std::map<int32_t, uint64_t> disks; //数据盘(单位：KB)，index从1开始
-
-    int16_t vnc_port;
-    std::string vnc_password;
-
-    std::string operation_system; //操作系统(如generic, ubuntu 18.04, windows 10)，默认ubuntu，带有win则认为是windows系统，必须全小写。
-    std::string bios_mode; //BIOS模式(如legacy,uefi)，默认传统BIOS，必须全小写。
-
-    std::vector<std::string> multicast; //组播地址(如："230.0.0.1:5558")
-};
-
 
 struct ImageFile {
     std::string name;
@@ -203,19 +101,6 @@ struct ImageServer {
 
     std::string to_string();
     void from_string(const std::string& str);
-};
-
-struct DownloadImageFile {
-    ImageFile file;
-    std::string local_dir;
-    ImageServer from_server;
-    std::shared_ptr<boost::process::child> process_ptr;
-};
-
-struct UploadImageFile {
-    ImageFile file;
-    ImageServer to_server;
-    std::shared_ptr<boost::process::child> process_ptr;
 };
 
 #endif
