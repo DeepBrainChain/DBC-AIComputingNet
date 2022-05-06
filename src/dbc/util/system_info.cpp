@@ -296,7 +296,7 @@ void SystemInfo::update_disk_info(const std::string &path, disk_info &info) {
         strcpy(dpath, path.c_str());
     }
 
-    info.data_mount_status = "ok";
+    info.data_mount_status = "normal";
     std::string cmd = "lsblk | grep data | awk -F ' ' '{print $7}'";
     if (run_shell(cmd.c_str()).find("data") == std::string::npos)
         info.data_mount_status = "lost"; 
