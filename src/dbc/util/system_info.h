@@ -59,6 +59,7 @@ struct disk_info {
     uint64_t free = 0;
     uint64_t available = 0;
     float usage = 0.0f;
+    std::string data_mount_status;
 };
 
 class SystemInfo : public Singleton<SystemInfo> {

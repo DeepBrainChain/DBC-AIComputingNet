@@ -280,6 +280,7 @@ void node_monitor_service::on_monitor_data_sender_task_timer(const std::shared_p
     hmData.diskTotal = SystemInfo::instance().GetDiskInfo().total;
     hmData.diskFree = SystemInfo::instance().GetDiskInfo().available;
     hmData.diskUsage = SystemInfo::instance().GetDiskInfo().usage * 100;
+    hmData.diskMountStatus = SystemInfo::instance().GetDiskInfo().data_mount_status;
     hmData.loadAverage = SystemInfo::instance().loadaverage();
     // hmData.packetLossRate
     hmData.version = dbcversion();

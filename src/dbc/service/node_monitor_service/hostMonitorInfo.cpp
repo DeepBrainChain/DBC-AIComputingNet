@@ -147,6 +147,7 @@ std::string hostMonitorData::toZabbixString() const {
     writeZabbixJsonItem<unsigned long long>(write, nodeId, "host.diskTotal", diskTotal, ts);
     writeZabbixJsonItem<unsigned long long>(write, nodeId, "host.diskFree", diskFree, ts);
     writeZabbixJsonItem<float>(write, nodeId, "host.diskUsage", diskUsage, ts);
+    writeZabbixJsonItem<std::string>(write, nodeId, "host.diskMountStatus", diskMountStatus, ts);
     if (loadAverage.size() == 3) {
         writeZabbixJsonItem<float>(write, nodeId, "host.loadAverage.1", loadAverage[0], ts);
         writeZabbixJsonItem<float>(write, nodeId, "host.loadAverage.5", loadAverage[1], ts);
