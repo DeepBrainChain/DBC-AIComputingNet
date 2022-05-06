@@ -245,7 +245,7 @@ void rest_api_service::on_call_rsp_handler(const std::shared_ptr<network::messag
 
         std::string sign_msg = node_rsp_msg->header.nonce + node_rsp_msg->header.session_id;
         if (!util::verify_sign(node_rsp_msg->header.exten_info["sign"], sign_msg, hreq_context->peer_node_id)) {
-            LOG_ERROR << "verify sign failed peer_node_id:" << hreq_context->peer_node_id;
+            LOG_ERROR << "rsp name: " << name << " verify sign failed peer_node_id:" << hreq_context->peer_node_id;
             return;
         }
 

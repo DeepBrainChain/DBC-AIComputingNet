@@ -315,6 +315,9 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
     tinyxml2::XMLElement* interface_model_node = doc.NewElement("model");
     interface_model_node->SetAttribute("type", "virtio");
     interface_node->LinkEndChild(interface_model_node);
+    tinyxml2::XMLElement* interface_filter_node = doc.NewElement("filterref");
+    interface_filter_node->SetAttribute("filter", domain_name.c_str());
+    interface_node->LinkEndChild(interface_filter_node);
     dev_node->LinkEndChild(interface_node);
 
     // multicast
@@ -391,6 +394,120 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
     //doc.SaveFile("domain.xml");
     tinyxml2::XMLPrinter printer;
     doc.Print( &printer );
+    return printer.CStr();
+}
+
+
+static std::string createNWFilterXml(const std::string& nwfilter_name, const std::string& uuid, const std::vector<std::string>& nwfilters) {
+    tinyxml2::XMLDocument doc;
+    // <filter>
+    tinyxml2::XMLElement *root = doc.NewElement("filter");
+    root->SetAttribute("name", nwfilter_name.c_str());
+    root->SetAttribute("chain", "root");
+    doc.InsertEndChild(root);
+
+    if (!uuid.empty()) {
+        // uuid
+        tinyxml2::XMLElement *uuid_node = doc.NewElement("uuid");
+        uuid_node->SetText(uuid.c_str());
+        root->LinkEndChild(uuid_node);
+    }
+
+    // filterref
+    tinyxml2::XMLElement *filterref1 = doc.NewElement("filterref");
+    filterref1->SetAttribute("filter", "clean-traffic");
+    root->LinkEndChild(filterref1);
+
+    // rule
+    for (const auto& nwfilter_item : nwfilters) {
+        //"nwfilter": [
+        //    "in,tcp,22,0.0.0.0/0,accept",
+        //    "in,all,all,0.0.0.0/0,drop",
+        //    "out,all,all,0.0.0.0/0,accept"
+        //]
+        std::vector<std::string> v_nwfilter_protocol = util::split(nwfilter_item, ",");
+        if (v_nwfilter_protocol.size() != 5) continue;
+        if (v_nwfilter_protocol[0] != "in" && v_nwfilter_protocol[0] != "out" && v_nwfilter_protocol[0] != "inout") continue;
+        // rdp ftp icmp ssh http https 最终还是在xml中配置tcp或者udp端口
+        if (v_nwfilter_protocol[4] != "accept" && v_nwfilter_protocol[4] != "drop") continue;
+        tinyxml2::XMLElement *rule = doc.NewElement("rule");
+        rule->SetAttribute("action", v_nwfilter_protocol[4].c_str());
+        rule->SetAttribute("direction", v_nwfilter_protocol[0].c_str());
+        // 优先级可以不写，libvirt默认500
+        rule->SetAttribute("priority", "500");
+        if (v_nwfilter_protocol[1] == "all") {
+            tinyxml2::XMLElement *all = doc.NewElement("all");
+            rule->LinkEndChild(all);
+        } else if (v_nwfilter_protocol[1] == "tcp" || v_nwfilter_protocol[1] == "udp") {
+            std::vector<std::string> v_tcp_range = util::split(v_nwfilter_protocol[2], "-");
+            if (v_tcp_range.empty()) continue;
+            tinyxml2::XMLElement *tcp = doc.NewElement(v_nwfilter_protocol[1].c_str());
+            tcp->SetAttribute("dstportstart", v_tcp_range[0].c_str());
+            if (v_tcp_range.size() == 2)
+                tcp->SetAttribute("dstportend", v_tcp_range[1].c_str());
+            rule->LinkEndChild(tcp);
+        } else if (v_nwfilter_protocol[1] == "ssh") {
+            tinyxml2::XMLElement *tcp = doc.NewElement("tcp");
+            tcp->SetAttribute("dstportstart", "22");
+            rule->LinkEndChild(tcp);
+        } else if (v_nwfilter_protocol[1] == "rdp") {
+            tinyxml2::XMLElement *tcp = doc.NewElement("tcp");
+            tcp->SetAttribute("dstportstart", "3389");
+            rule->LinkEndChild(tcp);
+        } else if (v_nwfilter_protocol[1] == "http") {
+            tinyxml2::XMLElement *tcp = doc.NewElement("tcp");
+            tcp->SetAttribute("dstportstart", "80");
+            rule->LinkEndChild(tcp);
+        } else if (v_nwfilter_protocol[1] == "https") {
+            tinyxml2::XMLElement *tcp = doc.NewElement("tcp");
+            tcp->SetAttribute("dstportstart", "443");
+            rule->LinkEndChild(tcp);
+        } else if (v_nwfilter_protocol[1] == "icmp") {
+            tinyxml2::XMLElement *icmp = doc.NewElement("icmp");
+            rule->LinkEndChild(icmp);
+        } else if (v_nwfilter_protocol[1] == "ftp") {
+            tinyxml2::XMLElement *ftp = doc.NewElement("ftp");
+            ftp->SetAttribute("dstportstart", "20");
+            ftp->SetAttribute("dstportend", "21");
+            rule->LinkEndChild(ftp);
+        } else if (v_nwfilter_protocol[1] == "dns(udp)") {
+            tinyxml2::XMLElement *dns = doc.NewElement("udp");
+            dns->SetAttribute("dstportstart", "53");
+            rule->LinkEndChild(dns);
+        } else if (v_nwfilter_protocol[1] == "dns(tcp)") {
+            tinyxml2::XMLElement *dns = doc.NewElement("tcp");
+            dns->SetAttribute("dstportstart", "53");
+            rule->LinkEndChild(dns);
+        }
+        root->LinkEndChild(rule);
+    }
+    // tinyxml2::XMLElement *rule1 = doc.NewElement("rule");
+    // rule1->SetAttribute("action", "accept");
+    // rule1->SetAttribute("direction", "in");
+    // tinyxml2::XMLElement *tcp1 = doc.NewElement("tcp");
+    // tcp1->SetAttribute("dstportstart", "22");
+    // rule1->LinkEndChild(tcp1);
+    // root->LinkEndChild(rule1);
+
+    // <!-- 丢弃所有其他in流量 -->
+    // tinyxml2::XMLElement *rulein = doc.NewElement("rule");
+    // rulein->SetAttribute("action", "drop");
+    // rulein->SetAttribute("direction", "in");
+    // tinyxml2::XMLElement *allin = doc.NewElement("all");
+    // rulein->LinkEndChild(allin);
+    // root->LinkEndChild(rulein);
+
+    // <!-- 允许所有out流量 -->
+    // tinyxml2::XMLElement *ruleout = doc.NewElement("rule");
+    // ruleout->SetAttribute("action", "accept");
+    // ruleout->SetAttribute("direction", "out");
+    // tinyxml2::XMLElement *allout = doc.NewElement("all");
+    // ruleout->LinkEndChild(allout);
+    // root->LinkEndChild(ruleout);
+
+    // doc.SaveFile((filterName + ".xml").c_str());
+    tinyxml2::XMLPrinter printer;
+    doc.Print(&printer);
     return printer.CStr();
 }
 
@@ -1792,4 +1909,67 @@ std::string VmClient::GetDomainXML(const std::string& domain_name) {
     }
 
     return std::move(str);
+}
+
+int32_t VmClient::DefineNWFilter(const std::string& nwfilter_name, const std::vector<std::string>& nwfilters) {
+    int32_t ret = -1;
+    if (m_connPtr == nullptr) {
+        LOG_ERROR << " connPtr is nullptr";
+        return ret;
+    }
+
+    std::string xmlDesc, uuid;
+    virNWFilterPtr nwfilter = nullptr;
+    do {
+        nwfilter = virNWFilterLookupByName(m_connPtr, nwfilter_name.c_str());
+        if (nwfilter != nullptr) {
+            char buf[VIR_UUID_STRING_BUFLEN] = { 0 };
+            if (virNWFilterGetUUIDString(nwfilter, buf) < 0) {
+                LOG_ERROR << " get uuid of nwfilter:" << nwfilter_name << " error";
+                break;
+            }
+            uuid = buf;
+            virNWFilterFree(nwfilter);
+            nwfilter = nullptr;
+        }
+        xmlDesc = createNWFilterXml(nwfilter_name, uuid, nwfilters);
+        nwfilter = virNWFilterDefineXML(m_connPtr, xmlDesc.c_str());
+        if (nwfilter == nullptr) {
+            LOG_ERROR << " define nwfilter:" << nwfilter_name << " error";
+            break;
+        }
+        ret = ERR_SUCCESS;
+    } while (0);
+
+    if (nwfilter != nullptr) {
+        virNWFilterFree(nwfilter);
+    }
+    return ret;
+}
+
+int32_t VmClient::UndefineNWFilter(const std::string& nwfilter_name) {
+    int32_t ret = -1;
+    if (m_connPtr == nullptr) {
+        LOG_ERROR << " connPtr is nullptr";
+        return ret;
+    }
+
+    virNWFilterPtr nwfilter = nullptr;
+    do {
+        nwfilter = virNWFilterLookupByName(m_connPtr, nwfilter_name.c_str());
+        if (nwfilter == nullptr) {
+            LOG_ERROR << " lookup nwfilter:" << nwfilter_name << " is nullptr";
+            break;
+        }
+        ret = virNWFilterUndefine(nwfilter);
+        if (ret < 0) {
+            LOG_ERROR << " undefine nwfilter:" << nwfilter_name << " error";
+            break;
+        }
+    } while (0);
+
+    if (nwfilter != nullptr) {
+        virNWFilterFree(nwfilter);
+    }
+    return ret;
 }

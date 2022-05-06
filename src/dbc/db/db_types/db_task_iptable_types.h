@@ -17,12 +17,13 @@ namespace dbc {
 	class db_task_iptable;
 
 	typedef struct _db_task_iptable__isset {
-		_db_task_iptable__isset() : host_ip(false), task_local_ip(false), ssh_port(false), rdp_port(false), custom_port(false) {}
+		_db_task_iptable__isset() : host_ip(false), task_local_ip(false), ssh_port(false), rdp_port(false), custom_port(false), public_ip(false) {}
 		bool host_ip : 1;
 		bool task_local_ip : 1;
 		bool ssh_port : 1;
 		bool rdp_port : 1;
 		bool custom_port : 1;
+		bool public_ip : 1;
 	} _db_task_iptable__isset;
 
 	class db_task_iptable : public virtual ::apache::thrift::TBase {
@@ -30,7 +31,7 @@ namespace dbc {
 
 		db_task_iptable(const db_task_iptable&);
 		db_task_iptable& operator=(const db_task_iptable&);
-		db_task_iptable() : task_id(), host_ip(), task_local_ip(), ssh_port(), rdp_port() {
+		db_task_iptable() : task_id(), host_ip(), task_local_ip(), ssh_port(), rdp_port(), public_ip() {
 		}
 
 		virtual ~db_task_iptable() throw();
@@ -40,6 +41,7 @@ namespace dbc {
 		std::string ssh_port;
 		std::string rdp_port;
 		std::vector<std::string>  custom_port;
+		std::string public_ip;
 
 		_db_task_iptable__isset __isset;
 
@@ -54,6 +56,8 @@ namespace dbc {
 		void __set_rdp_port(const std::string& val);
 
 		void __set_custom_port(const std::vector<std::string>& val);
+
+		void __set_public_ip(const std::string& val);
 
 		bool operator == (const db_task_iptable& rhs) const
 		{
@@ -78,6 +82,10 @@ namespace dbc {
 			if (__isset.custom_port != rhs.__isset.custom_port)
 				return false;
 			else if (__isset.custom_port && !(custom_port == rhs.custom_port))
+				return false;
+			if (__isset.public_ip != rhs.__isset.public_ip)
+				return false;
+			else if (__isset.public_ip && !(public_ip == rhs.public_ip))
 				return false;
 			return true;
 		}

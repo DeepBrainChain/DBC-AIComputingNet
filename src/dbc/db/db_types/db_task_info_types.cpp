@@ -64,14 +64,24 @@ namespace dbc {
 		__isset.multicast = true;
 	}
 
+	void db_task_info::__set_desc(const std::string& val) {
+		this->desc = val;
+		__isset.desc = true;
+	}
+
 	void db_task_info::__set_network_name(const std::string& val) {
 		this->network_name = val;
 		__isset.network_name = true;
 	}
 
-	void db_task_info::__set_desc(const std::string& val) {
-		this->desc = val;
-		__isset.desc = true;
+	void db_task_info::__set_public_ip(const std::string& val) {
+		this->public_ip = val;
+		__isset.public_ip = true;
+	}
+
+	void db_task_info::__set_nwfilter(const std::vector<std::string>& val) {
+		this->nwfilter = val;
+		__isset.nwfilter = true;
 	}
 	std::ostream& operator<<(std::ostream& out, const db_task_info& obj)
 	{
@@ -216,7 +226,16 @@ namespace dbc {
 					xfer += iprot->skip(ftype);
 				}
 				break;
-			case 20:
+			case 21:
+				if (ftype == ::apache::thrift::protocol::T_STRING) {
+					xfer += iprot->readString(this->desc);
+					this->__isset.desc = true;
+				}
+				else {
+					xfer += iprot->skip(ftype);
+				}
+				break;
+			case 24:
 				if (ftype == ::apache::thrift::protocol::T_STRING) {
 					xfer += iprot->readString(this->network_name);
 					this->__isset.network_name = true;
@@ -225,10 +244,31 @@ namespace dbc {
 					xfer += iprot->skip(ftype);
 				}
 				break;
-			case 21:
+			case 30:
 				if (ftype == ::apache::thrift::protocol::T_STRING) {
-					xfer += iprot->readString(this->desc);
-					this->__isset.desc = true;
+					xfer += iprot->readString(this->public_ip);
+					this->__isset.public_ip = true;
+				}
+				else {
+					xfer += iprot->skip(ftype);
+				}
+				break;
+			case 31:
+				if (ftype == ::apache::thrift::protocol::T_LIST) {
+					{
+						this->nwfilter.clear();
+						uint32_t _size10;
+						::apache::thrift::protocol::TType _etype13;
+						xfer += iprot->readListBegin(_etype13, _size10);
+						this->nwfilter.resize(_size10);
+						uint32_t _i14;
+						for (_i14 = 0; _i14 < _size10; ++_i14)
+						{
+							xfer += iprot->readString(this->nwfilter[_i14]);
+						}
+						xfer += iprot->readListEnd();
+					}
+					this->__isset.nwfilter = true;
 				}
 				else {
 					xfer += iprot->skip(ftype);
@@ -296,10 +336,10 @@ namespace dbc {
 			xfer += oprot->writeFieldBegin("custom_port", ::apache::thrift::protocol::T_LIST, 17);
 			{
 				xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->custom_port.size()));
-				std::vector<std::string> ::const_iterator _iter10;
-				for (_iter10 = this->custom_port.begin(); _iter10 != this->custom_port.end(); ++_iter10)
+				std::vector<std::string> ::const_iterator _iter15;
+				for (_iter15 = this->custom_port.begin(); _iter15 != this->custom_port.end(); ++_iter15)
 				{
-					xfer += oprot->writeString((*_iter10));
+					xfer += oprot->writeString((*_iter15));
 				}
 				xfer += oprot->writeListEnd();
 			}
@@ -309,23 +349,41 @@ namespace dbc {
 			xfer += oprot->writeFieldBegin("multicast", ::apache::thrift::protocol::T_LIST, 18);
 			{
 				xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->multicast.size()));
-				std::vector<std::string> ::const_iterator _iter11;
-				for (_iter11 = this->multicast.begin(); _iter11 != this->multicast.end(); ++_iter11)
+				std::vector<std::string> ::const_iterator _iter16;
+				for (_iter16 = this->multicast.begin(); _iter16 != this->multicast.end(); ++_iter16)
 				{
-					xfer += oprot->writeString((*_iter11));
+					xfer += oprot->writeString((*_iter16));
 				}
 				xfer += oprot->writeListEnd();
 			}
 			xfer += oprot->writeFieldEnd();
 		}
-		if (this->__isset.network_name) {
-			xfer += oprot->writeFieldBegin("network_name", ::apache::thrift::protocol::T_STRING, 20);
-			xfer += oprot->writeString(this->network_name);
-			xfer += oprot->writeFieldEnd();
-		}
 		if (this->__isset.desc) {
 			xfer += oprot->writeFieldBegin("desc", ::apache::thrift::protocol::T_STRING, 21);
 			xfer += oprot->writeString(this->desc);
+			xfer += oprot->writeFieldEnd();
+		}
+		if (this->__isset.network_name) {
+			xfer += oprot->writeFieldBegin("network_name", ::apache::thrift::protocol::T_STRING, 24);
+			xfer += oprot->writeString(this->network_name);
+			xfer += oprot->writeFieldEnd();
+		}
+		if (this->__isset.public_ip) {
+			xfer += oprot->writeFieldBegin("public_ip", ::apache::thrift::protocol::T_STRING, 30);
+			xfer += oprot->writeString(this->public_ip);
+			xfer += oprot->writeFieldEnd();
+		}
+		if (this->__isset.nwfilter) {
+			xfer += oprot->writeFieldBegin("nwfilter", ::apache::thrift::protocol::T_LIST, 31);
+			{
+				xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->nwfilter.size()));
+				std::vector<std::string> ::const_iterator _iter17;
+				for (_iter17 = this->nwfilter.begin(); _iter17 != this->nwfilter.end(); ++_iter17)
+				{
+					xfer += oprot->writeString((*_iter17));
+				}
+				xfer += oprot->writeListEnd();
+			}
 			xfer += oprot->writeFieldEnd();
 		}
 		xfer += oprot->writeFieldStop();
@@ -345,40 +403,46 @@ namespace dbc {
 		swap(a.rdp_port, b.rdp_port);
 		swap(a.custom_port, b.custom_port);
 		swap(a.multicast, b.multicast);
-		swap(a.network_name, b.network_name);
 		swap(a.desc, b.desc);
+		swap(a.network_name, b.network_name);
+		swap(a.public_ip, b.public_ip);
+		swap(a.nwfilter, b.nwfilter);
 		swap(a.__isset, b.__isset);
 	}
 
-	db_task_info::db_task_info(const db_task_info& other12) {
-		task_id = other12.task_id;
-		image_name = other12.image_name;
-		login_password = other12.login_password;
-		ssh_port = other12.ssh_port;
-		create_time = other12.create_time;
-		operation_system = other12.operation_system;
-		bios_mode = other12.bios_mode;
-		rdp_port = other12.rdp_port;
-		custom_port = other12.custom_port;
-		multicast = other12.multicast;
-		network_name = other12.network_name;
-		desc = other12.desc;
-		__isset = other12.__isset;
+	db_task_info::db_task_info(const db_task_info& other18) {
+		task_id = other18.task_id;
+		image_name = other18.image_name;
+		login_password = other18.login_password;
+		ssh_port = other18.ssh_port;
+		create_time = other18.create_time;
+		operation_system = other18.operation_system;
+		bios_mode = other18.bios_mode;
+		rdp_port = other18.rdp_port;
+		custom_port = other18.custom_port;
+		multicast = other18.multicast;
+		desc = other18.desc;
+		network_name = other18.network_name;
+		public_ip = other18.public_ip;
+		nwfilter = other18.nwfilter;
+		__isset = other18.__isset;
 	}
-	db_task_info& db_task_info::operator=(const db_task_info& other13) {
-		task_id = other13.task_id;
-		image_name = other13.image_name;
-		login_password = other13.login_password;
-		ssh_port = other13.ssh_port;
-		create_time = other13.create_time;
-		operation_system = other13.operation_system;
-		bios_mode = other13.bios_mode;
-		rdp_port = other13.rdp_port;
-		custom_port = other13.custom_port;
-		multicast = other13.multicast;
-		network_name = other13.network_name;
-		desc = other13.desc;
-		__isset = other13.__isset;
+	db_task_info& db_task_info::operator=(const db_task_info& other19) {
+		task_id = other19.task_id;
+		image_name = other19.image_name;
+		login_password = other19.login_password;
+		ssh_port = other19.ssh_port;
+		create_time = other19.create_time;
+		operation_system = other19.operation_system;
+		bios_mode = other19.bios_mode;
+		rdp_port = other19.rdp_port;
+		custom_port = other19.custom_port;
+		multicast = other19.multicast;
+		desc = other19.desc;
+		network_name = other19.network_name;
+		public_ip = other19.public_ip;
+		nwfilter = other19.nwfilter;
+		__isset = other19.__isset;
 		return *this;
 	}
 	void db_task_info::printTo(std::ostream& out) const {
@@ -394,8 +458,10 @@ namespace dbc {
 		out << ", " << "rdp_port="; (__isset.rdp_port ? (out << to_string(rdp_port)) : (out << "<null>"));
 		out << ", " << "custom_port="; (__isset.custom_port ? (out << to_string(custom_port)) : (out << "<null>"));
 		out << ", " << "multicast="; (__isset.multicast ? (out << to_string(multicast)) : (out << "<null>"));
-		out << ", " << "network_name="; (__isset.network_name ? (out << to_string(network_name)) : (out << "<null>"));
 		out << ", " << "desc="; (__isset.desc ? (out << to_string(desc)) : (out << "<null>"));
+		out << ", " << "network_name="; (__isset.network_name ? (out << to_string(network_name)) : (out << "<null>"));
+		out << ", " << "public_ip="; (__isset.public_ip ? (out << to_string(public_ip)) : (out << "<null>"));
+		out << ", " << "nwfilter="; (__isset.nwfilter ? (out << to_string(nwfilter)) : (out << "<null>"));
 		out << ")";
 	}
 

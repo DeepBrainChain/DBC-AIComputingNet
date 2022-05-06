@@ -1,59 +1,20 @@
 // entry of the test
 #define BOOST_TEST_MODULE "C++ Unit Tests for vir snapshot"
 #include <boost/test/unit_test.hpp>
-#include "virImpl.h"
+#include "vir_helper.h"
 #include <iostream>
 #include <iomanip>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/date_time/local_time/local_time.hpp>
 #include "tinyxml2.h"
 
+using namespace vir_helper;
+
 static const char* qemu_url = "qemu+tcp://localhost:16509/system";
 static const char* default_domain_name = "domain_test";
 static const char* default_snapshot_name = "snap1";
 // block job type
 static const char* arrayBlockJobType[] = {"UNKNOWN", "PULL", "COPY", "COMMIT", "ACTIVE_COMMIT", "BACKUP", "LAST"};
-
-std::ostream& operator<<(std::ostream& out, const DomainSnapshotInfo& obj) {
-    if (!obj.name.empty()) {
-        std::cout << " ";
-        std::cout << std::setw(8) << std::setfill(' ') << std::left << obj.name;
-        boost::posix_time::ptime ctime = boost::posix_time::from_time_t(obj.creationTime);
-        // std::cout << std::setw(28) << std::setfill(' ') << std::left << boost::posix_time::to_simple_string(ctime);
-        // 时间格式 2021-11-30 11:03:55 +0800
-        boost::posix_time::ptime  now = boost::posix_time::second_clock::local_time();
-        boost::posix_time::ptime  utc = boost::posix_time::second_clock::universal_time();
-        boost::posix_time::time_duration tz_offset = (now - utc);
-
-        std::stringstream   ss;
-        boost::local_time::local_time_facet* output_facet = new boost::local_time::local_time_facet();
-        ss.imbue(std::locale(std::locale::classic(), output_facet));
-
-        output_facet->format("%H:%M:%S");
-        ss.str("");
-        ss << tz_offset;
-
-        boost::local_time::time_zone_ptr    zone(new boost::local_time::posix_time_zone(ss.str().c_str()));
-        boost::local_time::local_date_time  ldt(ctime, zone);
-        output_facet->format("%Y-%m-%d %H:%M:%S %Q");
-        ss.str("");
-        ss << ldt;
-        std::cout << std::setw(28) << std::setfill(' ') << std::left << ss.str();
-        delete output_facet;
-        std::cout << std::setw(16) << std::setfill(' ') << std::left << obj.state;
-        std::cout << std::setw(50) << std::setfill(' ') << std::left << obj.description;
-        #if 0
-        std::cout << std::endl;
-        for (int i = 0; i < obj.disks.size(); i++) {
-            std::cout << " disk name=" << obj.disks[i].name << ", snapshot=" << obj.disks[i].snapshot
-                      << ", driver_type=" << obj.disks[i].driver_type << ", source_file=" << obj.disks[i].source_file;
-            if (i != obj.disks.size() - 1)
-                std::cout << std::endl;
-        }
-        #endif
-    }
-    return out;
-}
 
 std::string createSnapshotXML(const std::string &snapName) {
     tinyxml2::XMLDocument doc;
@@ -75,7 +36,7 @@ std::string createSnapshotXML(const std::string &snapName) {
     tinyxml2::XMLElement *disks = doc.NewElement("disks");
     // system disk
     tinyxml2::XMLElement *disk1 = doc.NewElement("disk");
-    disk1->SetAttribute("name", "hda");
+    disk1->SetAttribute("name", "vda");
     disk1->SetAttribute("snapshot", "external");
     tinyxml2::XMLElement *disk1driver = doc.NewElement("driver");
     disk1driver->SetAttribute("type", "qcow2");
@@ -83,12 +44,12 @@ std::string createSnapshotXML(const std::string &snapName) {
     disks->LinkEndChild(disk1);
     // data disk
     tinyxml2::XMLElement *disk2 = doc.NewElement("disk");
-    disk2->SetAttribute("name", "vda");
+    disk2->SetAttribute("name", "vdb");
     disk2->SetAttribute("snapshot", "no");
     disks->LinkEndChild(disk2);
     root->LinkEndChild(disks);
 
-    doc.SaveFile((snapName + ".xml").c_str());
+    // doc.SaveFile((snapName + ".xml").c_str());
     tinyxml2::XMLPrinter printer;
     doc.Print(&printer);
     return printer.CStr();
@@ -106,12 +67,12 @@ struct global_fixture
         instance() = this;
         std::cout << "command format: snapshot_test -- [domain name] [snapshot name]" << std::endl;
         std::cout << "开始准备测试数据------->" << std::endl;
-        // BOOST_REQUIRE(vir_tool_.openConnect(qemu_url));
+        // BOOST_REQUIRE(vir_helper_.openConnect(qemu_url));
     }
     virtual~global_fixture() {
         std::cout << "清理测试环境<---------" << std::endl;
     }
-    virTool vir_tool_;
+    virHelper vir_helper_;
 };
 
 BOOST_GLOBAL_FIXTURE(global_fixture);
@@ -141,7 +102,7 @@ struct assign_fixture
 
 BOOST_AUTO_TEST_CASE(testConnect) {
     std::cout << "test connect" << std::endl;
-    BOOST_REQUIRE(global_fixture::instance()->vir_tool_.openConnect(qemu_url));
+    BOOST_REQUIRE(global_fixture::instance()->vir_helper_.openConnect(qemu_url));
 }
 
 // BOOST_AUTO_TEST_SUITE(vir_snapshot)
@@ -153,7 +114,7 @@ BOOST_AUTO_TEST_CASE(testCommandParams) {
 }
 
 BOOST_AUTO_TEST_CASE(testCreateSnapshot) {
-    std::shared_ptr<virDomainImpl> domain = global_fixture::instance()->vir_tool_.openDomain(domain_name_.c_str());
+    std::shared_ptr<virDomainImpl> domain = global_fixture::instance()->vir_helper_.openDomainByName(domain_name_.c_str());
     BOOST_REQUIRE(domain);
     std::string snapXMLDesc = createSnapshotXML(snapshot_name_.c_str());
     BOOST_CHECK(!snapXMLDesc.empty());
@@ -161,14 +122,14 @@ BOOST_AUTO_TEST_CASE(testCreateSnapshot) {
                                VIR_DOMAIN_SNAPSHOT_CREATE_QUIESCE | VIR_DOMAIN_SNAPSHOT_CREATE_ATOMIC;
     std::shared_ptr<virDomainSnapshotImpl> snapshot = domain->createSnapshot(snapXMLDesc.c_str(), createFlags);
     BOOST_REQUIRE(snapshot);
-    std::string xmlDesc;
-    BOOST_CHECK(snapshot->getSnapshotXMLDesc(xmlDesc) != -1);
+    std::string xmlDesc = snapshot->getSnapshotXMLDesc(0);
+    BOOST_CHECK(!xmlDesc.empty());
     // std::cout << "snapshot xml desc: " << xmlDesc << std::endl;
     std::cout << "create snapshot successful" << std::endl;
 }
 
 BOOST_AUTO_TEST_CASE(testListSnapshot) {
-    std::shared_ptr<virDomainImpl> domain = global_fixture::instance()->vir_tool_.openDomain(domain_name_.c_str());
+    std::shared_ptr<virDomainImpl> domain = global_fixture::instance()->vir_helper_.openDomainByName(domain_name_.c_str());
     BOOST_REQUIRE(domain);
     // int32_t nums = domain->getSnapshotNums(1 << 10);
     // std::cout << domain_name_ << " has " << nums << " snapshots" << std::endl;
@@ -187,9 +148,9 @@ BOOST_AUTO_TEST_CASE(testListSnapshot) {
     std::cout << std::setw(50) << std::setfill(' ') << std::left << "description";
     std::cout << std::endl;
     std::cout << std::setw(1 + 8 + 28 + 16 + 50) << std::setfill('-') << std::left << "" << std::endl;
-    std::vector<DomainSnapshotInfo> dsInfos;
+    std::vector<domainSnapshotInfo> dsInfos;
     for (const auto& snap : snaps) {
-        DomainSnapshotInfo dsInfo;
+        domainSnapshotInfo dsInfo;
         BOOST_CHECK(snap->getSnapshotInfo(dsInfo) == 0);
         if (!dsInfo.name.empty()) {
             std::cout << dsInfo << std::endl;
@@ -208,7 +169,7 @@ BOOST_AUTO_TEST_CASE(testListSnapshot) {
 
 // error: unsupported configuration: revert to external snapshot not supported yet
 // BOOST_AUTO_TEST_CASE(testRevertSnapshot) {
-//     std::shared_ptr<virDomainImpl> domain = global_fixture::instance()->vir_tool_.openDomain(domain_name_.c_str());
+//     std::shared_ptr<virDomainImpl> domain = global_fixture::instance()->vir_helper_.openDomainByName(domain_name_.c_str());
 //     BOOST_REQUIRE(domain);
 //     std::shared_ptr<virDomainSnapshotImpl> snapshot = domain->getSnapshotByName(snapshot_name_.c_str());
 //     BOOST_REQUIRE(snapshot);
@@ -218,7 +179,7 @@ BOOST_AUTO_TEST_CASE(testListSnapshot) {
 
 // need see blockcommit and blockpull before delete a snapshot
 // BOOST_AUTO_TEST_CASE(testDeleteAllSnapshot) {
-//     std::shared_ptr<virDomainImpl> domain = global_fixture::instance()->vir_tool_.openDomain(domain_name_.c_str());
+//     std::shared_ptr<virDomainImpl> domain = global_fixture::instance()->vir_helper_.openDomainByName(domain_name_.c_str());
 //     BOOST_REQUIRE(domain);
 //     std::vector<std::shared_ptr<virDomainSnapshotImpl>> snaps;
 //     // BOOST_REQUIRE(domain->listAllSnapshots(snaps, VIR_DOMAIN_SNAPSHOT_LIST_ROOTS) >= 0);
@@ -239,7 +200,7 @@ BOOST_AUTO_TEST_CASE(testListSnapshot) {
 // }
 
 // BOOST_AUTO_TEST_CASE(testBlockCommit) {
-//     std::shared_ptr<virDomainImpl> domain = global_fixture::instance()->vir_tool_.openDomain(domain_name_.c_str());
+//     std::shared_ptr<virDomainImpl> domain = global_fixture::instance()->vir_helper_.openDomainByName(domain_name_.c_str());
 //     BOOST_REQUIRE(domain);
 //     BOOST_REQUIRE(domain->isDomainActive() > 0);
 //     // BOOST_REQUIRE(domain->blockCommit("hda", "/data/ubuntu_75WqfsJs759ZQgN5VwmYwx.qcow2", "/data/ubuntu_system_snap1.qcow2", 0, 0) == 0);
@@ -270,7 +231,7 @@ BOOST_AUTO_TEST_CASE(testListSnapshot) {
 // }
 
 // BOOST_AUTO_TEST_CASE(testBlockPull) {
-//     std::shared_ptr<virDomainImpl> domain = global_fixture::instance()->vir_tool_.openDomain(domain_name_.c_str());
+//     std::shared_ptr<virDomainImpl> domain = global_fixture::instance()->vir_helper_.openDomainByName(domain_name_.c_str());
 //     BOOST_REQUIRE(domain);
 //     BOOST_REQUIRE(domain->isDomainActive() > 0);
 //     BOOST_REQUIRE(domain->blockPull("vda", 0, 0) == 0);
@@ -297,7 +258,7 @@ BOOST_AUTO_TEST_CASE(testListSnapshot) {
 // }
 
 // BOOST_AUTO_TEST_CASE(testBlockRebase) {
-//     std::shared_ptr<virDomainImpl> domain = global_fixture::instance()->vir_tool_.openDomain(domain_name_.c_str());
+//     std::shared_ptr<virDomainImpl> domain = global_fixture::instance()->vir_helper_.openDomainByName(domain_name_.c_str());
 //     BOOST_REQUIRE(domain);
 //     BOOST_REQUIRE(domain->isDomainActive() > 0);
 //     BOOST_REQUIRE(domain->blockRebase("hda", NULL, 0, 0) == 0);

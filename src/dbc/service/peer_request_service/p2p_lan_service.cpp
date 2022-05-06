@@ -657,8 +657,8 @@ void p2p_lan_service::send_network_leave_request(const std::string& network_name
 }
 
 void p2p_lan_service::init_timer() {
-    // 30 second
-    add_timer(AI_MULTICAST_MACHINE_TIMER, 5 * 1000, 30 * 1000, ULLONG_MAX, "",
+    // 50 second
+    add_timer(AI_MULTICAST_MACHINE_TIMER, 5 * 1000, 50 * 1000, ULLONG_MAX, "",
         std::bind(&p2p_lan_service::on_multicast_machine_task_timer, this, std::placeholders::_1));
     // 3 min
     add_timer(AI_MULTICAST_NETWORK_TIMER, 180 * 1000, 180 * 1000, ULLONG_MAX, "",

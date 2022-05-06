@@ -235,7 +235,7 @@ public:
 
     void setCustomPort(const std::vector<std::string>& ports) {
         RwMutex::WriteLock wlock(m_mtx);
-        m_db_info->__set_custom_port(port);
+        m_db_info->__set_custom_port(ports);
     }
 
     std::vector<std::string> getMulticast() const {
@@ -248,6 +248,16 @@ public:
         m_db_info->__set_multicast(muls);
     }
 
+	std::string getDesc() const {
+		RwMutex::ReadLock rlock(m_mtx);
+		return m_db_info->desc;
+	}
+
+	void setDesc(const std::string& desc) {
+		RwMutex::WriteLock wlock(m_mtx);
+		m_db_info->__set_desc(desc);
+	}
+
     std::string getNetworkName() const {
         RwMutex::ReadLock rlock(m_mtx);
         return m_db_info->network_name;
@@ -258,14 +268,24 @@ public:
 		m_db_info->__set_network_name(name);
     }
 
-    std::string getDesc() const {
+    std::string getPublicIP() const {
         RwMutex::ReadLock rlock(m_mtx);
-        return m_db_info->desc;
+        return m_db_info->public_ip;
     }
 
-    void setDesc(const std::string& desc) {
+    void setPublicIP(const std::string& ip) {
         RwMutex::WriteLock wlock(m_mtx);
-        m_db_info->__set_desc(desc);
+        m_db_info->__set_public_ip(ip);
+    }
+
+    std::vector<std::string> getNwfilter() const {
+        RwMutex::ReadLock rlock(m_mtx);
+        return m_db_info->nwfilter;
+    }
+
+    void setNwfilter(const std::vector<std::string>& nwfilter) {
+        RwMutex::WriteLock wlock(m_mtx);
+        m_db_info->__set_nwfilter(nwfilter);
     }
 
     int32_t getCpuSockets() const {

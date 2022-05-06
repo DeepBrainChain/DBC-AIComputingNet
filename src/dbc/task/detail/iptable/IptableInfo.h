@@ -75,6 +75,16 @@ public:
 		m_db_info->__set_custom_port(ports);
 	}
 
+	std::string getPublicIP() const {
+		RwMutex::ReadLock rlock(m_mtx);
+		return m_db_info->public_ip;
+	}
+
+	void setPublicIP(const std::string& ip) {
+		RwMutex::WriteLock wlock(m_mtx);
+		m_db_info->__set_public_ip(ip);
+	}
+
 	void deleteFromDB(TaskIptableDB& db) {
 		RwMutex::WriteLock wlock(m_mtx);
 		db.delete_data(m_db_info->task_id);

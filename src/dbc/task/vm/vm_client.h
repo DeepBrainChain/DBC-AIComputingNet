@@ -89,6 +89,11 @@ public:
     // monitor data
     bool GetDomainMonitorData(const std::string& domain_name, dbcMonitor::domMonitorData& data);
 
+    // nwfilter
+    int32_t DefineNWFilter(const std::string& nwfilter_name, const std::vector<std::string>& nwfilters);
+
+    int32_t UndefineNWFilter(const std::string& nwfilter_name);
+
 private:
     virConnectPtr m_connPtr = nullptr;
 };

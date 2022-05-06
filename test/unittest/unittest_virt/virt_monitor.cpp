@@ -1,13 +1,15 @@
 // entry of the test
 #define BOOST_TEST_MODULE "C++ Unit Tests for virt monitor"
 #include <boost/test/unit_test.hpp>
-#include "virImpl.h"
+#include "vir_helper.h"
 #include <iostream>
 #include <iomanip>
 #include <map>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/date_time/local_time/local_time.hpp>
 #include "tinyxml2.h"
+
+using namespace vir_helper;
 
 static const char* qemu_url = "qemu+tcp://localhost:16509/system";
 static const char* default_domain_name = "domain_test";
@@ -39,12 +41,12 @@ struct global_fixture
         instance() = this;
         std::cout << "command format: snapshot_test -- [domain name]" << std::endl;
         std::cout << "开始准备测试数据------->" << std::endl;
-        // BOOST_REQUIRE(vir_tool_.openConnect(qemu_url));
+        // BOOST_REQUIRE(vir_helper_.openConnect(qemu_url));
     }
     virtual~global_fixture() {
         std::cout << "清理测试环境<---------" << std::endl;
     }
-    virTool vir_tool_;
+    virHelper vir_helper_;
 };
 
 BOOST_GLOBAL_FIXTURE(global_fixture);
@@ -69,18 +71,18 @@ struct assign_fixture
 
 BOOST_AUTO_TEST_CASE(testConnect) {
     std::cout << "test connect" << std::endl;
-    BOOST_REQUIRE(global_fixture::instance()->vir_tool_.openConnect(qemu_url));
+    BOOST_REQUIRE(global_fixture::instance()->vir_helper_.openConnect(qemu_url));
 }
 
-// BOOST_AUTO_TEST_SUITE(vir_snapshot)
-BOOST_FIXTURE_TEST_SUITE(vir_snapshot, assign_fixture)
+// BOOST_AUTO_TEST_SUITE(vir_monitor)
+BOOST_FIXTURE_TEST_SUITE(vir_monitor, assign_fixture)
 
 BOOST_AUTO_TEST_CASE(testCommandParams) {
     std::cout << "domain name = \"" << domain_name_ << "\"" << std::endl;
 }
 
 BOOST_AUTO_TEST_CASE(testGetDomainInfo) {
-    std::shared_ptr<virDomainImpl> domain = global_fixture::instance()->vir_tool_.openDomain(domain_name_.c_str());
+    std::shared_ptr<virDomainImpl> domain = global_fixture::instance()->vir_helper_.openDomainByName(domain_name_.c_str());
     BOOST_REQUIRE(domain);
     virDomainInfo info;
     BOOST_REQUIRE(domain->getDomainInfo(&info) > -1);
@@ -88,7 +90,7 @@ BOOST_AUTO_TEST_CASE(testGetDomainInfo) {
 }
 
 BOOST_AUTO_TEST_CASE(testCpuUsage1) {
-    std::shared_ptr<virDomainImpl> domain = global_fixture::instance()->vir_tool_.openDomain(domain_name_.c_str());
+    std::shared_ptr<virDomainImpl> domain = global_fixture::instance()->vir_helper_.openDomainByName(domain_name_.c_str());
     BOOST_REQUIRE(domain);
     virDomainInfo info_s, info_e;
     struct timeval real_time_s, real_time_e;
@@ -116,7 +118,7 @@ BOOST_AUTO_TEST_CASE(testCpuUsage1) {
 }
 
 BOOST_AUTO_TEST_CASE(testCpuUsage2) {
-    std::shared_ptr<virDomainImpl> domain = global_fixture::instance()->vir_tool_.openDomain(domain_name_.c_str());
+    std::shared_ptr<virDomainImpl> domain = global_fixture::instance()->vir_helper_.openDomainByName(domain_name_.c_str());
     BOOST_REQUIRE(domain);
     unsigned int nparams = domain->getDomainCPUStats(NULL, 0, -1, 1, 0);
     virTypedParameterPtr params_s = (virTypedParameterPtr)calloc(nparams, sizeof(virTypedParameter));
@@ -144,7 +146,7 @@ BOOST_AUTO_TEST_CASE(testCpuUsage2) {
 }
 
 BOOST_AUTO_TEST_CASE(testMemoryStats) {
-    std::shared_ptr<virDomainImpl> domain = global_fixture::instance()->vir_tool_.openDomain(domain_name_.c_str());
+    std::shared_ptr<virDomainImpl> domain = global_fixture::instance()->vir_helper_.openDomainByName(domain_name_.c_str());
     BOOST_REQUIRE(domain);
     virDomainMemoryStatStruct stats[20] = {0};
     BOOST_REQUIRE(domain->getDomainMemoryStats(stats, 20, 0) > -1);
@@ -173,17 +175,17 @@ BOOST_AUTO_TEST_CASE(testMemoryStats) {
 }
 
 BOOST_AUTO_TEST_CASE(testDiskInfo) {
-    std::shared_ptr<virDomainImpl> domain = global_fixture::instance()->vir_tool_.openDomain(domain_name_.c_str());
+    std::shared_ptr<virDomainImpl> domain = global_fixture::instance()->vir_helper_.openDomainByName(domain_name_.c_str());
     BOOST_REQUIRE(domain);
 
-    std::map<std::string, std::string> disks;
+    std::vector<domainDiskInfo> disks;
     BOOST_REQUIRE(domain->getDomainDisks(disks) > -1);
 
     for (const auto& disk : disks) {
         virDomainBlockInfo info;
-        BOOST_REQUIRE(domain->getDomainBlockInfo(disk.first.c_str(), &info, 0) > -1);
+        BOOST_REQUIRE(domain->getDomainBlockInfo(disk.target_dev.c_str(), &info, 0) > -1);
         std::cout << " disk_name:";
-        std::cout << std::setw(6) << std::setfill(' ') << std::left << disk.first;
+        std::cout << std::setw(6) << std::setfill(' ') << std::left << disk.target_dev;
         std::cout << " capacity:";
         std::cout << std::setw(6) << std::setfill(' ') << std::left << info.capacity / 1024 / 1024 / (float)1024;
         std::cout << " allocation:";
@@ -195,7 +197,7 @@ BOOST_AUTO_TEST_CASE(testDiskInfo) {
 }
 
 BOOST_AUTO_TEST_CASE(testDiskStats) {
-    std::shared_ptr<virDomainImpl> domain = global_fixture::instance()->vir_tool_.openDomain(domain_name_.c_str());
+    std::shared_ptr<virDomainImpl> domain = global_fixture::instance()->vir_helper_.openDomainByName(domain_name_.c_str());
     BOOST_REQUIRE(domain);
     long long rd_bytes, wr_bytes;
     virDomainBlockStatsStruct stats;
@@ -226,19 +228,19 @@ BOOST_AUTO_TEST_CASE(testDiskStats) {
 }
 
 // BOOST_AUTO_TEST_CASE(testNetworkList) {
-//     std::shared_ptr<virDomainImpl> domain = global_fixture::instance()->vir_tool_.openDomain(domain_name_.c_str());
+//     std::shared_ptr<virDomainImpl> domain = global_fixture::instance()->vir_helper_.openDomainByName(domain_name_.c_str());
 //     BOOST_REQUIRE(domain);
-//     std::vector<test::virDomainInterface> difaces;
+//     std::vector<domainInterface> difaces;
 //     BOOST_REQUIRE(domain->getDomainInterfaceAddress(difaces) > 0);
 //     BOOST_CHECK(!difaces.empty());
 // }
 
 BOOST_AUTO_TEST_CASE(testNetworkStats) {
-    std::shared_ptr<virDomainImpl> domain = global_fixture::instance()->vir_tool_.openDomain(domain_name_.c_str());
+    std::shared_ptr<virDomainImpl> domain = global_fixture::instance()->vir_helper_.openDomainByName(domain_name_.c_str());
     BOOST_REQUIRE(domain);
 
     // get network device name, exp vnet0.
-    std::vector<test::virDomainInterface> difaces;
+    std::vector<domainInterface> difaces;
     BOOST_REQUIRE(domain->getDomainInterfaceAddress(difaces) > 0);
     BOOST_REQUIRE(!difaces.empty());
     std::string network_device_name = difaces[0].name;
@@ -283,7 +285,7 @@ BOOST_AUTO_TEST_CASE(testNetworkStats) {
 }
 
 BOOST_AUTO_TEST_CASE(testQemuAgentCommand) {
-    std::shared_ptr<virDomainImpl> domain = global_fixture::instance()->vir_tool_.openDomain(domain_name_.c_str());
+    std::shared_ptr<virDomainImpl> domain = global_fixture::instance()->vir_helper_.openDomainByName(domain_name_.c_str());
     BOOST_REQUIRE(domain);
     std::string cmd = "{\"execute\":\"guest-info\"}";
     std::string ret = domain->QemuAgentCommand(cmd.c_str(), VIR_DOMAIN_QEMU_AGENT_COMMAND_DEFAULT, 0);
@@ -292,7 +294,7 @@ BOOST_AUTO_TEST_CASE(testQemuAgentCommand) {
 }
 
 BOOST_AUTO_TEST_CASE(testGpuStats) {
-    std::shared_ptr<virDomainImpl> domain = global_fixture::instance()->vir_tool_.openDomain(domain_name_.c_str());
+    std::shared_ptr<virDomainImpl> domain = global_fixture::instance()->vir_helper_.openDomainByName(domain_name_.c_str());
     BOOST_REQUIRE(domain);
     std::string cmd = "{\"execute\":\"guest-get-gpus\"}";
     std::string ret = domain->QemuAgentCommand(cmd.c_str(), VIR_DOMAIN_QEMU_AGENT_COMMAND_DEFAULT, 0);

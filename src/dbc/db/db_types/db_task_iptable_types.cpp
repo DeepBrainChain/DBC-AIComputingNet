@@ -43,6 +43,11 @@ namespace dbc {
 		this->custom_port = val;
 		__isset.custom_port = true;
 	}
+
+	void db_task_iptable::__set_public_ip(const std::string& val) {
+		this->public_ip = val;
+		__isset.public_ip = true;
+	}
 	std::ostream& operator<<(std::ostream& out, const db_task_iptable& obj)
 	{
 		obj.printTo(out);
@@ -138,6 +143,15 @@ namespace dbc {
 					xfer += iprot->skip(ftype);
 				}
 				break;
+			case 7:
+				if (ftype == ::apache::thrift::protocol::T_STRING) {
+					xfer += iprot->readString(this->public_ip);
+					this->__isset.public_ip = true;
+				}
+				else {
+					xfer += iprot->skip(ftype);
+				}
+				break;
 			default:
 				xfer += iprot->skip(ftype);
 				break;
@@ -194,6 +208,11 @@ namespace dbc {
 			}
 			xfer += oprot->writeFieldEnd();
 		}
+		if (this->__isset.public_ip) {
+			xfer += oprot->writeFieldBegin("public_ip", ::apache::thrift::protocol::T_STRING, 7);
+			xfer += oprot->writeString(this->public_ip);
+			xfer += oprot->writeFieldEnd();
+		}
 		xfer += oprot->writeFieldStop();
 		xfer += oprot->writeStructEnd();
 		return xfer;
@@ -207,6 +226,7 @@ namespace dbc {
 		swap(a.ssh_port, b.ssh_port);
 		swap(a.rdp_port, b.rdp_port);
 		swap(a.custom_port, b.custom_port);
+		swap(a.public_ip, b.public_ip);
 		swap(a.__isset, b.__isset);
 	}
 
@@ -217,6 +237,7 @@ namespace dbc {
 		ssh_port = other6.ssh_port;
 		rdp_port = other6.rdp_port;
 		custom_port = other6.custom_port;
+		public_ip = other6.public_ip;
 		__isset = other6.__isset;
 	}
 	db_task_iptable& db_task_iptable::operator=(const db_task_iptable& other7) {
@@ -226,6 +247,7 @@ namespace dbc {
 		ssh_port = other7.ssh_port;
 		rdp_port = other7.rdp_port;
 		custom_port = other7.custom_port;
+		public_ip = other7.public_ip;
 		__isset = other7.__isset;
 		return *this;
 	}
@@ -238,6 +260,7 @@ namespace dbc {
 		out << ", " << "ssh_port="; (__isset.ssh_port ? (out << to_string(ssh_port)) : (out << "<null>"));
 		out << ", " << "rdp_port="; (__isset.rdp_port ? (out << to_string(rdp_port)) : (out << "<null>"));
 		out << ", " << "custom_port="; (__isset.custom_port ? (out << to_string(custom_port)) : (out << "<null>"));
+		out << ", " << "public_ip="; (__isset.public_ip ? (out << to_string(public_ip)) : (out << "<null>"));
 		out << ")";
 	}
 

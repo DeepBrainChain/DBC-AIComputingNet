@@ -63,6 +63,11 @@ struct CreateTaskParams {
 	std::string network_name;
 
 	int64_t create_time = 0;
+
+    // 公网ip
+    std::string public_ip;
+    //安全组，只有设置了公网ip才会使用
+    std::vector<std::string> nwfilter;
 };
 
 class TaskManager : public Singleton<TaskManager> {
@@ -160,13 +165,13 @@ protected:
 
     void add_iptable_to_system(const std::string& task_id);
 
-    void shell_remove_iptable_from_system(const std::string& task_id, const std::string &public_ip,
+    void shell_remove_iptable_from_system(const std::string& task_id, const std::string &host_ip,
                                           uint16_t ssh_port, const std::string &task_local_ip);
 
-    void shell_add_iptable_to_system(const std::string& task_id, const std::string &public_ip,
+    void shell_add_iptable_to_system(const std::string& task_id, const std::string &host_ip,
                                      uint16_t ssh_port, uint16_t rdp_port,
                                      const std::vector<std::string>& custom_port,
-                                     const std::string &task_local_ip);
+                                     const std::string &task_local_ip, const std::string &public_ip);
 
     void shell_remove_reject_iptable_from_system();
 
@@ -208,7 +213,7 @@ protected:
 
     bool create_task_iptable(const std::string &domain_name, uint16_t ssh_port,
                              uint16_t rdp_port, const std::vector<std::string>& custom_port,
-                             const std::string &task_local_ip);
+                             const std::string &task_local_ip, const std::string& public_ip);
 
     static void getNeededBackingImage(const std::string &image_name, std::vector<std::string> &backing_images);
 
