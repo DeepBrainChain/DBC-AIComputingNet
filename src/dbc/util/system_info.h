@@ -113,6 +113,8 @@ public:
         return m_diskinfo;
     }
 
+    void GetDiskInfo(const std::string& path, disk_info& info);
+
     const std::vector<float> &loadaverage() const {
         RwMutex::ReadLock rlock(m_loadaverage_mtx);
         return m_loadaverage;

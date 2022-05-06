@@ -26,7 +26,7 @@ bool WalletSessionIdDB::init_db(boost::filesystem::path task_db_path, std::strin
     leveldb::Status status = leveldb::DB::Open(options, task_db_path.generic_string(), &db);
     if (!status.ok())
     {
-        LOG_ERROR << "init task db error: " << status.ToString();
+        LOG_ERROR << "open db error: " << status.ToString();
         return false;
     }
 
@@ -35,13 +35,13 @@ bool WalletSessionIdDB::init_db(boost::filesystem::path task_db_path, std::strin
     return true;
 }
 
-void WalletSessionIdDB::load(std::map<std::string, std::shared_ptr<dbc::rent_sessionid>>& session_ids)
+void WalletSessionIdDB::load_datas(std::map<std::string, std::shared_ptr<dbc::db_wallet_sessionid>>& session_ids)
 {
     std::unique_ptr<leveldb::Iterator> it;
     it.reset(m_db->NewIterator(leveldb::ReadOptions()));
     for (it->SeekToFirst(); it->Valid(); it->Next())
     {
-        std::shared_ptr<dbc::rent_sessionid> sessionid = std::make_shared<dbc::rent_sessionid>();
+        std::shared_ptr<dbc::db_wallet_sessionid> sessionid = std::make_shared<dbc::db_wallet_sessionid>();
         std::shared_ptr<byte_buf> buf = std::make_shared<byte_buf>();
         buf->write_to_byte_buf(it->value().data(), (uint32_t)it->value().size());
         network::binary_protocol proto(buf.get());
@@ -51,30 +51,14 @@ void WalletSessionIdDB::load(std::map<std::string, std::shared_ptr<dbc::rent_ses
     }
 }
 
-bool WalletSessionIdDB::del(const std::string& wallet)
-{
-    if (wallet.empty())
-        return true;
-
-    leveldb::WriteOptions write_options;
-    write_options.sync = true;
-    leveldb::Status status = m_db->Delete(write_options, wallet);
-    if (status.ok()) {
-        return true;
-    }
-    else {
-        return false;
-    }
-}
-
-std::shared_ptr<dbc::rent_sessionid> WalletSessionIdDB::read(const std::string& wallet) {
+std::shared_ptr<dbc::db_wallet_sessionid> WalletSessionIdDB::read_data(const std::string& wallet) {
     if (wallet.empty())
         return nullptr;
 
     std::string val;
     leveldb::Status status = m_db->Get(leveldb::ReadOptions(), wallet, &val);
     if (status.ok()) {
-        std::shared_ptr<dbc::rent_sessionid> sessionid = std::make_shared<dbc::rent_sessionid>();
+        std::shared_ptr<dbc::db_wallet_sessionid> sessionid = std::make_shared<dbc::db_wallet_sessionid>();
         std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
         task_buf->write_to_byte_buf(val.c_str(), val.size());
         network::binary_protocol proto(task_buf.get());
@@ -86,7 +70,7 @@ std::shared_ptr<dbc::rent_sessionid> WalletSessionIdDB::read(const std::string& 
     }
 }
 
-bool WalletSessionIdDB::write(const std::shared_ptr<dbc::rent_sessionid>& session_id)
+bool WalletSessionIdDB::write_data(const std::shared_ptr<dbc::db_wallet_sessionid>& session_id)
 {
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
     network::binary_protocol proto(out_buf.get());
@@ -100,7 +84,23 @@ bool WalletSessionIdDB::write(const std::shared_ptr<dbc::rent_sessionid>& sessio
         return true;
     }
     else {
-        LOG_INFO << "sessionid_db put sessionid failed: " << session_id->rent_wallet;
+        LOG_INFO << "db put data failed: " << session_id->rent_wallet;
         return false;
     }
+}
+
+bool WalletSessionIdDB::delete_data(const std::string& wallet)
+{
+	if (wallet.empty())
+		return true;
+
+	leveldb::WriteOptions write_options;
+	write_options.sync = true;
+	leveldb::Status status = m_db->Delete(write_options, wallet);
+	if (status.ok()) {
+		return true;
+	}
+	else {
+		return false;
+	}
 }

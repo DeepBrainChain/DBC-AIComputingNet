@@ -3155,6 +3155,7 @@ void node_request_service::snapshot_list(const network::base_header& header,
     if (task != nullptr) {
         if (data->snapshot_name.empty()) {
             ss_snapshots << "[";
+            /*
             std::vector<std::shared_ptr<dbc::snapshotInfo>> snaps;
             m_task_scheduler.listTaskSnapshot(result.rent_wallet, data->task_id, snaps);
             int idx = 0;
@@ -3185,11 +3186,13 @@ void node_request_service::snapshot_list(const network::base_header& header,
 
                 idx++;
             }
+            */
             ss_snapshots << "]";
         } else {
             auto snapshot = m_task_scheduler.getTaskSnapshot(result.rent_wallet, data->task_id, data->snapshot_name);
             if (nullptr != snapshot) {
                 ss_snapshots << "{";
+                /*
                 ss_snapshots << "\"snapshot_name\":" << "\"" << snapshot->name << "\"";
                 ss_snapshots << ", \"description\":" << "\"" << snapshot->description << "\"";
 
@@ -3224,6 +3227,7 @@ void node_request_service::snapshot_list(const network::base_header& header,
                     }
                     ss_snapshots << "]";
                 }
+                */
                 ss_snapshots << "}";
             } else {
                 ret_code = E_DEFAULT;
@@ -3371,8 +3375,10 @@ void node_request_service::snapshot_create(const network::base_header& header,
         ss << "\"errcode\":" << ret_code;
         ss << ", \"message\":" << "{";
         // ss << "\"task_id\":" << "\"" << data->task_id << "\"";
+        /*
         auto snapshot = m_task_scheduler.getCreatingSnapshot(result.rent_wallet, data->task_id);
         ss << "\"snapshot_name\":" << "\"" << snapshot->name << "\"";
+        */
         // struct tm _tm{};
         // time_t tt = snapshot == nullptr ? 0 : snapshot->creationTime;
         // localtime_r(&tt, &_tm);
@@ -3380,8 +3386,10 @@ void node_request_service::snapshot_create(const network::base_header& header,
         // memset(buf, 0, sizeof(char) * 256);
         // strftime(buf, sizeof(char) * 256, "%Y-%m-%d %H:%M:%S", &_tm);
         // ss << ", \"create_time\":" << "\"" << buf << "\"";
+        /*
         ss << ", \"description\":" << "\"" << snapshot->description << "\"";
         ss << ", \"status\":" << "\"" << "creating" << "\"";
+        */
         ss << "}";
         ss << "}";
     } else {

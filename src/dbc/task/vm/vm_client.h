@@ -4,13 +4,10 @@
 #include "util/utils.h"
 #include <libvirt/libvirt.h>
 #include <libvirt/virterror.h>
-#include "../detail/TaskResourceManager.h"
-#include "db/db_types/taskinfo_types.h"
-#include "../detail/TaskMonitorInfo.h"
+#include "task/detail/TaskMonitorInfo.h"
+#include "task/detail/info/TaskInfo.h"
 
 namespace dbc {
-class snapshotInfo;
-
 typedef struct virDomainInterfaceIPAddress virDomainIPAddress;
 struct virDomainInterfaceIPAddress {
     int type;                /* virIPAddrType */
@@ -24,14 +21,6 @@ struct virDomainInterface {
 };
 }
 
-struct domainDiskInfo {
-    std::string driverName;
-    std::string driverType;
-    std::string sourceFile;
-    std::string targetDev;
-    std::string targetBus;
-};
-
 class VmClient : public Singleton<VmClient> {
 public:
     VmClient();
@@ -42,7 +31,10 @@ public:
 
     void exit();
 
-    int32_t CreateDomain(const std::shared_ptr<dbc::TaskInfo>& taskinfo, const std::shared_ptr<TaskResource>& task_resource);
+    // domain
+	bool IsExistDomain(const std::string& domain_name);
+
+    int32_t CreateDomain(const std::shared_ptr<TaskInfo>& taskinfo);
 
     int32_t StartDomain(const std::string& domain_name);
 
@@ -60,8 +52,7 @@ public:
 
     int32_t UndefineDomain(const std::string& domain_name);
 
-    FResult RedefineDomain(const std::shared_ptr<dbc::TaskInfo>& taskinfo,
-        const std::shared_ptr<TaskResource>& task_resource, bool increase_disk = false);
+    FResult RedefineDomain(const std::shared_ptr<TaskInfo>& taskinfo);
 
     int32_t DestroyAndUndefineDomain(const std::string& domain_name, unsigned int undefineFlags = 0);
 
@@ -73,24 +64,26 @@ public:
 
     FResult GetDomainLog(const std::string& domain_name, QUERY_LOG_DIRECTION direction, int32_t linecount, std::string &log_content);
 
+	bool SetDomainUserPassword(const std::string& domain_name, const std::string& username, const std::string& pwd);
+
+    // network
     std::string GetDomainLocalIP(const std::string &domain_name);
 
     int32_t GetDomainInterfaceAddress(const std::string& domain_name, std::vector<dbc::virDomainInterface> &difaces, unsigned int source = 0);
-
-    bool SetDomainUserPassword(const std::string &domain_name, const std::string &username, const std::string &pwd);
-
-    bool IsExistDomain(const std::string& domain_name);
-
-    bool ListDomainDiskInfo(const std::string& domain_name, std::map<std::string, domainDiskInfo>& disks);
-
+    
     int32_t IsDomainHasNvram(const std::string& domain_name);
 
-    // snapshot
-    FResult CreateSnapshot(const std::string& domain_name, const std::shared_ptr<dbc::snapshotInfo>& info);
+    // xml
+    std::string GetDomainXML(const std::string& domain_name);
 
-    std::shared_ptr<dbc::snapshotInfo> GetDomainSnapshot(const std::string& domain_name, const std::string& snapshot_name);
+    // disk
+    int64_t GetDiskVirtualSize(const std::string& domain_name, const std::string& disk_name);
 
-    // Qemu guest agent
+    FResult AttachDisk(const std::string& domain_name, const std::string& disk_name, const std::string& source_file);
+
+    FResult DetachDisk(const std::string& domain_name, const std::string& disk_name);
+
+    // qemu command
     std::string QemuAgentCommand(const std::string& domain_name, const std::string& cmd, int timeout, unsigned int flags);
 
     // monitor data

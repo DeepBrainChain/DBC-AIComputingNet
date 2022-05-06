@@ -8,17 +8,69 @@
 #include "message/vm_task_result_types.h"
 #include "vm/vm_client.h"
 #include "HttpDBCChainClient.h"
-#include "detail/TaskInfoManager.h"
-#include "detail/TaskIptableManager.h"
-#include "detail/WalletSessionIDManager.h"
-#include "detail/WalletRentTaskManager.h"
-#include "detail/TaskResourceManager.h"
-#include "detail/TaskSnapshotInfoManager.h"
-#include "detail/ImageManager.h"
+#include "detail/info/TaskInfoManager.h"
+#include "detail/disk/TaskDiskManager.h"
+#include "detail/gpu/TaskGpuManager.h"
+#include "detail/iptable/TaskIptableManager.h"
+#include "detail/wallet_rent_task/WalletRentTaskManager.h"
+#include "detail/wallet_session_id/WalletSessionIDManager.h"
+#include "detail/image/ImageManager.h"
+#include "TaskEvent.h"
 
 namespace bp = boost::process;
 
-class TaskManager {
+struct CreateTaskParams {
+    std::string task_id;
+	// 描述
+	std::string desc;
+	// 登录密码
+	std::string login_password;
+	// 镜像名字 (ubuntu.qcow2 ...)
+	std::string image_name;
+	// ssh连接端口（linux）
+	uint16_t ssh_port;
+	// rdp连接端口（windows）
+	uint16_t rdp_port;
+	// 自定义端口映射
+	std::vector<std::string> custom_port;
+	// cpu物理个数
+	int32_t cpu_sockets;
+	// 每个物理cpu的物理核数
+	int32_t cpu_cores;
+	// 每个物理核的线程数
+	int32_t cpu_threads;
+	// 内存（KB）
+	int64_t mem_size;
+	// 数据盘大小（KB）
+	int64_t disk_size;
+	// GPU列表
+	std::map<std::string, std::list<std::string>> gpus;
+	// 自定义数据盘路径
+	std::string data_file_name;
+	// vnc
+	uint16_t vnc_port;
+	std::string vnc_password;
+
+	// 操作系统(如generic, ubuntu 18.04, windows 10)，默认ubuntu，带有win则认为是windows系统，必须全小写。
+	std::string operation_system;
+	// BIOS模式(如legacy,uefi)，默认传统BIOS，必须全小写。
+	std::string bios_mode;
+
+	//组播地址(如："230.0.0.1:5558")
+	std::vector<std::string> multicast;
+
+	// vxlan network name
+	std::string network_name;
+
+	int64_t create_time = 0;
+
+    // 公网ip
+    std::string public_ip;
+    //安全组，只有设置了公网ip才会使用
+    std::vector<std::string> nwfilter;
+};
+
+class TaskManager : public Singleton<TaskManager> {
 public:
     TaskManager() = default;
 
@@ -28,29 +80,19 @@ public:
     
     void exit();
 
-    FResult listImages(const std::shared_ptr<dbc::node_list_images_req_data>& data,
-                       const AuthoriseResult& result, std::vector<ImageFile> &images);
+    void pushTaskEvent(const std::shared_ptr<TaskEvent>& ev);
 
-    FResult downloadImage(const std::string& wallet, const std::shared_ptr<dbc::node_download_image_req_data>& data);
-
-    FResult downloadImageProgress(const std::string& wallet, const std::shared_ptr<dbc::node_download_image_progress_req_data>& data);
-
-    FResult stopDownloadImage(const std::string& wallet, const std::shared_ptr<dbc::node_stop_download_image_req_data>& data);
-
-    FResult uploadImage(const std::string& wallet, const std::shared_ptr<dbc::node_upload_image_req_data>& data);
-
-    FResult uploadImageProgress(const std::string& wallet, const std::shared_ptr<dbc::node_upload_image_progress_req_data>& data);
-
-    FResult stopUploadImage(const std::string& wallet, const std::shared_ptr<dbc::node_stop_upload_image_req_data>& data);
-
-    FResult deleteImage(const std::string& wallet, const std::shared_ptr<dbc::node_delete_image_req_data>& data);
-
+    TaskStatus queryTaskStatus(const std::string& task_id);
+    
+    // task
     FResult createTask(const std::string& wallet, const std::shared_ptr<dbc::node_create_task_req_data>& data,
                        int64_t rent_end, USER_ROLE role, std::string& task_id);
 
     FResult startTask(const std::string& wallet, const std::string &task_id);
 
-    FResult stopTask(const std::string& wallet, const std::string &task_id);
+    FResult shutdownTask(const std::string& wallet, const std::string &task_id);
+
+	FResult poweroffTask(const std::string& wallet, const std::string& task_id);
 
     FResult restartTask(const std::string& wallet, const std::string &task_id, bool force_reboot = false);
 
@@ -63,46 +105,57 @@ public:
     FResult
     getTaskLog(const std::string &task_id, QUERY_LOG_DIRECTION direction, int32_t nlines, std::string &log_content);
 
-    void listAllTask(const std::string& wallet, std::vector<std::shared_ptr<dbc::TaskInfo>> &vec);
+    void listAllTask(const std::string& wallet, std::vector<std::shared_ptr<TaskInfo>> &vec);
 
-    void listRunningTask(const std::string& wallet, std::vector<std::shared_ptr<dbc::TaskInfo>> &vec);
+    void listRunningTask(const std::string& wallet, std::vector<std::shared_ptr<TaskInfo>> &vec);
 
-    std::shared_ptr<dbc::TaskInfo> findTask(const std::string& wallet, const std::string &task_id);
+	//std::shared_ptr<TaskInfo> findTask(const std::string& wallet, const std::string& task_id);
 
     int32_t getRunningTasksSize(const std::string& wallet);
-
-    ETaskStatus getTaskStatus(const std::string &task_id);
-
-    int32_t getTaskAgentInterfaceAddress(const std::string &task_id, std::vector<std::tuple<std::string, std::string>> &address);
 
     void deleteAllCheckTasks();
 
     void deleteOtherCheckTasks(const std::string& wallet);
 
+    // session_id
     std::string createSessionId(const std::string& wallet, const std::vector<std::string>& multisig_signers = std::vector<std::string>());
 
     std::string getSessionId(const std::string& wallet);
 
     std::string checkSessionId(const std::string& session_id, const std::string& session_id_sign);
 
-    // this function do not check renter's wallet of task
-    void listTaskDiskInfo(const std::string& task_id, std::map<std::string, domainDiskInfo>& disks);
+    // image
+	FResult listImages(const std::shared_ptr<dbc::node_list_images_req_data>& data,
+		const AuthoriseResult& result, std::vector<ImageFile>& images);
+
+	FResult downloadImage(const std::string& wallet, const std::shared_ptr<dbc::node_download_image_req_data>& data);
+
+	FResult downloadImageProgress(const std::string& wallet, const std::shared_ptr<dbc::node_download_image_progress_req_data>& data);
+
+	FResult stopDownloadImage(const std::string& wallet, const std::shared_ptr<dbc::node_stop_download_image_req_data>& data);
+
+	FResult uploadImage(const std::string& wallet, const std::shared_ptr<dbc::node_upload_image_req_data>& data);
+
+	FResult uploadImageProgress(const std::string& wallet, const std::shared_ptr<dbc::node_upload_image_progress_req_data>& data);
+
+	FResult stopUploadImage(const std::string& wallet, const std::shared_ptr<dbc::node_stop_upload_image_req_data>& data);
+
+	FResult deleteImage(const std::string& wallet, const std::shared_ptr<dbc::node_delete_image_req_data>& data);
 
     // snapshot
-    FResult createSnapshot(const std::string& wallet, const std::string &additional, const std::string& task_id);
+	FResult listTaskSnapshot(const std::string& wallet, const std::string& task_id, std::vector<dbc::snapshot_info>& snapshots);
 
-    FResult deleteSnapshot(const std::string& wallet, const std::string &task_id, const std::string& snapshot_name);
+    FResult createSnapshot(const std::string& wallet, const std::string& task_id, const std::string &snapshot_name, const ImageServer& imgsvr, const std::string& desc);
 
-    FResult listTaskSnapshot(const std::string& wallet, const std::string& task_id, std::vector<std::shared_ptr<dbc::snapshotInfo>>& snaps);
+	FResult terminateSnapshot(const std::string& wallet, const std::string& task_id, const std::string& snapshot_name);
 
-    std::shared_ptr<dbc::snapshotInfo> getTaskSnapshot(const std::string& wallet, const std::string& task_id, const std::string& snapshot_name);
-
-    std::shared_ptr<dbc::snapshotInfo> getCreatingSnapshot(const std::string& wallet, const std::string& task_id);
+    // network
+	int32_t getTaskAgentInterfaceAddress(const std::string& task_id, std::vector<std::tuple<std::string, std::string>>& address);
 
     void broadcast_message(const std::string& msg);
 
 protected:
-    bool restore_tasks();
+    FResult init_tasks_status();
 
     void start_task(const std::string &task_id);
 
@@ -113,20 +166,18 @@ protected:
     void add_iptable_to_system(const std::string& task_id);
 
     void shell_remove_iptable_from_system(const std::string& task_id, const std::string &host_ip,
-                                          const std::string &ssh_port, const std::string &vm_local_ip);
+                                          uint16_t ssh_port, const std::string &task_local_ip);
 
     void shell_add_iptable_to_system(const std::string& task_id, const std::string &host_ip,
-                                     const std::string &ssh_port, const std::string &rdp_port,
+                                     uint16_t ssh_port, uint16_t rdp_port,
                                      const std::vector<std::string>& custom_port,
-                                     const std::string &vm_local_ip, const std::string &public_ip);
+                                     const std::string &task_local_ip, const std::string &public_ip);
 
     void shell_remove_reject_iptable_from_system();
 
     void delete_task(const std::string& task_id);
 
-    void delete_disk_file(const std::string& task_id, const std::map<std::string, domainDiskInfo>& diskfiles);
-
-    FResult parse_create_params(const std::string &additional, USER_ROLE role, TaskCreateParams& params);
+    FResult parse_create_params(const std::string &additional, USER_ROLE role, CreateTaskParams& params);
 
     bool allocate_cpu(int32_t& total_cores, int32_t& sockets, int32_t& cores_per_socket, int32_t& threads);
 
@@ -136,9 +187,7 @@ protected:
 
     bool allocate_disk(uint64_t disk_size);
 
-    FResult parse_vm_xml(const std::string& xml_file_path, ParseVmXmlParams& params);
-
-    bool check_iptables_port_occupied(const std::string& port);
+    bool check_iptables_port_occupied(uint16_t port);
 
     FResult check_image(const std::string& image_name);
 
@@ -155,36 +204,40 @@ protected:
     FResult check_bios_mode(const std::string& bios_mode);
 
     FResult check_multicast(const std::vector<std::string>& multicast);
-
-    FResult parse_create_snapshot_params(const std::string &additional, const std::string &task_id, std::shared_ptr<dbc::snapshotInfo> &info);
-
+    
     void process_task_thread_func();
 
-    void add_process_task(const ETaskEvent& ev);
+    void process_task(const std::shared_ptr<TaskEvent>& ev);
 
-    void process_task(const ETaskEvent& ev);
+    void process_create_task(const std::shared_ptr<TaskEvent>& ev);
 
-    void process_create(const ETaskEvent& ev);
-
-    bool create_task_iptable(const std::string &domain_name, const std::string &ssh_port,
-                             const std::string& rdp_port, const std::vector<std::string>& custom_port,
-                             const std::string &vm_local_ip, const std::string &public_ip);
+    bool create_task_iptable(const std::string &domain_name, uint16_t ssh_port,
+                             uint16_t rdp_port, const std::vector<std::string>& custom_port,
+                             const std::string &task_local_ip, const std::string& public_ip);
 
     static void getNeededBackingImage(const std::string &image_name, std::vector<std::string> &backing_images);
 
-    void process_start(const ETaskEvent& ev);
+    void process_start_task(const std::shared_ptr<TaskEvent>& ev);
 
-    void process_stop(const ETaskEvent& ev);
+    void process_shutdown_task(const std::shared_ptr<TaskEvent>& ev);
 
-    void process_restart(const ETaskEvent& ev);
+    void process_poweroff_task(const std::shared_ptr<TaskEvent>& ev);
 
-    void process_force_reboot(const ETaskEvent& ev);
+    void process_restart_task(const std::shared_ptr<TaskEvent>& ev);
 
-    void process_reset(const ETaskEvent& ev);
+    void process_force_reboot_task(const std::shared_ptr<TaskEvent>& ev);
 
-    void process_delete(const ETaskEvent& ev);
+    void process_reset_task(const std::shared_ptr<TaskEvent>& ev);
 
-    void process_create_snapshot(const ETaskEvent& ev);
+    void process_delete_task(const std::shared_ptr<TaskEvent>& ev);
+
+    void process_resize_disk(const std::shared_ptr<TaskEvent>& ev);
+
+    void process_add_disk(const std::shared_ptr<TaskEvent>& ev);
+
+    void process_delete_disk(const std::shared_ptr<TaskEvent>& ev);
+
+    void process_create_snapshot(const std::shared_ptr<TaskEvent>& ev);
 
     void prune_task_thread_func();
 
@@ -193,7 +246,7 @@ protected:
     std::thread* m_process_thread = nullptr;
 	std::mutex m_process_mtx;
 	std::condition_variable m_process_cond;
-	std::queue<ETaskEvent> m_process_tasks; // <task_id>
+	std::queue<std::shared_ptr<TaskEvent> > m_events;
 
     std::thread* m_prune_thread = nullptr;
     std::mutex m_prune_mtx;

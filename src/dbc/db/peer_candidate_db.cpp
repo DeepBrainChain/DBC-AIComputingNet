@@ -47,7 +47,7 @@ void PeerCandidateDB::load_datas(std::map<std::string, std::shared_ptr<dbc::db_p
     }
 }
 
-std::shared_ptr<dbc::db_peer_candidate> PeerCandidateDB::read(const std::string& ip) {
+std::shared_ptr<dbc::db_peer_candidate> PeerCandidateDB::read_data(const std::string& ip) {
     if (ip.empty())
         return nullptr;
 
@@ -67,7 +67,7 @@ std::shared_ptr<dbc::db_peer_candidate> PeerCandidateDB::read(const std::string&
     }
 }
 
-bool PeerCandidateDB::write(const std::shared_ptr<dbc::db_peer_candidate>& item)
+bool PeerCandidateDB::write_data(const std::shared_ptr<dbc::db_peer_candidate>& item)
 {
     std::shared_ptr<byte_buf> b_buf = std::make_shared<byte_buf>();
     network::binary_protocol proto(b_buf.get());
@@ -81,14 +81,14 @@ bool PeerCandidateDB::write(const std::shared_ptr<dbc::db_peer_candidate>& item)
         return true;
     }
     else {
-        LOG_ERROR << "write peer_candidate failed: " 
+        LOG_ERROR << "write data failed: " 
             << "node_type=" << item->node_type << ", node_id=" << item->node_id 
             << ", addr=" << item->ip << ":" << item->port;
         return false;
     }
 }
 
-bool PeerCandidateDB::write(const std::vector<std::shared_ptr<dbc::db_peer_candidate>>& items) {
+bool PeerCandidateDB::write_datas(const std::vector<std::shared_ptr<dbc::db_peer_candidate>>& items) {
     leveldb::WriteBatch batch;
     for (auto& it : items) {
         std::shared_ptr<byte_buf> b_buf = std::make_shared<byte_buf>();
@@ -106,12 +106,12 @@ bool PeerCandidateDB::write(const std::vector<std::shared_ptr<dbc::db_peer_candi
         return true;
     }
     else {
-        LOG_ERROR << "write peer_candidate failed: batch_size=" << items.size();
+        LOG_ERROR << "write datas failed: batch_size=" << items.size();
         return false;
     }
 }
 
-bool PeerCandidateDB::write(const std::list<std::shared_ptr<dbc::db_peer_candidate>>& items) {
+bool PeerCandidateDB::write_datas(const std::list<std::shared_ptr<dbc::db_peer_candidate>>& items) {
     leveldb::WriteBatch batch;
     for (auto& it : items) {
         std::shared_ptr<byte_buf> b_buf = std::make_shared<byte_buf>();
@@ -129,12 +129,12 @@ bool PeerCandidateDB::write(const std::list<std::shared_ptr<dbc::db_peer_candida
         return true;
     }
     else {
-        LOG_ERROR << "write peer_candidate failed: batch_size=" << items.size();
+        LOG_ERROR << "write datas failed: batch_size=" << items.size();
         return false;
     }
 }
 
-bool PeerCandidateDB::del(const std::string& ip)
+bool PeerCandidateDB::delete_data(const std::string& ip)
 {
     if (ip.empty())
         return true;
@@ -146,7 +146,7 @@ bool PeerCandidateDB::del(const std::string& ip)
         return true;
     }
     else {
-        LOG_ERROR << "delete peer_candidate failed: key=" << ip;
+        LOG_ERROR << "delete data failed: key=" << ip;
         return false;
     }
 }
@@ -161,3 +161,4 @@ void PeerCandidateDB::clear() {
         m_db->Delete(write_options, it->key());
     }
 }
+

@@ -25,6 +25,7 @@ void register_signal_function() {
 int main(int argc, char* argv[]) {
     register_signal_function();
     srand((int)time(0));
+
 	int result = g_server.Init(argc, argv);
 	if (ERR_SUCCESS != result) {
 		std::cout << "server init failed: " << result;

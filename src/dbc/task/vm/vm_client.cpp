@@ -7,17 +7,18 @@
 #include <uuid/uuid.h>
 #include "message/message_id.h"
 #include "message/vm_task_result_types.h"
-#include "db/db_types/task_snapshotinfo_types.h"
 #include "util/utils.h"
 #include <libvirt/libvirt-qemu.h>
 #include "task/detail/VxlanManager.h"
+#include "task/detail/disk/TaskDiskManager.h"
+#include "task/detail/gpu/TaskGpuManager.h"
 
 static const std::string qemu_tcp_url = "qemu+tcp://localhost:16509/system";
 
 static std::string createXmlStr(const std::string& uuid, const std::string& domain_name,
                          int64_t memory, int32_t cpunum, int32_t sockets, int32_t cores, int32_t threads,
                          const std::string& vedio_pci, const std::string & disk_system,
-                         const std::vector<std::string>& disk_data, int32_t vnc_port, const std::string& vnc_pwd,
+                         const std::string& disk_data, int32_t vnc_port, const std::string& vnc_pwd,
                          const std::vector<std::string>& multicast, const std::string& bridge_name,
                          bool is_windows = false, bool uefi = false)
 {
@@ -272,30 +273,26 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
     dev_node->LinkEndChild(image_node);
 
     // disk data
-    for (int i = 0; i < disk_data.size(); i++) {
-        tinyxml2::XMLElement* disk_data_node = doc.NewElement("disk");
-        disk_data_node->SetAttribute("type", "file");
-        disk_data_node->SetAttribute("device", "disk");
+	tinyxml2::XMLElement* disk_data_node = doc.NewElement("disk");
+	disk_data_node->SetAttribute("type", "file");
+	disk_data_node->SetAttribute("device", "disk");
 
-        tinyxml2::XMLElement* disk_driver_node = doc.NewElement("driver");
-        disk_driver_node->SetAttribute("name", "qemu");
-        disk_driver_node->SetAttribute("type", "qcow2");
-        disk_data_node->LinkEndChild(disk_driver_node);
+	tinyxml2::XMLElement* disk_driver_node = doc.NewElement("driver");
+	disk_driver_node->SetAttribute("name", "qemu");
+	disk_driver_node->SetAttribute("type", "qcow2");
+	disk_data_node->LinkEndChild(disk_driver_node);
 
-        tinyxml2::XMLElement* disk_source_node = doc.NewElement("source");
-        disk_source_node->SetAttribute("file", disk_data[i].c_str());
-        disk_data_node->LinkEndChild(disk_source_node);
+	tinyxml2::XMLElement* disk_source_node = doc.NewElement("source");
+	disk_source_node->SetAttribute("file", disk_data.c_str());
+	disk_data_node->LinkEndChild(disk_source_node);
 
-        tinyxml2::XMLElement* disk_target_node = doc.NewElement("target");
-		char buf[10] = { 0 };
-		snprintf(buf, 10, "%c", 'b' + i);
-        disk_target_node->SetAttribute("dev", std::string("vd").append(buf).c_str());
-        disk_target_node->SetAttribute("bus", "virtio");
-        disk_data_node->LinkEndChild(disk_target_node);
+	tinyxml2::XMLElement* disk_target_node = doc.NewElement("target");
+	disk_target_node->SetAttribute("dev", "vdb");
+	disk_target_node->SetAttribute("bus", "virtio");
+	disk_data_node->LinkEndChild(disk_target_node);
 
-        dev_node->LinkEndChild(disk_data_node);
-    }
-
+	dev_node->LinkEndChild(disk_data_node);
+ 
     // qemu_guest_agent
     tinyxml2::XMLElement* agent_node = doc.NewElement("channel");
     agent_node->SetAttribute("type", "unix");
@@ -400,61 +397,6 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
     return printer.CStr();
 }
 
-static std::string createSnapshotXml(const std::shared_ptr<dbc::snapshotInfo>& info) {
-    tinyxml2::XMLDocument doc;
-    // <domainsnapshot>
-    tinyxml2::XMLElement *root = doc.NewElement("domainsnapshot");
-    doc.InsertEndChild(root);
-
-    // description
-    tinyxml2::XMLElement *desc = doc.NewElement("description");
-    desc->SetText(info->description.c_str());
-    root->LinkEndChild(desc);
-
-    // name
-    tinyxml2::XMLElement *name = doc.NewElement("name");
-    name->SetText(info->name.c_str());
-    root->LinkEndChild(name);
-
-    // disks
-    tinyxml2::XMLElement *disks = doc.NewElement("disks");
-    // // system disk
-    // tinyxml2::XMLElement *disk1 = doc.NewElement("disk");
-    // disk1->SetAttribute("name", "hda");
-    // disk1->SetAttribute("snapshot", "external");
-    // tinyxml2::XMLElement *disk1driver = doc.NewElement("driver");
-    // disk1driver->SetAttribute("type", "qcow2");
-    // disk1->LinkEndChild(disk1driver);
-    // disks->LinkEndChild(disk1);
-    // // data disk
-    // tinyxml2::XMLElement *disk2 = doc.NewElement("disk");
-    // disk2->SetAttribute("name", "vda");
-    // disk2->SetAttribute("snapshot", "no");
-    // disks->LinkEndChild(disk2);
-    // root->LinkEndChild(disks);
-    for (const auto& diskinfo : info->disks) {
-        tinyxml2::XMLElement *disk = doc.NewElement("disk");
-        disk->SetAttribute("name", diskinfo.name.c_str());
-        disk->SetAttribute("snapshot", diskinfo.snapshot.c_str());
-        if (diskinfo.snapshot != "no") {
-            tinyxml2::XMLElement *diskdriver = doc.NewElement("driver");
-            diskdriver->SetAttribute("type", diskinfo.driver_type.c_str());
-            disk->LinkEndChild(diskdriver);
-            if (!diskinfo.source_file.empty() && diskinfo.snapshot == "external") {
-                tinyxml2::XMLElement *sourcefile = doc.NewElement("source");
-                sourcefile->SetAttribute("file", diskinfo.source_file.c_str());
-                disk->LinkEndChild(sourcefile);
-            }
-        }
-        disks->LinkEndChild(disk);
-    }
-    root->LinkEndChild(disks);
-
-    // doc.SaveFile((info->name + ".xml").c_str());
-    tinyxml2::XMLPrinter printer;
-    doc.Print(&printer);
-    return printer.CStr();
-}
 
 static std::string createNWFilterXml(const std::string& nwfilter_name, const std::string& uuid, const std::vector<std::string>& nwfilters) {
     tinyxml2::XMLDocument doc;
@@ -593,29 +535,31 @@ void VmClient::exit() {
     }
 }
 
-int32_t VmClient::CreateDomain(const std::shared_ptr<dbc::TaskInfo>& taskinfo,
-                               const std::shared_ptr<TaskResource>& task_resource) {
+int32_t VmClient::CreateDomain(const std::shared_ptr<TaskInfo>& taskinfo) {
     if (m_connPtr == nullptr) {
-        TASK_LOG_ERROR(taskinfo->image_name, "connPtr is nullptr");
+        TASK_LOG_ERROR(taskinfo->getTaskId(), "connPtr is nullptr");
         return ERR_ERROR;
     }
 
+    std::string domain_name = taskinfo->getTaskId();
+
     // gpu
-    std::map<std::string, std::list<std::string>> mpGpu = task_resource->gpus;
+    auto gpus = TaskGpuMgr::instance().getTaskGpus(taskinfo->getTaskId());
     std::string vga_pci;
-    for (auto& it : mpGpu) {
-        for (auto& it2 : it.second) {
+    for (auto& it : gpus) {
+        auto ids = it.second->getDeviceIds();
+        for (auto& it2 : ids) {
             vga_pci += it2 + "|";
         }
     }
     LOG_INFO << "vga_pci: " << vga_pci;
 
     // cpu
-    long cpuNumTotal = task_resource->total_cores();
+    long cpuNumTotal = taskinfo->getTotalCores();
     LOG_INFO << "cpu: " << cpuNumTotal;
 
     // mem
-    uint64_t memoryTotal = task_resource->mem_size; // KB
+    int64_t memoryTotal = taskinfo->getMemSize(); // KB
     LOG_INFO << "mem: " << memoryTotal << "KB";
 
     // uuid
@@ -623,61 +567,50 @@ int32_t VmClient::CreateDomain(const std::shared_ptr<dbc::TaskInfo>& taskinfo,
     char buf_uuid[1024] = {0};
     uuid_generate(uu);
     uuid_unparse(uu, buf_uuid);
-    TASK_LOG_INFO(taskinfo->task_id, "create domain with vga_pci: " << vga_pci << ", cpu: " << cpuNumTotal
+    TASK_LOG_INFO(domain_name, "create domain with vga_pci: " << vga_pci << ", cpu: " << cpuNumTotal
         << ", mem: " << memoryTotal << "KB, uuid: " << buf_uuid);
 
+    std::map<std::string, std::shared_ptr<DiskInfo>> mpdisks;
+    TaskDiskMgr::instance().listDisks(domain_name, mpdisks);
     // 系统盘: 创建增量镜像
-    std::string from_image_file = "/data/" + taskinfo->image_name;
-    std::string image_fname = util::GetFileNameWithoutExt(from_image_file);
-    std::string image_fext = util::GetFileExt(from_image_file);
-    std::string disk_system = "/data/";
-    disk_system += "vm_" + std::to_string(rand() % 100000) + "_" + util::time2str(time(nullptr)) + "_"
-                  + taskinfo->custom_image_name + ".qcow2";
-
-    std::string cmd_back_system_image = "qemu-img create -f qcow2 -F qcow2 -b " + from_image_file + " " + disk_system;
+    std::string from_image_file = "/data/" + taskinfo->getImageName();
+    std::string cmd_back_system_image = "qemu-img create -f qcow2 -F qcow2 -b " + from_image_file + " " + mpdisks["vda"]->getSourceFile();
     std::string create_system_image_ret = run_shell(cmd_back_system_image);
-    TASK_LOG_INFO(taskinfo->task_id, "create vm, cmd: " << cmd_back_system_image << ", result: " << create_system_image_ret);
-
+    TASK_LOG_INFO(domain_name, "create vm, cmd: " << cmd_back_system_image << ", result: " << create_system_image_ret);
     // 数据盘：
-    std::string data_file = "/data/data_" + std::to_string(rand() % 100000) + "_" +
-            util::time2str(time(nullptr)) + "_" + taskinfo->custom_image_name + ".qcow2";
-    uint64_t data_size = task_resource->disks.begin()->second / 1024L / 1024L; // GB
-    TASK_LOG_INFO(taskinfo->task_id, "data_file: " << data_file << ", data_size:" << data_size << "G");
-    if (taskinfo->data_file_name.empty()) {
-        std::string cmd_create_img = "qemu-img create -f qcow2 " + data_file + " " + std::to_string(data_size) + "G";
+    auto diskinfo_vdb = mpdisks["vdb"];
+    std::string vdbfile = diskinfo_vdb->getSourceFile();
+    if (!bfs::exists(vdbfile)) {
+        int64_t disk_size = diskinfo_vdb->getVirtualSize() / 1024L / 1024L / 1024L;
+        std::string cmd_create_img = "qemu-img create -f qcow2 " + vdbfile + " " + std::to_string(disk_size) + "G";
         std::string create_ret = run_shell(cmd_create_img);
-        TASK_LOG_INFO(taskinfo->task_id, "create data: " << cmd_create_img << ", result: " << create_ret);
-    } else {
-        boost::filesystem::copy_file("/data/" + taskinfo->data_file_name, data_file);
-        TASK_LOG_INFO(taskinfo->task_id, "copy data: " << "/data/" << taskinfo->data_file_name
-            << " to: " << data_file);
+        TASK_LOG_INFO(domain_name, "create data: " << cmd_create_img << ", result: " << create_ret);
     }
-    std::vector<std::string> disk_data;
-    disk_data.push_back(data_file);
-
-    if (!taskinfo->multicast.empty()) {
-        for (const auto & mcast : taskinfo->multicast) {
-            TASK_LOG_INFO(taskinfo->task_id, "add multicast address: " << mcast);
+ 
+    if (!taskinfo->getMulticast().empty()) {
+        auto multicasts = taskinfo->getMulticast();
+        for (const auto & mcast : multicasts) {
+            TASK_LOG_INFO(domain_name, "add multicast address: " << mcast);
         }
     }
 
     std::string bridge_name;
-    if (!taskinfo->network_name.empty()) {
-        std::shared_ptr<dbc::networkInfo> networkInfo = VxlanManager::instance().GetNetwork(taskinfo->network_name);
+    if (!taskinfo->getNetworkName().empty()) {
+        std::shared_ptr<dbc::networkInfo> networkInfo = VxlanManager::instance().GetNetwork(taskinfo->getNetworkName());
         if (networkInfo) bridge_name = networkInfo->bridgeName;
     }
 
     // vnc
-    TASK_LOG_INFO(taskinfo->task_id, "vnc port: " << task_resource->vnc_port << ", password: " << task_resource->vnc_password);
+    TASK_LOG_INFO(domain_name, "vnc port: " << taskinfo->getVncPort() << ", password: " << taskinfo->getVncPassword());
 
-    std::string xml_content = createXmlStr(buf_uuid, taskinfo->task_id, memoryTotal,
-                                           cpuNumTotal, task_resource->cpu_sockets,
-                                           task_resource->cpu_cores, task_resource->cpu_threads,
-                                           vga_pci, disk_system, disk_data,
-                                           task_resource->vnc_port, task_resource->vnc_password,
-                                           taskinfo->multicast, bridge_name,
-                                           taskinfo->operation_system.find("win") != std::string::npos,
-                                           taskinfo->bios_mode == "uefi");
+    std::string xml_content = createXmlStr(buf_uuid, domain_name,
+        memoryTotal, cpuNumTotal, 
+        taskinfo->getCpuSockets(), taskinfo->getCpuCoresPerSocket(), taskinfo->getCpuThreadsPerCore(),
+        vga_pci, mpdisks["vda"]->getSourceFile(), mpdisks["vdb"]->getSourceFile(),
+        taskinfo->getVncPort(), taskinfo->getVncPassword(),
+        taskinfo->getMulticast(), bridge_name,
+        taskinfo->getOperationSystem().find("win") != std::string::npos,
+        taskinfo->getBiosMode() == "uefi");
 
     virDomainPtr domainPtr = nullptr;
     int32_t errorNum = ERR_SUCCESS;
@@ -687,7 +620,7 @@ int32_t VmClient::CreateDomain(const std::shared_ptr<dbc::TaskInfo>& taskinfo,
             errorNum = E_VIRT_DOMAIN_EXIST;
 
             virErrorPtr error = virGetLastError();
-            TASK_LOG_ERROR(taskinfo->task_id, "virDomainDefineXML error: " << (error ? error->message : ""));
+            TASK_LOG_ERROR(domain_name, "virDomainDefineXML error: " << (error ? error->message : ""));
             break;
         }
 
@@ -695,7 +628,7 @@ int32_t VmClient::CreateDomain(const std::shared_ptr<dbc::TaskInfo>& taskinfo,
             errorNum = E_VIRT_INTERNAL_ERROR;
 
             virErrorPtr error = virGetLastError();
-            TASK_LOG_ERROR(taskinfo->task_id, "virDomainCreate error: " << (error ? error->message : ""));
+            TASK_LOG_ERROR(domain_name, "virDomainCreate error: " << (error ? error->message : ""));
         }
     } while (0);
 
@@ -1003,43 +936,34 @@ int32_t VmClient::UndefineDomain(const std::string &domain_name) {
     return errorNum;
 }
 
-FResult VmClient::RedefineDomain(const std::shared_ptr<dbc::TaskInfo>& taskinfo, 
-                                 const std::shared_ptr<TaskResource>& task_resource, bool increase_disk) {
+FResult VmClient::RedefineDomain(const std::shared_ptr<TaskInfo>& taskinfo) {
 	if (m_connPtr == nullptr) {
 		return FResult(ERR_ERROR, "libvirt disconnect");
 	}
 
-	virDomainPtr domainPtr = virDomainLookupByName(m_connPtr, taskinfo->task_id.c_str());
+	virDomainPtr domainPtr = virDomainLookupByName(m_connPtr, taskinfo->getTaskId().c_str());
 	if (nullptr == domainPtr) {
-        return FResult(ERR_ERROR, "task:" + taskinfo->task_id + " not exist");
+        return FResult(ERR_ERROR, "task:" + taskinfo->getTaskId() + " not exist");
 	}
 
 	// new gpu
-	std::map<std::string, std::list<std::string>> mpGpu = task_resource->gpus;
+    auto gpus = TaskGpuMgr::instance().getTaskGpus(taskinfo->getTaskId());
 	std::string vga_pci;
-	for (auto& it : mpGpu) {
-		for (auto& it2 : it.second) {
+	for (auto& it : gpus) {
+        auto ids = it.second->getDeviceIds();
+		for (auto& it2 : ids) {
 			vga_pci += it2 + "|";
 		}
 	}
 
 	// new cpu
-	int32_t cpuNumTotal = task_resource->total_cores();
-    int32_t cpuSockets = task_resource->cpu_sockets;
-    int32_t cpuCores = task_resource->cpu_cores;
-    int32_t cpuThreads = task_resource->cpu_threads;
+	int32_t cpuNumTotal = taskinfo->getTotalCores();
+    int32_t cpuSockets = taskinfo->getCpuSockets();
+    int32_t cpuCores = taskinfo->getCpuCoresPerSocket();
+    int32_t cpuThreads = taskinfo->getCpuThreadsPerCore();
  
 	// new mem
-	uint64_t memoryTotal = task_resource->mem_size; // KB
- 
-	// new disk
-	std::string data_file = "/data/data_" + std::to_string(rand() % 100000) + "_" +
-		util::time2str(time(nullptr)) + "_" + taskinfo->custom_image_name + ".qcow2";
-    uint64_t data_size = task_resource->disks[task_resource->disks.size() - 1] / 1024L / 1024L; // GB
-    if (increase_disk) {
-        std::string cmd_create_img = "qemu-img create -f qcow2 " + data_file + " " + std::to_string(data_size) + "G";
-        run_shell(cmd_create_img);
-    }
+	int64_t memoryTotal = taskinfo->getMemSize(); // KB
 
 	char* pContent = virDomainGetXMLDesc(domainPtr, VIR_DOMAIN_XML_SECURE);
     if (pContent != nullptr) {
@@ -1047,7 +971,7 @@ FResult VmClient::RedefineDomain(const std::shared_ptr<dbc::TaskInfo>& taskinfo,
         tinyxml2::XMLError err = doc.Parse(pContent);
         if (err != tinyxml2::XML_SUCCESS) {
             virDomainFree(domainPtr);
-            return FResult(ERR_ERROR, "task:" + taskinfo->task_id + " parse domain xml failed");
+            return FResult(ERR_ERROR, "task:" + taskinfo->getTaskId() + " parse domain xml failed");
         }
         tinyxml2::XMLElement* root = doc.RootElement();
         // memory
@@ -1072,34 +996,6 @@ FResult VmClient::RedefineDomain(const std::shared_ptr<dbc::TaskInfo>& taskinfo,
             ele_topology->SetAttribute("threads", cpuThreads);
 		}
         tinyxml2::XMLElement* ele_devices = root->FirstChildElement("devices");
-        // disk
-        if (increase_disk) {
-            if (ele_devices != nullptr) {
-                tinyxml2::XMLElement* ele_disk = ele_devices->LastChildElement("disk");
-                tinyxml2::XMLElement* ele_target = ele_disk->FirstChildElement("target");
-                std::string strDev = ele_target->Attribute("dev");
-                char idx = strDev.back() + 1;
-
-                tinyxml2::XMLElement* disk_data_node = doc.NewElement("disk");
-                disk_data_node->SetAttribute("type", "file");
-                disk_data_node->SetAttribute("device", "disk");
-                tinyxml2::XMLElement* disk_driver_node = doc.NewElement("driver");
-                disk_driver_node->SetAttribute("name", "qemu");
-                disk_driver_node->SetAttribute("type", "qcow2");
-                disk_data_node->LinkEndChild(disk_driver_node);
-                tinyxml2::XMLElement* disk_source_node = doc.NewElement("source");
-                disk_source_node->SetAttribute("file", data_file.c_str());
-                disk_data_node->LinkEndChild(disk_source_node);
-                tinyxml2::XMLElement* disk_target_node = doc.NewElement("target");
-                char buf[10] = { 0 };
-                snprintf(buf, 10, "%c", idx);
-                disk_target_node->SetAttribute("dev", std::string("vd").append(buf).c_str());
-                disk_target_node->SetAttribute("bus", "virtio");
-                disk_data_node->LinkEndChild(disk_target_node);
-
-                ele_devices->InsertAfterChild(ele_disk, disk_data_node);
-            }
-        }
         // gpu
         if (ele_devices != nullptr) {
             tinyxml2::XMLElement* ele_hostdev = ele_devices->FirstChildElement("hostdev");
@@ -1595,70 +1491,6 @@ bool VmClient::IsExistDomain(const std::string &domain_name) {
     }
 }
 
-bool VmClient::ListDomainDiskInfo(const std::string& domain_name, std::map<std::string, domainDiskInfo>& disks){
-    if (m_connPtr == nullptr) {
-        LOG_ERROR << domain_name << " connPtr is nullptr";
-        return false;
-    }
-
-    bool ret = false;
-    virDomainPtr domain_ptr = nullptr;
-    char* pContent = nullptr;
-    do {
-        domain_ptr = virDomainLookupByName(m_connPtr, domain_name.c_str());
-        if (domain_ptr == nullptr) {
-            LOG_ERROR << " lookup domain:" << domain_name << " is nullptr";
-            break;
-        }
-        pContent = virDomainGetXMLDesc(domain_ptr, VIR_DOMAIN_XML_SECURE);
-        if (!pContent) {
-            LOG_ERROR << domain_name << " get domain xml desc failed";
-            break;
-        }
-        tinyxml2::XMLDocument doc;
-        tinyxml2::XMLError err = doc.Parse(pContent);
-        if (err != tinyxml2::XML_SUCCESS) {
-            LOG_ERROR << domain_name << " parse xml desc failed";
-            break;
-        }
-        tinyxml2::XMLElement* root = doc.RootElement();
-        tinyxml2::XMLElement* devices_node = root->FirstChildElement("devices");
-        if (!devices_node) {
-            LOG_ERROR << domain_name << "not find devices node";
-            break;
-        }
-        tinyxml2::XMLElement* disk_node = devices_node->FirstChildElement("disk");
-        while (disk_node) {
-            domainDiskInfo ddInfo;
-            tinyxml2::XMLElement* disk_driver_node = disk_node->FirstChildElement("driver");
-            if (disk_driver_node) {
-                ddInfo.driverName = disk_driver_node->Attribute("name");
-                ddInfo.driverType = disk_driver_node->Attribute("type");
-            }
-            tinyxml2::XMLElement* disk_source_node = disk_node->FirstChildElement("source");
-            if (disk_source_node) {
-                ddInfo.sourceFile = disk_source_node->Attribute("file");
-            }
-            tinyxml2::XMLElement* disk_target_node = disk_node->FirstChildElement("target");
-            if (disk_target_node) {
-                ddInfo.targetDev = disk_target_node->Attribute("dev");
-                ddInfo.targetBus = disk_target_node->Attribute("bus");
-            }
-            disks[ddInfo.targetDev] = ddInfo;
-            disk_node = disk_node->NextSiblingElement("disk");
-        }
-        ret = true;
-    } while(0);
-
-    if (pContent) {
-        free(pContent);
-    }
-    if (domain_ptr != nullptr) {
-        virDomainFree(domain_ptr);
-    }
-    return ret;
-}
-
 int32_t VmClient::IsDomainHasNvram(const std::string& domain_name) {
     int32_t ret = -1;
     if (m_connPtr == nullptr) {
@@ -1706,153 +1538,6 @@ int32_t VmClient::IsDomainHasNvram(const std::string& domain_name) {
     return ret;
 }
 
-FResult VmClient::CreateSnapshot(const std::string& domain_name, const std::shared_ptr<dbc::snapshotInfo>& info) {
-    int32_t ret_code = ERR_ERROR;
-    std::string ret_msg;
-    if (m_connPtr == nullptr) {
-        LOG_ERROR << domain_name << " connPtr is nullptr";
-        ret_msg = "connPtr is nullptr";
-        return {ret_code, ret_msg};
-    }
-
-    std::string snapXMLDesc = createSnapshotXml(info);
-    if (snapXMLDesc.empty()) {
-        LOG_ERROR << domain_name << " snapshot xml is empty";
-        ret_msg = "domain snapshot xml is empty";
-        return {ret_code, ret_msg};
-    }
-
-    virDomainPtr domainPtr = nullptr;
-    virDomainSnapshotPtr snapshotPtr = nullptr;
-    do {
-        domainPtr = virDomainLookupByName(m_connPtr, domain_name.c_str());
-        if (domainPtr == nullptr) {
-            LOG_ERROR << " lookup domain:" << domain_name << " is nullptr";
-            ret_msg = "lookup domain:" + domain_name + " is nullptr";
-            break;
-        }
-
-        unsigned int createFlags = VIR_DOMAIN_SNAPSHOT_CREATE_HALT | VIR_DOMAIN_SNAPSHOT_CREATE_DISK_ONLY |
-                                   VIR_DOMAIN_SNAPSHOT_CREATE_QUIESCE | VIR_DOMAIN_SNAPSHOT_CREATE_ATOMIC;
-        bool bExternal = false;
-        for (const auto& disk : info->disks) {
-            if (disk.snapshot == "external") {
-                bExternal = true;
-                break;
-            }
-        }
-        snapshotPtr = virDomainSnapshotCreateXML(domainPtr, snapXMLDesc.c_str(), bExternal ? createFlags : 0);
-        if (snapshotPtr == nullptr) {
-            virErrorPtr error = virGetLastError();
-            TASK_LOG_ERROR(domain_name, "virDomainSnapshotCreateXML error: " << (error ? error->message : ""));
-            ret_code = error ? error->code : E_VIRT_INTERNAL_ERROR;
-            ret_msg = error ? error->message : "virDomainSnapshotCreateXML error";
-            break;
-        }
-        ret_code = ERR_SUCCESS;
-    } while (0);
-
-    if (nullptr != snapshotPtr) {
-        virDomainSnapshotFree(snapshotPtr);
-    }
-    if (nullptr != domainPtr) {
-        virDomainFree(domainPtr);
-    }
-
-    return {ret_code, ret_msg};
-}
-
-std::shared_ptr<dbc::snapshotInfo> VmClient::GetDomainSnapshot(const std::string& domain_name, const std::string& snapshot_name) {
-    if (m_connPtr == nullptr) {
-        LOG_ERROR << domain_name << " connPtr is nullptr";
-        return nullptr;
-    }
-
-    virDomainPtr domain_ptr = nullptr;
-    virDomainSnapshotPtr snapshot_ptr = nullptr;
-    char* pContent = nullptr;
-    std::shared_ptr<dbc::snapshotInfo> ssInfo = nullptr;
-    do {
-        domain_ptr = virDomainLookupByName(m_connPtr, domain_name.c_str());
-        if (domain_ptr == nullptr) {
-            LOG_ERROR << " lookup domain:" << domain_name << " is nullptr";
-            break;
-        }
-
-        snapshot_ptr = virDomainSnapshotLookupByName(domain_ptr, snapshot_name.c_str(), 0);
-        if (snapshot_ptr == nullptr) {
-            LOG_ERROR << " lookup snapshot:" << snapshot_name << " is nullptr";
-            break;
-        }
-
-        pContent = virDomainSnapshotGetXMLDesc(snapshot_ptr, 0);
-        if (pContent == nullptr) {
-            LOG_ERROR << "snapshot:" << snapshot_name << " virDomainSnapshotGetXMLDesc return nullptr";
-            break;
-        }
-
-        tinyxml2::XMLDocument doc;
-        tinyxml2::XMLError err = doc.Parse(pContent);
-        if (err != tinyxml2::XML_SUCCESS) {
-            LOG_ERROR << "parse domain snapshot xml desc error: " << err << ", snap: " << snapshot_name;
-            break;
-        }
-
-        ssInfo = std::make_shared<dbc::snapshotInfo>();
-        ssInfo->__set_name(snapshot_name);
-        
-        tinyxml2::XMLElement* root = doc.RootElement();
-        tinyxml2::XMLElement *desc = root->FirstChildElement("description");
-        if (desc) {
-            ssInfo->__set_description(desc->GetText());
-        }
-        tinyxml2::XMLElement *state = root->FirstChildElement("state");
-        if (state) {
-            ssInfo->__set_state(state->GetText());
-        }
-        tinyxml2::XMLElement *creationTime = root->FirstChildElement("creationTime");
-        if (creationTime) {
-            ssInfo->__set_creationTime(atoll(creationTime->GetText()));
-        }
-        tinyxml2::XMLElement *disks = root->FirstChildElement("disks");
-        if (disks) {
-            std::vector<dbc::snapshotDiskInfo> vecDisk;
-            tinyxml2::XMLElement *disk = disks->FirstChildElement("disk");
-            while (disk) {
-                dbc::snapshotDiskInfo dsinfo;
-                dsinfo.__set_name(disk->Attribute("name"));
-                dsinfo.__set_snapshot(disk->Attribute("snapshot"));
-                tinyxml2::XMLElement *driver = disk->FirstChildElement("driver");
-                if (driver) {
-                    dsinfo.__set_driver_type(driver->Attribute("type"));
-                }
-                tinyxml2::XMLElement *source = disk->FirstChildElement("source");
-                if (source) {
-                    dsinfo.__set_source_file(source->Attribute("file"));
-                }
-                vecDisk.push_back(dsinfo);
-                disk = disk->NextSiblingElement("disk");
-            }
-            if (!vecDisk.empty()) {
-                ssInfo->__set_disks(vecDisk);
-            }
-        }
-        ssInfo->__set_error_code(0);
-        ssInfo->__set_error_message("");
-    } while(0);
-
-    if (pContent) {
-        free(pContent);
-    }
-    if (snapshot_ptr) {
-        virDomainSnapshotFree(snapshot_ptr);
-    }
-    if (domain_ptr != nullptr) {
-        virDomainFree(domain_ptr);
-    }
-    return ssInfo;
-}
-
 std::string VmClient::QemuAgentCommand(const std::string& domain_name, const std::string& cmd, int timeout, unsigned int flags) {
     std::string ret;
     if (m_connPtr == nullptr) {
@@ -1887,8 +1572,8 @@ bool VmClient::GetDomainMonitorData(const std::string& domain_name, dbcMonitor::
     }
     bool bRet = false;
 
-    std::map<std::string, domainDiskInfo> disks;
-    ListDomainDiskInfo(domain_name, disks);
+    std::map<std::string, std::shared_ptr<DiskInfo>> disks;
+    TaskDiskMgr::instance().listDisks(domain_name, disks);
     std::vector<dbc::virDomainInterface> difaces;
     GetDomainInterfaceAddress(domain_name, difaces, VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_LEASE);
 
@@ -2066,6 +1751,166 @@ bool VmClient::GetDomainMonitorData(const std::string& domain_name, dbcMonitor::
     return bRet;
 }
 
+int64_t VmClient::GetDiskVirtualSize(const std::string& domain_name, const std::string& disk_name) {
+    virDomainPtr domain_ptr = nullptr;
+    domain_ptr = virDomainLookupByName(m_connPtr, domain_name.c_str());
+    if (domain_ptr == nullptr) {
+        LOG_ERROR << " lookup domain:" << domain_name << " is nullptr";
+        return 0;
+    }
+
+    int64_t disk_size = 0;
+    virDomainBlockInfo blockinfo;
+    if (virDomainGetBlockInfo(domain_ptr, disk_name.c_str(), &blockinfo, 0) >= 0) {
+        disk_size = blockinfo.capacity;
+    }
+
+    if (domain_ptr != nullptr)
+        virDomainFree(domain_ptr);
+
+    return disk_size;
+}
+
+FResult VmClient::AttachDisk(const std::string& domain_name, const std::string& disk_name, const std::string& source_file) {
+    FResult ret = FResultOk;
+    virDomainPtr domainPtr = nullptr;
+    do {
+        domainPtr = virDomainLookupByName(m_connPtr, domain_name.c_str());
+        if (domainPtr == nullptr) {
+            ret = FResult(ERR_ERROR, "task not exist");
+            break;
+        }
+
+        char* pContent = virDomainGetXMLDesc(domainPtr, VIR_DOMAIN_XML_SECURE);
+        tinyxml2::XMLDocument doc;
+        tinyxml2::XMLError err = doc.Parse(pContent);
+        if (err != tinyxml2::XML_SUCCESS) {
+            ret = FResult(ERR_ERROR, "task parse domain xml failed");
+            break;
+        }
+        tinyxml2::XMLElement* root = doc.RootElement();
+        tinyxml2::XMLElement* ele_devices = root->FirstChildElement("devices");
+        tinyxml2::XMLElement* ele_disk = ele_devices->LastChildElement("disk");
+
+        tinyxml2::XMLElement* disk_data_node = doc.NewElement("disk");
+        disk_data_node->SetAttribute("type", "file");
+        disk_data_node->SetAttribute("device", "disk");
+        tinyxml2::XMLElement* disk_driver_node = doc.NewElement("driver");
+        disk_driver_node->SetAttribute("name", "qemu");
+        disk_driver_node->SetAttribute("type", "qcow2");
+        disk_data_node->LinkEndChild(disk_driver_node);
+        tinyxml2::XMLElement* disk_source_node = doc.NewElement("source");
+        disk_source_node->SetAttribute("file", source_file.c_str());
+        disk_data_node->LinkEndChild(disk_source_node);
+        tinyxml2::XMLElement* disk_target_node = doc.NewElement("target");
+        disk_target_node->SetAttribute("dev", disk_name.c_str());
+        disk_target_node->SetAttribute("bus", "virtio");
+        disk_data_node->LinkEndChild(disk_target_node);
+
+        ele_devices->InsertAfterChild(ele_disk, disk_data_node);
+
+        tinyxml2::XMLPrinter printer;
+        doc.Print(&printer);
+        const char* xml_content = printer.CStr();
+
+        domainPtr = virDomainDefineXML(m_connPtr, xml_content);
+        if (domainPtr == nullptr) {
+            ret = FResult(ERR_ERROR, "domain defineXML failed");
+            break;
+        }
+    } while (0);
+
+    if (domainPtr != nullptr)
+        virDomainFree(domainPtr);
+
+    return ret;
+}
+
+FResult VmClient::DetachDisk(const std::string& domain_name, const std::string& disk_name) {
+    FResult ret = FResultOk;
+    virDomainPtr domainPtr = nullptr;
+    do {
+        domainPtr = virDomainLookupByName(m_connPtr, domain_name.c_str());
+        if (domainPtr == nullptr) {
+            ret = FResult(ERR_ERROR, "task not exist");
+            break;
+        }
+
+        char* pContent = virDomainGetXMLDesc(domainPtr, VIR_DOMAIN_XML_SECURE);
+        tinyxml2::XMLDocument doc;
+        tinyxml2::XMLError err = doc.Parse(pContent);
+        if (err != tinyxml2::XML_SUCCESS) {
+            ret = FResult(ERR_ERROR, "task parse domain xml failed");
+            break;
+        }
+        tinyxml2::XMLElement* root = doc.RootElement();
+        tinyxml2::XMLElement* ele_devices = root->FirstChildElement("devices");
+        tinyxml2::XMLElement* ele_disk = ele_devices->FirstChildElement("disk");
+        while (ele_disk != nullptr) {
+            tinyxml2::XMLElement* ele_target = ele_disk->FirstChildElement("target");
+            std::string str_dev = ele_target->Attribute("dev");
+            if (str_dev == disk_name) {
+                ele_devices->DeleteChild(ele_disk);
+                break;
+            }
+            ele_disk = ele_disk->NextSiblingElement("disk");
+        }
+ 
+        tinyxml2::XMLPrinter printer;
+        doc.Print(&printer);
+        const char* xml_content = printer.CStr();
+
+        domainPtr = virDomainDefineXML(m_connPtr, xml_content);
+        if (domainPtr == nullptr) {
+            ret = FResult(ERR_ERROR, "domain defineXML failed");
+            break;
+        }
+    } while (0);
+
+    if (domainPtr != nullptr)
+        virDomainFree(domainPtr);
+
+    return ret;
+}
+
+std::string VmClient::GetDomainXML(const std::string& domain_name) {
+    if (m_connPtr == nullptr) {
+        LOG_ERROR << domain_name << " connPtr is nullptr";
+        return "";
+    }
+
+    virDomainPtr domain_ptr = nullptr;
+    char* pContent = nullptr;
+    do {
+        domain_ptr = virDomainLookupByName(m_connPtr, domain_name.c_str());
+        if (domain_ptr == nullptr) {
+            LOG_ERROR << " lookup domain:" << domain_name << " is nullptr";
+            break;
+        }
+
+        pContent = virDomainGetXMLDesc(domain_ptr, VIR_DOMAIN_XML_SECURE);
+        if (!pContent) {
+            LOG_ERROR << domain_name << " get domain xml failed";
+            break;
+        }
+    } while (0);
+
+    std::string str;
+    if (pContent != nullptr) {
+        str = pContent;
+    }
+
+    if (pContent) {
+        free(pContent);
+    }
+
+    if (domain_ptr != nullptr) {
+        virDomainFree(domain_ptr);
+    }
+
+    return std::move(str);
+}
+
 int32_t VmClient::DefineNWFilter(const std::string& nwfilter_name, const std::vector<std::string>& nwfilters) {
     int32_t ret = -1;
     if (m_connPtr == nullptr) {
@@ -2078,7 +1923,7 @@ int32_t VmClient::DefineNWFilter(const std::string& nwfilter_name, const std::ve
     do {
         nwfilter = virNWFilterLookupByName(m_connPtr, nwfilter_name.c_str());
         if (nwfilter != nullptr) {
-            char buf[VIR_UUID_STRING_BUFLEN] = {0};
+            char buf[VIR_UUID_STRING_BUFLEN] = { 0 };
             if (virNWFilterGetUUIDString(nwfilter, buf) < 0) {
                 LOG_ERROR << " get uuid of nwfilter:" << nwfilter_name << " error";
                 break;
@@ -2094,7 +1939,7 @@ int32_t VmClient::DefineNWFilter(const std::string& nwfilter_name, const std::ve
             break;
         }
         ret = ERR_SUCCESS;
-    } while(0);
+    } while (0);
 
     if (nwfilter != nullptr) {
         virNWFilterFree(nwfilter);
@@ -2121,7 +1966,7 @@ int32_t VmClient::UndefineNWFilter(const std::string& nwfilter_name) {
             LOG_ERROR << " undefine nwfilter:" << nwfilter_name << " error";
             break;
         }
-    } while(0);
+    } while (0);
 
     if (nwfilter != nullptr) {
         virNWFilterFree(nwfilter);
