@@ -51,7 +51,7 @@ struct hostMonitorData{
     unsigned long long diskTotal;                   // 数据盘大小
     unsigned long long diskFree;                    // 数据盘free大小
     float diskUsage;                                // 数据盘使用率，已经乘以100
-    std::string diskMountStatus;                    // 数据盘挂载状态, "ok" or "lost"
+    std::string diskMountStatus;                    // 数据盘挂载状态, "normal" or "lost"
     std::vector<float> loadAverage;                 // 负载平均值
     std::vector<float> packetLossRate;              // 丢包率(CU|CT|CM)
     std::string version;                            // 版本号
