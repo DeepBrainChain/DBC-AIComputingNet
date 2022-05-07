@@ -8,6 +8,7 @@
 #include "network/protocol/thrift_binary.h"
 #include "util/system_info.h"
 #include "server/server.h"
+#include "task/detail/gpu/TaskGpuManager.h"
 
 node_monitor_service::~node_monitor_service() {
 
@@ -202,23 +203,25 @@ void node_monitor_service::on_monitor_data_sender_task_timer(const std::shared_p
     hmData.gpuCount = hmData.gpuUsed = hmData.vmCount = hmData.vmRunning = 0;
     hmData.rxFlow = hmData.txFlow = 0;
 
-    auto renttasks = WalletRentTaskMgr::instance().getRentTasks();
+    auto renttasks = WalletRentTaskMgr::instance().getAllWalletRentTasks();
     for (const auto& rentlist : renttasks) {
         auto monitor_servers = m_wallet_monitors.find(rentlist.first);
         if (rentlist.first == m_cur_renter_wallet) {
-            hmData.vmCount = rentlist.second->task_ids.size();
+            hmData.vmCount = rentlist.second->getTaskIds().size();
         }
-        for (const auto& task_id : rentlist.second->task_ids) {
+
+        auto ids = rentlist.second->getTaskIds();
+        for (const auto& task_id : ids) {
             if (task_id.find("vm_check_") != std::string::npos) continue;
             auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
             if (rentlist.first == m_cur_renter_wallet) {
-                if (taskinfo && taskinfo->status == ETaskStatus::TS_Running) {
-                    std::shared_ptr<TaskResource> task_resource = TaskResourceMgr::instance().getTaskResource(task_id);
-                    hmData.gpuUsed += task_resource->gpus.size();
+                if (taskinfo && taskinfo->getTaskStatus() == TaskStatus::TS_Task_Running) {
+                    auto gpus = TaskGpuMgr::instance().getTaskGpus(task_id);
+                    hmData.gpuUsed += gpus.size();
                     hmData.vmRunning++;
                 }
             }
-            if (!taskinfo || taskinfo->status == ETaskStatus::TS_Creating) continue;
+            if (!taskinfo || taskinfo->getTaskStatus() == TaskStatus::TS_Task_Creating) continue;
 
             // get monitor data of vm
             dbcMonitor::domMonitorData dmData;
@@ -238,7 +241,8 @@ void node_monitor_service::on_monitor_data_sender_task_timer(const std::shared_p
                 m_monitor_datas[task_id] = dmData;
             }
 
-            if (rentlist.first == m_cur_renter_wallet && taskinfo && taskinfo->status == ETaskStatus::TS_Running) {
+            if (rentlist.first == m_cur_renter_wallet && taskinfo 
+                && taskinfo->getTaskStatus() == TaskStatus::TS_Task_Running) {
                 for (const auto& gpuStat : dmData.gpuStats) {
                     hmData.gpuStats[gpuStat.first] = gpuStat.second;
                 }
@@ -258,7 +262,8 @@ void node_monitor_service::on_monitor_data_sender_task_timer(const std::shared_p
             // send_monitor_data(dmData, m_dbc_monitor_server);
         }
     }
-    const std::map<std::string, std::shared_ptr<dbc::TaskInfo>> task_list = TaskInfoMgr::instance().getTasks();
+    
+    auto task_list = TaskInfoMgr::instance().getAllTaskInfos();
     for (auto iter = m_monitor_datas.begin(); iter != m_monitor_datas.end();) {
         if (task_list.find(iter->first) == task_list.end()) {
             TASK_LOG_INFO(iter->first, "task not existed, so monitor data will be deleted later");
@@ -299,11 +304,12 @@ void node_monitor_service::on_monitor_data_sender_task_timer(const std::shared_p
 
 void node_monitor_service::on_update_cur_renter_wallet_timer(const std::shared_ptr<core_timer>& timer) {
     std::string cur_renter_wallet;
-    std::vector<std::string> wallets = WalletRentTaskMgr::instance().getAllWallet();
+    auto wallets = WalletRentTaskMgr::instance().getAllWalletRentTasks();
     for (auto& it : wallets) {
-        int64_t rent_end = HttpDBCChainClient::instance().request_rent_end(ConfManager::instance().GetNodeId(), it);
+        int64_t rent_end = HttpDBCChainClient::instance().request_rent_end(
+            ConfManager::instance().GetNodeId(), it.first);
         if (rent_end > 0) {
-            cur_renter_wallet = it;
+            cur_renter_wallet = it.first;
             break;
         }
     }

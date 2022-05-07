@@ -65,10 +65,15 @@
 #define NODE_START_TASK_RSP     "node_start_task_rsp"
 #define NODE_START_TASK_TIMER   "node_start_task_timer"
 
-// stop task
-#define NODE_STOP_TASK_REQ      "node_stop_task_req"
-#define NODE_STOP_TASK_RSP      "node_stop_task_rsp"
-#define NODE_STOP_TASK_TIMER    "node_stop_task_timer"
+// shutdown task
+#define NODE_SHUTDOWN_TASK_REQ      "node_shutdown_task_req"
+#define NODE_SHUTDOWN_TASK_RSP      "node_shutdown_task_rsp"
+#define NODE_SHUTDOWN_TASK_TIMER    "node_shutdown_task_timer"
+
+// poweroff task
+#define NODE_POWEROFF_TASK_REQ      "node_poweroff_task_req"
+#define NODE_POWEROFF_TASK_RSP      "node_poweroff_task_rsp"
+#define NODE_POWEROFF_TASK_TIMER    "node_poweroff_task_timer"
 
 // restart task
 #define NODE_RESTART_TASK_REQ     "node_restart_task_req"
@@ -124,6 +129,26 @@
 #define NODE_DELETE_SNAPSHOT_REQ      "node_delete_snapshot_req"
 #define NODE_DELETE_SNAPSHOT_RSP      "node_delete_snapshot_rsp"
 #define NODE_DELETE_SNAPSHOT_TIMER    "node_delete_snapshot_timer"
+
+// list disk
+#define NODE_LIST_DISK_REQ      "node_list_disk_req"
+#define NODE_LIST_DISK_RSP      "node_list_disk_rsp"
+#define NODE_LIST_DISK_TIMER    "node_list_disk_timer"
+
+// resize disk
+#define NODE_RESIZE_DISK_REQ        "node_resize_disk_req"
+#define NODE_RESIZE_DISK_RSP        "node_resize_disk_rsp"
+#define NODE_RESIZE_DISK_TIMER      "node_resize_disk_timer"
+
+// add disk
+#define NODE_ADD_DISK_REQ      "node_add_disk_req"
+#define NODE_ADD_DISK_RSP      "node_add_disk_rsp"
+#define NODE_ADD_DISK_TIMER    "node_add_disk_timer"
+
+// delete disk
+#define NODE_DELETE_DISK_REQ      "node_delete_disk_req"
+#define NODE_DELETE_DISK_RSP      "node_delete_disk_rsp"
+#define NODE_DELETE_DISK_TIMER    "node_delete_disk_timer"
 
 // list monitor server
 #define NODE_LIST_MONITOR_SERVER_REQ      "node_list_monitor_server_req"

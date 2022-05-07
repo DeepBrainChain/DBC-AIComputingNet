@@ -57,8 +57,7 @@ FResult TaskManager::init() {
         return FResult(ERR_ERROR, "wallet_sessionid manager init failed");
     }
 
-    // 重启时恢复running_tasks
-    // 初始化task状态
+    // 重启时恢复running_tasks、初始化task状态
     fret = this->init_tasks_status();
     if (fret.errcode != ERR_SUCCESS) {
         return FResult(ERR_ERROR, "restore tasks failed");
@@ -435,10 +434,10 @@ void TaskManager::delete_task(const std::string &task_id) {
 	TaskGpuManager::instance().del(task_id);
 
 	// delete disk
-	TaskDiskMgr::instance().del_disks(task_id);
+	TaskDiskMgr::instance().delDisks(task_id);
 
 	// delete snapshot
-	TaskDiskMgr::instance().del_snapshots(task_id);
+	TaskDiskMgr::instance().delSnapshots(task_id);
 
 	// delete iptable
 	remove_iptable_from_system(task_id);
@@ -493,6 +492,19 @@ FResult TaskManager::createTask(const std::string& wallet,
         return fret;
     }
 
+	std::vector<std::string> image_files;
+	getNeededBackingImage(create_params.image_name, image_files);
+	if (!image_files.empty()) {
+		std::string str = "image backfile not exist: ";
+		for (size_t i = 0; i < image_files.size(); i++) {
+			if (i > 0)
+				str += ",";
+			str += image_files[i];
+		}
+
+        return FResult(ERR_ERROR, str);
+	}
+
     int64_t tnow = time(nullptr);
     task_id = create_params.task_id;
     dbclog::instance().add_task_log_backend(task_id);
@@ -528,7 +540,7 @@ FResult TaskManager::createTask(const std::string& wallet,
     disk_vda->setName("vda");
     disk_vda->setSourceFile(disk_vda_file);
     disk_vda->setVirtualSize(g_disk_system_size * 1024L * 1024L * 1024L);
-    TaskDiskMgr::instance().add_disk(task_id, disk_vda);
+    TaskDiskMgr::instance().addDisk(task_id, disk_vda);
 
     std::string disk_vdb_file;
 	if (create_params.data_file_name.empty()) {
@@ -541,7 +553,7 @@ FResult TaskManager::createTask(const std::string& wallet,
     disk_vdb->setName("vdb");
     disk_vdb->setSourceFile(disk_vdb_file);
     disk_vdb->setVirtualSize(create_params.disk_size * 1024L);
-    TaskDiskMgr::instance().add_disk(task_id, disk_vdb);
+    TaskDiskMgr::instance().addDisk(task_id, disk_vdb);
 
     // add gpus
     auto& gpus = create_params.gpus;
@@ -1055,7 +1067,6 @@ FResult TaskManager::check_multicast(const std::vector<std::string>& multicast) 
     return FResultOk;
 }
 
-/*
 std::shared_ptr<TaskInfo> TaskManager::findTask(const std::string& wallet, const std::string &task_id) {
     std::shared_ptr<TaskInfo> taskinfo = nullptr;
     auto renttask = WalletRentTaskMgr::instance().getWalletRentTask(wallet);
@@ -1071,7 +1082,6 @@ std::shared_ptr<TaskInfo> TaskManager::findTask(const std::string& wallet, const
 
     return taskinfo;
 }
-*/
 
 FResult TaskManager::startTask(const std::string& wallet, const std::string &task_id) {
     auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
@@ -1979,69 +1989,6 @@ void TaskManager::process_create_task(const std::shared_ptr<TaskEvent>& ev) {
     auto taskinfo = TaskInfoMgr::instance().getTaskInfo(ev->task_id);
     if (taskinfo == nullptr) return;
 
-	std::vector<std::string> image_files;
-	getNeededBackingImage(taskinfo->getImageName(), image_files);
-    if (!image_files.empty()) {
-        if (taskinfo->getTaskStatus() == TaskStatus::TS_Task_Creating) {
-            taskinfo->setTaskStatus(TaskStatus::TS_CreateTaskError);
-        }
-
-        std::string str = "image backfile not exist: ";
-        for (size_t i = 0; i < image_files.size(); i++) {
-            if (i > 0)
-                str += ",";
-            str += image_files[i];
-        }
-        TASK_LOG_ERROR(ev->task_id, str);
-        return;
-    }
-
-    /*
-    ImageServer imgsvr;
-    imgsvr.from_string(ev.image_server);
-    std::vector<std::string> images_name;
-    getNeededBackingImage(taskinfo->image_name, images_name);
-    if (!images_name.empty()) {
-        if (ev.image_server.empty()) {
-            taskinfo->status = TS_CreateError;
-            TaskInfoMgr::instance().update(taskinfo);
-            TASK_LOG_ERROR(taskinfo->task_id, "image not exist and no image_server");
-            return;
-        }
-
-        std::string _taskid = ev.task_id;
-        std::string _svr = ev.image_server;
-        ImageServer imgsvr;
-        imgsvr.from_string(_svr);
-        LOG_INFO << "need download image: " << images_name[0];
-        ImageManager::instance().Download(images_name[0], "/data/", imgsvr, [this, _taskid, _svr]() {
-            ETaskEvent ev;
-            ev.task_id = _taskid;
-            ev.op = T_OP_Create;
-            ev.image_server = _svr;
-            add_process_task(ev);
-        });
-        return;
-    } else {
-        if (ImageManager::instance().IsDownloading(taskinfo->image_name) ||
-            ImageManager::instance().IsUploading(taskinfo->image_name)) {
-            taskinfo->status = TS_CreateError;
-            TaskInfoMgr::instance().update(taskinfo);
-            TASK_LOG_ERROR(taskinfo->task_id, "image:" << taskinfo->image_name
-                            << " in downloading or uploading, please try again later");
-            return;
-        }
-    }
-
-    ERRCODE ret = VmClient::instance().DefineNWFilter(taskinfo->task_id, taskinfo->nwfilter);
-    if (ret != ERR_SUCCESS) {
-        taskinfo->status = TS_CreateError;
-        TaskInfoMgr::instance().update(taskinfo);
-        TASK_LOG_ERROR(taskinfo->task_id, "create network filter failed");
-        return;
-    }
-    */
-
 	ERRCODE ret = VmClient::instance().DefineNWFilter(ev->task_id, taskinfo->getNwfilter());
 	if (ret != ERR_SUCCESS) {
         if (taskinfo->getTaskStatus() == TaskStatus::TS_Task_Creating) {
@@ -2051,7 +1998,7 @@ void TaskManager::process_create_task(const std::shared_ptr<TaskEvent>& ev) {
 		return;
 	}
 
-    ERRCODE ret = VmClient::instance().CreateDomain(taskinfo);
+    ret = VmClient::instance().CreateDomain(taskinfo);
     if (ret != ERR_SUCCESS) {
         if (taskinfo->getTaskStatus() == TaskStatus::TS_Task_Creating) {
             taskinfo->setTaskStatus(TaskStatus::TS_CreateTaskError);
@@ -2099,16 +2046,16 @@ void TaskManager::process_create_task(const std::shared_ptr<TaskEvent>& ev) {
     }
 }
 
-bool TaskManager::create_task_iptable(const std::string& domain_name, uint16_t ssh_port,
+bool TaskManager::create_task_iptable(const std::string& task_id, uint16_t ssh_port,
 	    uint16_t rdp_port, const std::vector<std::string>& custom_port,
 	    const std::string& task_local_ip, const std::string& public_ip) {
 	std::string host_ip = SystemInfo::instance().GetDefaultRouteIp();
 	if (!host_ip.empty() && !task_local_ip.empty()) {
-		shell_add_iptable_to_system(domain_name, host_ip, ssh_port, rdp_port, custom_port, task_local_ip, public_ip);
+		shell_add_iptable_to_system(task_id, host_ip, ssh_port, rdp_port, custom_port, task_local_ip, public_ip);
 
 		std::shared_ptr<IptableInfo> iptable = std::make_shared<IptableInfo>();
-		iptable->setTaskId(domain_name);
-		iptable->setHostIP(public_ip);
+		iptable->setTaskId(task_id);
+		iptable->setHostIP(host_ip);
 		iptable->setTaskLocalIP(task_local_ip);
 		iptable->setSSHPort(ssh_port);
 		iptable->setRDPPort(rdp_port);
@@ -2116,15 +2063,17 @@ bool TaskManager::create_task_iptable(const std::string& domain_name, uint16_t s
 		iptable->setPublicIP(public_ip);
 		TaskIptableMgr::instance().add(iptable);
 
-		TASK_LOG_INFO(domain_name, "transform ssh_port successful, "
-			"public_ip:" << public_ip << " ssh_port:" << ssh_port
-			<< " rdp_port:" << rdp_port << " custom_port.size:" << custom_port.size()
-			<< " local_ip:" << task_local_ip);
+		TASK_LOG_INFO(task_id, "create iptable successful,"
+	        " host_ip:" + host_ip + " ssh_port:" + std::to_string(ssh_port) 
+            + " rdp_port:" + std::to_string(rdp_port) 
+            + " custom_port.size:" + std::to_string(custom_port.size())
+			+ " task_local_ip:" + task_local_ip
+            + " public_ip:" + public_ip);
 		return true;
 	}
 	else {
-		TASK_LOG_ERROR(domain_name, "transform ssh_port failed, public_ip or vm_local_ip is empty: " 
-            << public_ip << ":" << task_local_ip);
+		TASK_LOG_ERROR(task_id, "create iptable failed, host_ip or task_local_ip is empty: "
+            << "host_ip:" << host_ip << ", task_local_ip:" << task_local_ip);
 		return false;
 	}
 }
@@ -2139,7 +2088,7 @@ void TaskManager::getNeededBackingImage(const std::string &image_name, std::vect
             break;
         }
 
-        std::string cmd_get_backing_file = "qemu-img info " + cur_image + " | grep -i 'backing file' | awk -F ': ' '{print $2}'";
+        std::string cmd_get_backing_file = "qemu-img info " + cur_image + " | grep -i 'backing file:' | awk -F ': ' '{print $2}'";
         cur_image = run_shell(cmd_get_backing_file);
     }
 }
@@ -2178,13 +2127,13 @@ void TaskManager::process_shutdown_task(const std::shared_ptr<TaskEvent>& ev) {
         if (taskinfo->getTaskStatus() == TaskStatus::TS_Task_BeingShutdown) {
             taskinfo->setTaskStatus(TaskStatus::TS_ShutdownTaskError);
         }
-        TASK_LOG_ERROR(ev->task_id, "stop task failed");
+        TASK_LOG_ERROR(ev->task_id, "shutdown task failed");
     } else {
         if (taskinfo->getTaskStatus() == TaskStatus::TS_Task_BeingShutdown) {
             taskinfo->setTaskStatus(TaskStatus::TS_Task_Shutoff);
         }
         remove_iptable_from_system(ev->task_id);
-        TASK_LOG_INFO(ev->task_id, "stop task successful");
+        TASK_LOG_INFO(ev->task_id, "shutdown task successful");
     }
 }
 
@@ -2200,14 +2149,14 @@ void TaskManager::process_poweroff_task(const std::shared_ptr<TaskEvent>& ev) {
         if (taskinfo->getTaskStatus() == TaskStatus::TS_Task_BeingPoweroff) {
             taskinfo->setTaskStatus(TaskStatus::TS_PoweroffTaskError);
         }
-		TASK_LOG_ERROR(ev->task_id, "stop task failed");
+		TASK_LOG_ERROR(ev->task_id, "poweroff task failed");
 	}
 	else {
         if (taskinfo->getTaskStatus() == TaskStatus::TS_Task_BeingPoweroff) {
             taskinfo->setTaskStatus(TaskStatus::TS_Task_Shutoff);
         }
 		remove_iptable_from_system(ev->task_id);
-		TASK_LOG_INFO(ev->task_id, "stop task successful");
+		TASK_LOG_INFO(ev->task_id, "poweroff task successful");
 	}
 }
 

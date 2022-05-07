@@ -45,7 +45,7 @@ enum class TaskStatus {
 	TS_CreateSnapshotError      //创建并上传快照错误
 };
 
-std::string task_status_string(TaskStatus status) {
+static std::string task_status_string(TaskStatus status) {
 	std::string str_status = "none";
 
 	switch (status) {

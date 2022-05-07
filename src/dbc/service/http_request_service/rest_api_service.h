@@ -85,103 +85,6 @@ public:
     // /
     void rest_client_version(const std::shared_ptr<network::http_request>& httpReq, const std::string &path);
 
-    // /images
-    void rest_images(const std::shared_ptr<network::http_request>& httpReq, const std::string &path);
-
-	// list image servers
-	void rest_list_image_servers(const std::shared_ptr<network::http_request>& httpReq, const std::string& path);
-
-	std::shared_ptr<network::message> create_node_list_image_servers_req_msg(const std::string& head_session_id,
-		const req_body& body);
-
-    // list image
-    void rest_list_images(const std::shared_ptr<network::http_request>& httpReq, const std::string &path);
-
-    std::shared_ptr<network::message> create_node_list_images_req_msg(const std::string &head_session_id,
-                                                                           const req_body &body);
-
-    void on_node_list_images_rsp(const std::shared_ptr<network::http_request_context> &hreq_context,
-                                 const std::shared_ptr<network::message> &rsp_msg);
-
-    void on_node_list_images_timer(const std::shared_ptr<core_timer> &timer);
-
-    // download image
-    void rest_download_image(const std::shared_ptr<network::http_request>& httpReq, const std::string &path);
-
-    std::shared_ptr<network::message> create_node_download_image_req_msg(const std::string &head_session_id,
-                                                                              const req_body &body);
-
-    void on_node_download_image_rsp(const std::shared_ptr<network::http_request_context> &hreq_context,
-                                    const std::shared_ptr<network::message> &rsp_msg);
-
-    void on_node_download_image_timer(const std::shared_ptr<core_timer> &timer);
-
-    // download progress
-    void rest_download_image_progress(const std::shared_ptr<network::http_request>& httpReq, const std::string& path);
-
-    std::shared_ptr<network::message> create_node_download_image_progress_req_msg(const std::string& head_session_id,
-        const req_body& body);
-
-    void on_node_download_image_progress_rsp(const std::shared_ptr<network::http_request_context>& hreq_context,
-        const std::shared_ptr<network::message>& rsp_msg);
-
-    void on_node_download_image_progress_timer(const std::shared_ptr<core_timer>& timer);
-
-    // stop download
-    void rest_stop_download_image(const std::shared_ptr<network::http_request>& httpReq, const std::string& path);
-
-    std::shared_ptr<network::message> create_node_stop_download_image_req_msg(const std::string& head_session_id,
-        const req_body& body);
-
-    void on_node_stop_download_image_rsp(const std::shared_ptr<network::http_request_context>& hreq_context,
-        const std::shared_ptr<network::message>& rsp_msg);
-
-    void on_node_stop_download_image_timer(const std::shared_ptr<core_timer>& timer);
-
-    // upload image
-    void rest_upload_image(const std::shared_ptr<network::http_request>& httpReq, const std::string &path);
-
-    std::shared_ptr<network::message> create_node_upload_image_req_msg(const std::string &head_session_id,
-                                                                            const req_body &body);
-
-    void on_node_upload_image_rsp(const std::shared_ptr<network::http_request_context> &hreq_context,
-                                  const std::shared_ptr<network::message> &rsp_msg);
-
-    void on_node_upload_image_timer(const std::shared_ptr<core_timer> &timer);
-
-    // upload progress
-    void rest_upload_image_progress(const std::shared_ptr<network::http_request>& httpReq, const std::string& path);
-
-    std::shared_ptr<network::message> create_node_upload_image_progress_req_msg(const std::string& head_session_id,
-        const req_body& body);
-
-    void on_node_upload_image_progress_rsp(const std::shared_ptr<network::http_request_context>& hreq_context,
-        const std::shared_ptr<network::message>& rsp_msg);
-
-    void on_node_upload_image_progress_timer(const std::shared_ptr<core_timer>& timer);
-
-    // stop upload
-    void rest_stop_upload_image(const std::shared_ptr<network::http_request>& httpReq, const std::string& path);
-
-    std::shared_ptr<network::message> create_node_stop_upload_image_req_msg(const std::string& head_session_id,
-        const req_body& body);
-
-    void on_node_stop_upload_image_rsp(const std::shared_ptr<network::http_request_context>& hreq_context,
-        const std::shared_ptr<network::message>& rsp_msg);
-
-    void on_node_stop_upload_image_timer(const std::shared_ptr<core_timer>& timer);
-
-    // delete image
-    void rest_delete_image(const std::shared_ptr<network::http_request>&httpReq, const std::string & path);
-
-    std::shared_ptr<network::message> create_node_delete_image_req_msg(const std::string & head_session_id,
-        const req_body & body);
-
-    void on_node_delete_image_rsp(const std::shared_ptr<network::http_request_context> &hreq_context,
-        const std::shared_ptr<network::message> &rsp_msg);
-
-    void on_node_delete_image_timer(const std::shared_ptr<core_timer> &timer);
-
     // /tasks
     void rest_task(const std::shared_ptr<network::http_request> &httpReq, const std::string &path);
 
@@ -189,7 +92,7 @@ public:
     void rest_list_task(const std::shared_ptr<network::http_request> &httpReq, const std::string &path);
 
     std::shared_ptr<network::message> create_node_list_task_req_msg(const std::string &head_session_id,
-                                                                         const req_body &body);
+                                                                    const req_body &body);
 
     void on_node_list_task_rsp(const std::shared_ptr<network::http_request_context> &hreq_context,
                                const std::shared_ptr<network::message> &rsp_msg);
@@ -211,29 +114,40 @@ public:
     void rest_start_task(const std::shared_ptr<network::http_request> &httpReq, const std::string &path);
 
     std::shared_ptr<network::message> create_node_start_task_req_msg(const std::string &head_session_id,
-                                                                          const req_body &body);
+                                                                     const req_body &body);
 
     void on_node_start_task_rsp(const std::shared_ptr<network::http_request_context> &hreq_context,
                                 const std::shared_ptr<network::message> &rsp_msg);
 
     void on_node_start_task_timer(const std::shared_ptr<core_timer> &timer);
 
-    // stop task
-    void rest_stop_task(const std::shared_ptr<network::http_request> &httpReq, const std::string &path);
+    // shutdown task
+    void rest_shutdown_task(const std::shared_ptr<network::http_request> &httpReq, const std::string &path);
 
-    std::shared_ptr<network::message> create_node_stop_task_req_msg(const std::string &head_session_id,
-                                                                         const req_body &body);
+    std::shared_ptr<network::message> create_node_shutdown_task_req_msg(const std::string &head_session_id,
+                                                                        const req_body &body);
 
-    void on_node_stop_task_rsp(const std::shared_ptr<network::http_request_context> &hreq_context,
-                               const std::shared_ptr<network::message> &rsp_msg);
+    void on_node_shutdown_task_rsp(const std::shared_ptr<network::http_request_context> &hreq_context,
+                                   const std::shared_ptr<network::message> &rsp_msg);
 
-    void on_node_stop_task_timer(const std::shared_ptr<core_timer> &timer);
+    void on_node_shutdown_task_timer(const std::shared_ptr<core_timer> &timer);
+
+	// poweroff task
+	void rest_poweroff_task(const std::shared_ptr<network::http_request>& httpReq, const std::string& path);
+
+	std::shared_ptr<network::message> create_node_poweroff_task_req_msg(const std::string& head_session_id,
+		                                                                const req_body& body);
+
+	void on_node_poweroff_task_rsp(const std::shared_ptr<network::http_request_context>& hreq_context,
+		                           const std::shared_ptr<network::message>& rsp_msg);
+
+	void on_node_poweroff_task_timer(const std::shared_ptr<core_timer>& timer);
 
     // restart task
     void rest_restart_task(const std::shared_ptr<network::http_request> &httpReq, const std::string &path);
 
     std::shared_ptr<network::message> create_node_restart_task_req_msg(const std::string &head_session_id,
-                                                                            const req_body &body);
+                                                                       const req_body &body);
 
     void on_node_restart_task_rsp(const std::shared_ptr<network::http_request_context> &hreq_context,
                                   const std::shared_ptr<network::message> &rsp_msg);
@@ -244,7 +158,7 @@ public:
     void rest_reset_task(const std::shared_ptr<network::http_request> &httpReq, const std::string &path);
 
     std::shared_ptr<network::message> create_node_reset_task_req_msg(const std::string &head_session_id,
-                                                                          const req_body &body);
+                                                                     const req_body &body);
 
     void on_node_reset_task_rsp(const std::shared_ptr<network::http_request_context> &hreq_context,
                                 const std::shared_ptr<network::message> &rsp_msg);
@@ -255,7 +169,7 @@ public:
     void rest_delete_task(const std::shared_ptr<network::http_request> &httpReq, const std::string &path);
 
     std::shared_ptr<network::message> create_node_delete_task_req_msg(const std::string &head_session_id,
-                                                                           const req_body &body);
+                                                                      const req_body &body);
 
     void on_node_delete_task_rsp(const std::shared_ptr<network::http_request_context> &hreq_context,
                                  const std::shared_ptr<network::message> &rsp_msg);
@@ -266,7 +180,7 @@ public:
     void rest_modify_task(const std::shared_ptr<network::http_request> &httpReq, const std::string &path);
 
     std::shared_ptr<network::message> create_node_modify_task_req_msg(const std::string &head_session_id,
-                                                                           const req_body &body);
+                                                                      const req_body &body);
 
     void on_node_modify_task_rsp(const std::shared_ptr<network::http_request_context> &hreq_context,
                                  const std::shared_ptr<network::message> &rsp_msg);
@@ -277,32 +191,176 @@ public:
     void rest_task_logs(const std::shared_ptr<network::http_request> &httpReq, const std::string &path);
 
     std::shared_ptr<network::message> create_node_task_logs_req_msg(const std::string &head_session_id,
-                                                                         const req_body &body);
+                                                                    const req_body &body);
 
     void on_node_task_logs_rsp(const std::shared_ptr<network::http_request_context> &hreq_context,
                                const std::shared_ptr<network::message> &rsp_msg);
 
     void on_node_task_logs_timer(const std::shared_ptr<core_timer> &timer);
 
+	// /images
+	void rest_images(const std::shared_ptr<network::http_request>& httpReq, const std::string& path);
+
+	// list image_server
+	void rest_list_image_servers(const std::shared_ptr<network::http_request>& httpReq, const std::string& path);
+
+	std::shared_ptr<network::message> create_node_list_image_servers_req_msg(const std::string& head_session_id,
+		                                                                     const req_body& body);
+
+	// list image
+	void rest_list_images(const std::shared_ptr<network::http_request>& httpReq, const std::string& path);
+
+	std::shared_ptr<network::message> create_node_list_images_req_msg(const std::string& head_session_id,
+		                                                              const req_body& body);
+
+	void on_node_list_images_rsp(const std::shared_ptr<network::http_request_context>& hreq_context,
+		                         const std::shared_ptr<network::message>& rsp_msg);
+
+	void on_node_list_images_timer(const std::shared_ptr<core_timer>& timer);
+
+	// download image
+	void rest_download_image(const std::shared_ptr<network::http_request>& httpReq, const std::string& path);
+
+	std::shared_ptr<network::message> create_node_download_image_req_msg(const std::string& head_session_id,
+		                                                                 const req_body& body);
+
+	void on_node_download_image_rsp(const std::shared_ptr<network::http_request_context>& hreq_context,
+		                            const std::shared_ptr<network::message>& rsp_msg);
+
+	void on_node_download_image_timer(const std::shared_ptr<core_timer>& timer);
+
+	// download progress
+	void rest_download_image_progress(const std::shared_ptr<network::http_request>& httpReq, const std::string& path);
+
+	std::shared_ptr<network::message> create_node_download_image_progress_req_msg(const std::string& head_session_id,
+		                                                                          const req_body& body);
+
+	void on_node_download_image_progress_rsp(const std::shared_ptr<network::http_request_context>& hreq_context,
+		                                     const std::shared_ptr<network::message>& rsp_msg);
+
+	void on_node_download_image_progress_timer(const std::shared_ptr<core_timer>& timer);
+
+	// stop download
+	void rest_stop_download_image(const std::shared_ptr<network::http_request>& httpReq, const std::string& path);
+
+	std::shared_ptr<network::message> create_node_stop_download_image_req_msg(const std::string& head_session_id,
+		                                                                      const req_body& body);
+
+	void on_node_stop_download_image_rsp(const std::shared_ptr<network::http_request_context>& hreq_context,
+		                                 const std::shared_ptr<network::message>& rsp_msg);
+
+	void on_node_stop_download_image_timer(const std::shared_ptr<core_timer>& timer);
+
+	// upload image
+	void rest_upload_image(const std::shared_ptr<network::http_request>& httpReq, const std::string& path);
+
+	std::shared_ptr<network::message> create_node_upload_image_req_msg(const std::string& head_session_id,
+		                                                               const req_body& body);
+
+	void on_node_upload_image_rsp(const std::shared_ptr<network::http_request_context>& hreq_context,
+		                          const std::shared_ptr<network::message>& rsp_msg);
+
+	void on_node_upload_image_timer(const std::shared_ptr<core_timer>& timer);
+
+	// upload progress
+	void rest_upload_image_progress(const std::shared_ptr<network::http_request>& httpReq, const std::string& path);
+
+	std::shared_ptr<network::message> create_node_upload_image_progress_req_msg(const std::string& head_session_id,
+		                                                                        const req_body& body);
+
+	void on_node_upload_image_progress_rsp(const std::shared_ptr<network::http_request_context>& hreq_context,
+		                                   const std::shared_ptr<network::message>& rsp_msg);
+
+	void on_node_upload_image_progress_timer(const std::shared_ptr<core_timer>& timer);
+
+	// stop upload
+	void rest_stop_upload_image(const std::shared_ptr<network::http_request>& httpReq, const std::string& path);
+
+	std::shared_ptr<network::message> create_node_stop_upload_image_req_msg(const std::string& head_session_id,
+		                                                                    const req_body& body);
+
+	void on_node_stop_upload_image_rsp(const std::shared_ptr<network::http_request_context>& hreq_context,
+		                               const std::shared_ptr<network::message>& rsp_msg);
+
+	void on_node_stop_upload_image_timer(const std::shared_ptr<core_timer>& timer);
+
+	// delete image
+	void rest_delete_image(const std::shared_ptr<network::http_request>& httpReq, const std::string& path);
+
+	std::shared_ptr<network::message> create_node_delete_image_req_msg(const std::string& head_session_id,
+		                                                               const req_body& body);
+
+	void on_node_delete_image_rsp(const std::shared_ptr<network::http_request_context>& hreq_context,
+		                          const std::shared_ptr<network::message>& rsp_msg);
+
+	void on_node_delete_image_timer(const std::shared_ptr<core_timer>& timer);
+
+    // /disk
+    void rest_disk(const std::shared_ptr<network::http_request>& httpReq, const std::string& path);
+
+	// list disk
+	void rest_list_disk(const std::shared_ptr<network::http_request>& httpReq, const std::string& path);
+
+	std::shared_ptr<network::message> create_node_list_disk_req_msg(const std::string& head_session_id,
+		                                                            const req_body& body);
+
+	void on_node_list_disk_rsp(const std::shared_ptr<network::http_request_context>& hreq_context,
+		                       const std::shared_ptr<network::message>& rsp_msg);
+
+	void on_node_list_disk_timer(const std::shared_ptr<core_timer>& timer);
+
+    // resize disk
+	void rest_resize_disk(const std::shared_ptr<network::http_request>& httpReq, const std::string& path);
+
+	std::shared_ptr<network::message> create_node_resize_disk_req_msg(const std::string& head_session_id,
+		                                                              const req_body& body);
+
+	void on_node_resize_disk_rsp(const std::shared_ptr<network::http_request_context>& hreq_context,
+		                         const std::shared_ptr<network::message>& rsp_msg);
+
+	void on_node_resize_disk_timer(const std::shared_ptr<core_timer>& timer);
+
+	// add disk
+	void rest_add_disk(const std::shared_ptr<network::http_request>& httpReq, const std::string& path);
+
+	std::shared_ptr<network::message> create_node_add_disk_req_msg(const std::string& head_session_id,
+		                                                           const req_body& body);
+
+	void on_node_add_disk_rsp(const std::shared_ptr<network::http_request_context>& hreq_context,
+		                      const std::shared_ptr<network::message>& rsp_msg);
+
+	void on_node_add_disk_timer(const std::shared_ptr<core_timer>& timer);
+
+	// delete disk
+	void rest_delete_disk(const std::shared_ptr<network::http_request>& httpReq, const std::string& path);
+
+	std::shared_ptr<network::message> create_node_delete_disk_req_msg(const std::string& head_session_id,
+		                                                              const req_body& body);
+
+	void on_node_delete_disk_rsp(const std::shared_ptr<network::http_request_context>& hreq_context,
+		                         const std::shared_ptr<network::message>& rsp_msg);
+
+	void on_node_delete_disk_timer(const std::shared_ptr<core_timer>& timer);
+
     // /mining_nodes
     void rest_mining_nodes(const std::shared_ptr<network::http_request> &httpReq, const std::string &path);
 
-    // list mining node
+    // list mining_node
     void rest_list_mining_nodes(const std::shared_ptr<network::http_request> &httpReq, const std::string &path);
 
     std::shared_ptr<network::message> create_node_query_node_info_req_msg(const std::string &head_session_id,
-                                                                               const req_body &body);
+                                                                          const req_body &body);
 
     void on_node_query_node_info_rsp(const std::shared_ptr<network::http_request_context> &hreq_context,
                                      const std::shared_ptr<network::message> &rsp_msg);
 
     void on_node_query_node_info_timer(const std::shared_ptr<core_timer> &timer);
 
-    // mining node session_id
+    // session_id
     void rest_node_session_id(const std::shared_ptr<network::http_request> &httpReq, const std::string &path);
 
     std::shared_ptr<network::message> create_node_session_id_req_msg(const std::string &head_session_id,
-                                                                          const req_body &body);
+                                                                     const req_body &body);
 
     void on_node_session_id_rsp(const std::shared_ptr<network::http_request_context> &hreq_context,
                                 const std::shared_ptr<network::message> &rsp_msg);
@@ -314,22 +372,22 @@ public:
 
     void rest_get_peer_nodes(const std::shared_ptr<network::http_request> &httpReq, const std::string &path);
 
-    // /stat/
+    // /stat
     void rest_stat(const std::shared_ptr<network::http_request> &httpReq, const std::string &path);
 
-    // /config/
+    // /config
     void rest_config(const std::shared_ptr<network::http_request> &httpReq, const std::string &path);
 
     void on_binary_forward(const std::shared_ptr<network::message> &msg);
 
-    // snapshot
+    // /snapshot
     void rest_snapshot(const std::shared_ptr<network::http_request> &httpReq, const std::string &path);
 
     // list snapshot
     void rest_list_snapshot(const std::shared_ptr<network::http_request> &httpReq, const std::string &path);
 
     std::shared_ptr<network::message> create_node_list_snapshot_req_msg(const std::string &head_session_id,
-                                                                             const req_body &body);
+                                                                        const req_body &body);
 
     void on_node_list_snapshot_rsp(const std::shared_ptr<network::http_request_context> &hreq_context,
                                    const std::shared_ptr<network::message> &rsp_msg);
@@ -340,7 +398,7 @@ public:
     void rest_create_snapshot(const std::shared_ptr<network::http_request> &httpReq, const std::string &path);
 
     std::shared_ptr<network::message> create_node_create_snapshot_req_msg(const std::string &head_session_id,
-                                                                               const req_body &body);
+                                                                          const req_body &body);
 
     void on_node_create_snapshot_rsp(const std::shared_ptr<network::http_request_context> &hreq_context,
                                      const std::shared_ptr<network::message> &rsp_msg);
@@ -351,7 +409,7 @@ public:
     void rest_delete_snapshot(const std::shared_ptr<network::http_request> &httpReq, const std::string &path);
 
     std::shared_ptr<network::message> create_node_delete_snapshot_req_msg(const std::string &head_session_id,
-                                                                               const req_body &body);
+                                                                          const req_body &body);
 
     void on_node_delete_snapshot_rsp(const std::shared_ptr<network::http_request_context> &hreq_context,
                                      const std::shared_ptr<network::message> &rsp_msg);
@@ -365,10 +423,10 @@ public:
     void rest_list_monitor_server(const std::shared_ptr<network::http_request> &httpReq, const std::string &path);
 
     std::shared_ptr<network::message> create_node_list_monitor_server_req_msg(const std::string &head_session_id,
-                                                                             const req_body &body);
+                                                                              const req_body &body);
 
     void on_node_list_monitor_server_rsp(const std::shared_ptr<network::http_request_context> &hreq_context,
-                                   const std::shared_ptr<network::message> &rsp_msg);
+                                         const std::shared_ptr<network::message> &rsp_msg);
 
     void on_node_list_monitor_server_timer(const std::shared_ptr<core_timer> &timer);
 
@@ -376,10 +434,10 @@ public:
     void rest_set_monitor_server(const std::shared_ptr<network::http_request> &httpReq, const std::string &path);
 
     std::shared_ptr<network::message> create_node_set_monitor_server_req_msg(const std::string &head_session_id,
-                                                                               const req_body &body);
+                                                                             const req_body &body);
 
     void on_node_set_monitor_server_rsp(const std::shared_ptr<network::http_request_context> &hreq_context,
-                                     const std::shared_ptr<network::message> &rsp_msg);
+                                        const std::shared_ptr<network::message> &rsp_msg);
 
     void on_node_set_monitor_server_timer(const std::shared_ptr<core_timer> &timer);
 
@@ -390,10 +448,10 @@ public:
     void rest_list_lan(const std::shared_ptr<network::http_request> &httpReq, const std::string &path);
 
     std::shared_ptr<network::message> create_node_list_lan_req_msg(const std::string &head_session_id,
-                                                                             const req_body &body);
+                                                                   const req_body &body);
 
     void on_node_list_lan_rsp(const std::shared_ptr<network::http_request_context> &hreq_context,
-                                   const std::shared_ptr<network::message> &rsp_msg);
+                              const std::shared_ptr<network::message> &rsp_msg);
 
     void on_node_list_lan_timer(const std::shared_ptr<core_timer> &timer);
 
@@ -401,10 +459,10 @@ public:
     void rest_create_lan(const std::shared_ptr<network::http_request> &httpReq, const std::string &path);
 
     std::shared_ptr<network::message> create_node_create_lan_req_msg(const std::string &head_session_id,
-                                                                               const req_body &body);
+                                                                     const req_body &body);
 
     void on_node_create_lan_rsp(const std::shared_ptr<network::http_request_context> &hreq_context,
-                                     const std::shared_ptr<network::message> &rsp_msg);
+                                const std::shared_ptr<network::message> &rsp_msg);
 
     void on_node_create_lan_timer(const std::shared_ptr<core_timer> &timer);
 
@@ -412,10 +470,10 @@ public:
     void rest_delete_lan(const std::shared_ptr<network::http_request> &httpReq, const std::string &path);
 
     std::shared_ptr<network::message> create_node_delete_lan_req_msg(const std::string &head_session_id,
-                                                                               const req_body &body);
+                                                                     const req_body &body);
 
     void on_node_delete_lan_rsp(const std::shared_ptr<network::http_request_context> &hreq_context,
-                                     const std::shared_ptr<network::message> &rsp_msg);
+                                const std::shared_ptr<network::message> &rsp_msg);
 
     void on_node_delete_lan_timer(const std::shared_ptr<core_timer> &timer);
 

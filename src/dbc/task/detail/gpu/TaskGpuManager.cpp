@@ -1,4 +1,7 @@
 ﻿#include "TaskGpuManager.h"
+#include "tinyxml2.h"
+#include "task/vm/vm_client.h"
+#include "log/log.h"
 
 FResult TaskGpuManager::init(const std::vector<std::string>& task_ids) {
     for (size_t i = 0; i < task_ids.size(); i++) {
@@ -6,15 +9,15 @@ FResult TaskGpuManager::init(const std::vector<std::string>& task_ids) {
         std::string strXml = VmClient::instance().GetDomainXML(task_id);
 
         tinyxml2::XMLDocument doc;
-        tinyxml2::XMLError err = doc.Parse(strXml);
+        tinyxml2::XMLError err = doc.Parse(strXml.c_str());
         if (err != tinyxml2::XML_SUCCESS) {
-            LOG_ERROR << domain_name << " parse xml desc failed";
+            LOG_ERROR << " parse xml desc failed";
             continue;
         }
         tinyxml2::XMLElement* root = doc.RootElement();
         tinyxml2::XMLElement* ele_devices = root->FirstChildElement("devices");
         if (!ele_devices) {
-            LOG_ERROR << domain_name << "not found devices node";
+            LOG_ERROR << "not found devices node";
             continue;
         }
          
@@ -61,7 +64,7 @@ FResult TaskGpuManager::init(const std::vector<std::string>& task_ids) {
 
 void TaskGpuManager::add(const std::string& task_id, const std::shared_ptr<GpuInfo>& gpu) {
     RwMutex::WriteLock wlock(m_mtx);
-    m_task_gpus[task_id].insert(gpu->getId(), gpu);
+    m_task_gpus[task_id].insert({ gpu->getId(), gpu });
 }
 
 void TaskGpuManager::del(const std::string& task_id) {

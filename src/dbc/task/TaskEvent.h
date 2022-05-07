@@ -142,6 +142,7 @@ struct CreateAndUploadSnapshotEvent : public TaskEvent {
     std::string snapshot_file;  //快照文件
     int64_t create_time = 0;    //创建时间
     ImageServer image_server;   //上传的镜像中心
+    std::string desc;            //描述
 };
 
 #endif

@@ -8,7 +8,7 @@
 #include "socket_channel_handler/server_socket_channel_handler.h"
 #include "network/channel/tcp_socket_channel.h"
 #include "timer/timer_def.h"
-#include "db/db_types/peer_candidate_types.h"
+#include "db/db_types/db_peer_candidate_types.h"
 #include <boost/format.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
@@ -128,18 +128,18 @@ void p2p_net_service::load_peer_candidates_from_db() {
 
         variable_value val_ip(it.second->ip, false);
         if (!ip_vdr.validate(val_ip)) {
-            m_peers_candidates_db.del(it.second->ip);
+            m_peers_candidates_db.delete_data(it.second->ip);
             continue;
         }
 
         variable_value val_port(std::to_string((uint16_t)it.second->port), false);
         if (!port_vdr.validate(val_port)) {
-            m_peers_candidates_db.del(it.second->ip);
+            m_peers_candidates_db.delete_data(it.second->ip);
             continue;
         }
 
         if (it.second->node_id.empty()) {
-            m_peers_candidates_db.del(it.second->ip);
+            m_peers_candidates_db.delete_data(it.second->ip);
             continue;
         }
 
@@ -1127,7 +1127,7 @@ int32_t p2p_net_service::save_peer_candidates() {
         list_peer_candidates.push_back(db_candidate);
     }
 
-    if (!m_peers_candidates_db.write(list_peer_candidates)) {
+    if (!m_peers_candidates_db.write_datas(list_peer_candidates)) {
         LOG_ERROR << "save db_peer_candidates failed";
         return ERR_ERROR;
     }

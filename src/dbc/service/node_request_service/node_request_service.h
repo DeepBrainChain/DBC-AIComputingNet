@@ -45,42 +45,7 @@ protected:
 
     void init_invoker() override;
 
-    void on_node_list_images_req(const std::shared_ptr<network::message> &msg);
-
-    void list_images(const network::base_header& header, const std::shared_ptr<dbc::node_list_images_req_data>& data, const AuthoriseResult& result);
-
-    void on_node_download_image_req(const std::shared_ptr<network::message> &msg);
-
-    void download_image(const network::base_header& header, const std::shared_ptr<dbc::node_download_image_req_data>& data, const AuthoriseResult& result);
-
-    void on_node_download_image_progress_req(const std::shared_ptr<network::message>& msg);
-
-    void download_image_progress(const network::base_header& header, const std::shared_ptr<dbc::node_download_image_progress_req_data>& data, const AuthoriseResult& result);
-
-    void on_node_stop_download_image_req(const std::shared_ptr<network::message>& msg);
-
-    void stop_download_image(const network::base_header& header, const std::shared_ptr<dbc::node_stop_download_image_req_data>& data, const AuthoriseResult& result);
-
-    void on_node_upload_image_req(const std::shared_ptr<network::message> &msg);
-
-    void upload_image(const network::base_header& header, const std::shared_ptr<dbc::node_upload_image_req_data>& data, const AuthoriseResult& result);
-
-    void on_node_upload_image_progress_req(const std::shared_ptr<network::message>& msg);
-
-    void upload_image_progress(const network::base_header& header, const std::shared_ptr<dbc::node_upload_image_progress_req_data>& data, const AuthoriseResult& result);
-
-    void on_node_stop_upload_image_req(const std::shared_ptr<network::message>& msg);
-
-    void stop_upload_image(const network::base_header& header, const std::shared_ptr<dbc::node_stop_upload_image_req_data>& data, const AuthoriseResult& result);
-
-    void on_node_delete_image_req(const std::shared_ptr<network::message>& msg);
-
-    void delete_image(const network::base_header& header, const std::shared_ptr<dbc::node_delete_image_req_data>& data, const AuthoriseResult& result);
-
-    void on_node_query_node_info_req(const std::shared_ptr<network::message> &msg);
-
-    void query_node_info(const network::base_header& header, const std::shared_ptr<dbc::node_query_node_info_req_data>& data);
-
+    // task
     void on_node_list_task_req(const std::shared_ptr<network::message>& msg);
 
     void task_list(const network::base_header& header, const std::shared_ptr<dbc::node_list_task_req_data>& data, const AuthoriseResult& result);
@@ -97,9 +62,13 @@ protected:
 
     void task_restart(const network::base_header& header, const std::shared_ptr<dbc::node_restart_task_req_data>& data, const AuthoriseResult& result);
 
-    void on_node_stop_task_req(const std::shared_ptr<network::message>& msg);
+    void on_node_shutdown_task_req(const std::shared_ptr<network::message>& msg);
 
-    void task_stop(const network::base_header& header, const std::shared_ptr<dbc::node_stop_task_req_data>& data, const AuthoriseResult& result);
+    void task_shutdown(const network::base_header& header, const std::shared_ptr<dbc::node_shutdown_task_req_data>& data, const AuthoriseResult& result);
+
+	void on_node_poweroff_task_req(const std::shared_ptr<network::message>& msg);
+
+	void task_poweroff(const network::base_header& header, const std::shared_ptr<dbc::node_poweroff_task_req_data>& data, const AuthoriseResult& result);
 
     void on_node_reset_task_req(const std::shared_ptr<network::message>& msg);
 
@@ -117,6 +86,74 @@ protected:
 
     void task_modify(const network::base_header& header, const std::shared_ptr<dbc::node_modify_task_req_data>& data, const AuthoriseResult& result);
 
+	// images
+	void on_node_list_images_req(const std::shared_ptr<network::message>& msg);
+
+	void list_images(const network::base_header& header, const std::shared_ptr<dbc::node_list_images_req_data>& data, const AuthoriseResult& result);
+
+	void on_node_download_image_req(const std::shared_ptr<network::message>& msg);
+
+	void download_image(const network::base_header& header, const std::shared_ptr<dbc::node_download_image_req_data>& data, const AuthoriseResult& result);
+
+	void on_node_download_image_progress_req(const std::shared_ptr<network::message>& msg);
+
+	void download_image_progress(const network::base_header& header, const std::shared_ptr<dbc::node_download_image_progress_req_data>& data, const AuthoriseResult& result);
+
+	void on_node_stop_download_image_req(const std::shared_ptr<network::message>& msg);
+
+	void stop_download_image(const network::base_header& header, const std::shared_ptr<dbc::node_stop_download_image_req_data>& data, const AuthoriseResult& result);
+
+	void on_node_upload_image_req(const std::shared_ptr<network::message>& msg);
+
+	void upload_image(const network::base_header& header, const std::shared_ptr<dbc::node_upload_image_req_data>& data, const AuthoriseResult& result);
+
+	void on_node_upload_image_progress_req(const std::shared_ptr<network::message>& msg);
+
+	void upload_image_progress(const network::base_header& header, const std::shared_ptr<dbc::node_upload_image_progress_req_data>& data, const AuthoriseResult& result);
+
+	void on_node_stop_upload_image_req(const std::shared_ptr<network::message>& msg);
+
+	void stop_upload_image(const network::base_header& header, const std::shared_ptr<dbc::node_stop_upload_image_req_data>& data, const AuthoriseResult& result);
+
+	void on_node_delete_image_req(const std::shared_ptr<network::message>& msg);
+
+	void delete_image(const network::base_header& header, const std::shared_ptr<dbc::node_delete_image_req_data>& data, const AuthoriseResult& result);
+
+    // snapshot
+	void on_node_list_snapshot_req(const std::shared_ptr<network::message>& msg);
+
+	void snapshot_list(const network::base_header& header, const std::shared_ptr<dbc::node_list_snapshot_req_data>& data, const AuthoriseResult& result);
+
+	void on_node_create_snapshot_req(const std::shared_ptr<network::message>& msg);
+
+	void snapshot_create(const network::base_header& header, const std::shared_ptr<dbc::node_create_snapshot_req_data>& data, const AuthoriseResult& result);
+
+	void on_node_delete_snapshot_req(const std::shared_ptr<network::message>& msg);
+
+	void snapshot_delete(const network::base_header& header, const std::shared_ptr<dbc::node_delete_snapshot_req_data>& data, const AuthoriseResult& result);
+
+    // disk
+	void on_node_list_disk_req(const std::shared_ptr<network::message>&msg);
+
+	void do_list_disk(const network::base_header & header, const std::shared_ptr<dbc::node_list_disk_req_data>&data, const AuthoriseResult & result);
+
+	void on_node_resize_disk_req(const std::shared_ptr<network::message>&msg);
+
+	void do_resize_disk(const network::base_header & header, const std::shared_ptr<dbc::node_resize_disk_req_data>&data, const AuthoriseResult & result);
+
+	void on_node_add_disk_req(const std::shared_ptr<network::message>&msg);
+
+	void do_add_disk(const network::base_header & header, const std::shared_ptr<dbc::node_add_disk_req_data>&data, const AuthoriseResult & result);
+
+	void on_node_delete_disk_req(const std::shared_ptr<network::message>& msg);
+
+	void do_delete_disk(const network::base_header& header, const std::shared_ptr<dbc::node_delete_disk_req_data>& data, const AuthoriseResult& result);
+
+    // node
+	void on_node_query_node_info_req(const std::shared_ptr<network::message>& msg);
+
+	void query_node_info(const network::base_header& header, const std::shared_ptr<dbc::node_query_node_info_req_data>& data);
+
     void on_node_session_id_req(const std::shared_ptr<network::message>& msg);
 
     void node_session_id(const network::base_header& header, const std::shared_ptr<dbc::node_session_id_req_data>& data, const AuthoriseResult& result);
@@ -133,18 +170,7 @@ protected:
 
     std::string format_logs(const std::string& raw_logs, uint16_t max_lines);
 
-    void on_node_list_snapshot_req(const std::shared_ptr<network::message>& msg);
-
-    void snapshot_list(const network::base_header& header, const std::shared_ptr<dbc::node_list_snapshot_req_data>& data, const AuthoriseResult& result);
-
-    void on_node_create_snapshot_req(const std::shared_ptr<network::message>& msg);
-
-    void snapshot_create(const network::base_header& header, const std::shared_ptr<dbc::node_create_snapshot_req_data>& data, const AuthoriseResult& result);
-
-    void on_node_delete_snapshot_req(const std::shared_ptr<network::message>& msg);
-
-    void snapshot_delete(const network::base_header& header, const std::shared_ptr<dbc::node_delete_snapshot_req_data>& data, const AuthoriseResult& result);
-
+    // monitor
     void on_node_list_monitor_server_req(const std::shared_ptr<network::message>& msg);
 
     void monitor_server_list(const network::base_header& header, const std::shared_ptr<dbc::node_list_monitor_server_req_data>& data, const AuthoriseResult& result);
@@ -153,6 +179,7 @@ protected:
 
     void monitor_server_set(const network::base_header& header, const std::shared_ptr<dbc::node_set_monitor_server_req_data>& data, const AuthoriseResult& result);
     
+    // network
     void on_node_list_lan_req(const std::shared_ptr<network::message>& msg);
 
     void list_lan(const network::base_header& header, const std::shared_ptr<dbc::node_list_lan_req_data>& data, const AuthoriseResult& result);

@@ -516,9 +516,7 @@ VmClient::VmClient() {
 }
 
 VmClient::~VmClient() {
-    if (m_connPtr != nullptr) {
-        virConnectClose(m_connPtr);
-    }
+
 }
 
 bool VmClient::init() {

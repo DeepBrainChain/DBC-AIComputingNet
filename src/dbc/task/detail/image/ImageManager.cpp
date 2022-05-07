@@ -2,8 +2,9 @@
 #include "util/threadpool.h"
 #include "log/log.h"
 #include "config/conf_manager.h"
-#include "WalletRentTaskManager.h"
-#include "../vm/vm_client.h"
+#include "task/detail/wallet_rent_task/WalletRentTaskManager.h"
+#include "task/vm/vm_client.h"
+#include "task/detail/disk/TaskDiskManager.h"
 
 ImageManager::ImageManager() {
 
@@ -128,10 +129,10 @@ void ImageManager::listLocalBaseImages(std::vector<ImageFile>& imagefiles) {
     VmClient::instance().ListAllRunningDomains(vecRunningDomains);
     std::set<std::string> setRunningImages;
     for (int i = 0; i < vecRunningDomains.size(); i++) {
-        std::map<std::string, domainDiskInfo> mp;
-        VmClient::instance().ListDomainDisks(vecRunningDomains[i], mp);
-        for (auto& iter : mp) {
-            std::string fname = boost::filesystem::path(iter.second.sourceFile).filename().string();
+        std::map<std::string, std::shared_ptr<DiskInfo>> mpdisks;
+        TaskDiskMgr::instance().listDisks(vecRunningDomains[i], mpdisks);
+        for (auto& iter : mpdisks) {
+            std::string fname = boost::filesystem::path(iter.second->getSourceFile()).filename().string();
             setRunningImages.insert(fname);
         }
     }
@@ -164,10 +165,10 @@ void ImageManager::listLocalShareImages(const ImageServer &image_server, std::ve
     VmClient::instance().ListAllRunningDomains(vecRunningDomains);
     std::set<std::string> setRunningImages;
     for (int i = 0; i < vecRunningDomains.size(); i++) {
-        std::map<std::string, domainDiskInfo> mp;
-        VmClient::instance().ListDomainDisks(vecRunningDomains[i], mp);
-        for (auto& iter : mp) {
-            std::string fname = boost::filesystem::path(iter.second.sourceFile).filename().string();
+		std::map<std::string, std::shared_ptr<DiskInfo>> mpdisks;
+		TaskDiskMgr::instance().listDisks(vecRunningDomains[i], mpdisks); 
+        for (auto& iter : mpdisks) {
+            std::string fname = boost::filesystem::path(iter.second->getSourceFile()).filename().string();
             setRunningImages.insert(fname);
         }
     }
@@ -198,7 +199,7 @@ void ImageManager::listLocalShareImages(const ImageServer &image_server, std::ve
 
     // mix local and remote
     std::vector<ImageFile> vec_share_images;
-    ListShareImages(image_server, vec_share_images);
+    listShareImages(image_server, vec_share_images);
     for (int i = 0; i < vec_share_images.size(); i++) {
         if (set_images.count(vec_share_images[i].name) > 0) {
             imagefiles.push_back(vec_share_images[i]);
@@ -208,23 +209,23 @@ void ImageManager::listLocalShareImages(const ImageServer &image_server, std::ve
 
 void ImageManager::listWalletLocalShareImages(const std::string &wallet, const ImageServer &image_server, std::vector<ImageFile>& imagefiles) {
     std::vector<ImageFile> vec_images;
-    ImageMgr::instance().ListLocalShareImages(image_server, vec_images);
+    listLocalShareImages(image_server, vec_images);
 
     std::set<ImageFile> set_images;
-    std::shared_ptr<dbc::rent_task> rent_task = WalletRentTaskMgr::instance().getRentTask(wallet);
+    std::shared_ptr<WalletRentTask> rent_task = WalletRentTaskMgr::instance().getWalletRentTask(wallet);
     if (rent_task != nullptr) {
-        for (auto& id : rent_task->task_ids) {
+        auto ids = rent_task->getTaskIds();
+        for (auto& id : ids) {
             virDomainState status = VmClient::instance().GetDomainStatus(id);
             if (status != VIR_DOMAIN_RUNNING) {
-                std::map<std::string, domainDiskInfo> mp;
-                VmClient::instance().ListDomainDisks(id, mp);
-
-                for (auto &iter: mp) {
-                    std::string fname = util::GetFileNameFromPath(iter.second.sourceFile);
+				std::map<std::string, std::shared_ptr<DiskInfo>> mpdisks;
+				TaskDiskMgr::instance().listDisks(id, mpdisks);
+                for (auto &iter: mpdisks) {
+                    std::string fname = util::GetFileNameFromPath(iter.second->getSourceFile());
                     if (iter.first == "vda") {
                         ImageFile image_file;
                         image_file.name = fname;
-                        image_file.size = bfs::file_size(iter.second.sourceFile);
+                        image_file.size = bfs::file_size(iter.second->getSourceFile());
 
                         set_images.insert(image_file);
                     }

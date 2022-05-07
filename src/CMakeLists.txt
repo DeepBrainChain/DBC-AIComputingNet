@@ -60,13 +60,13 @@ set(service_src_dir
         dbc/task/vm
         dbc/task/docker
         dbc/task/detail
-        dbc/task/detal/disk
-        dbc/task/detal/gpu
-        dbc/task/detal/image
-        dbc/task/detal/info
-        dbc/task/detal/iptable
-        dbc/task/detal/wallet_rent_task
-        dbc/task/detal/wallet_session_id
+        dbc/task/detail/disk
+        dbc/task/detail/gpu
+        dbc/task/detail/image
+        dbc/task/detail/info
+        dbc/task/detail/iptable
+        dbc/task/detail/wallet_rent_task
+        dbc/task/detail/wallet_session_id
         dbc/task
         dbc/service_info
         dbc/service/http_request_service

@@ -1,5 +1,7 @@
 ﻿#include "TaskInfoManager.h"
 #include "log/log.h"
+#include "task/vm/vm_client.h"
+#include "tinyxml2.h"
 
 FResult TaskInfoManager::init() {
     bool ret = m_db.init_db(EnvManager::instance().get_db_path(), "task.db");
@@ -18,12 +20,12 @@ FResult TaskInfoManager::init() {
         std::string strXml = VmClient::instance().GetDomainXML(task_id);
 
         tinyxml2::XMLDocument doc;
-        tinyxml2::XMLError err = doc.Parse(strXml);
+        tinyxml2::XMLError err = doc.Parse(strXml.c_str());
         if (err != tinyxml2::XML_SUCCESS) {
-            LOG_ERROR << domain_name << " parse xml desc failed";
+            LOG_ERROR << " parse xml desc failed";
             continue;
         }
-        tinyxml2::XMLElement* root = doc.RootElement();3
+        tinyxml2::XMLElement* root = doc.RootElement();
         // cpu
         tinyxml2::XMLElement* ele_cpu = root->FirstChildElement("cpu");
         if (ele_cpu != nullptr) {
@@ -41,6 +43,7 @@ FResult TaskInfoManager::init() {
             taskinfo->setMemSize(atol(str_memory));
         }
         // vnc
+        tinyxml2::XMLElement* ele_devices = root->FirstChildElement("devices");
         tinyxml2::XMLElement* ele_graphics = ele_devices->FirstChildElement("graphics");
         while (ele_graphics != nullptr) {
             std::string graphics_type = ele_graphics->Attribute("type");
@@ -58,7 +61,7 @@ FResult TaskInfoManager::init() {
     }
 
 	// init running tasks
-	bool ret = m_running_db.init_db(EnvManager::instance().get_db_path(), "runningtasks.db");
+	ret = m_running_db.init_db(EnvManager::instance().get_db_path(), "runningtasks.db");
 	if (!ret) {
 		return FResult(ERR_ERROR, "init running tasks db failed");
 	}

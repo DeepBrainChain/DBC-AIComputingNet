@@ -4,8 +4,8 @@
 #include "util/utils.h"
 #include <leveldb/db.h>
 #include "service_module/service_module.h"
-#include "task/detail/TaskInfoManager.h"
-#include "task/detail/WalletRentTaskManager.h"
+#include "task/detail/info/TaskInfoManager.h"
+#include "task/detail/wallet_rent_task/WalletRentTaskManager.h"
 #include "task/detail/TaskMonitorInfo.h"
 #include "task/HttpDBCChainClient.h"
 #include "hostMonitorInfo.h"

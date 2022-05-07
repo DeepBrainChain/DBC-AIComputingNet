@@ -18,6 +18,7 @@
 #include "task/detail/VxlanManager.h"
 #include "util/system_info.h"
 #include "task/HttpDBCChainClient.h"
+#include "task/detail/image/ImageManager.h"
 
 static std::unique_ptr<ECCVerifyHandle> g_ecc_verify_handle;
 static std::unique_ptr<std::recursive_mutex[]> g_ssl_lock;
@@ -86,7 +87,7 @@ ERRCODE Server::Init(int argc, char *argv[]) {
 
 	// ImageManager
 	LOG_INFO << "begin to start ImageManager";
-	ImageManager::instance().Init();
+	ImageManager::instance().init();
 	LOG_INFO << "start ImageManager success";
 
     // timer_matrix_manager
@@ -293,7 +294,7 @@ void Server::Idle() {
 void Server::Exit() {
     LOG_INFO << "server begin exited ...";
 
-    ImageManager::instance().Exit();
+    ImageManager::instance().exit();
     LOG_INFO << "ImageManager exited";
     sleep(3);
 

@@ -109,7 +109,7 @@ public:
 
     void listRunningTask(const std::string& wallet, std::vector<std::shared_ptr<TaskInfo>> &vec);
 
-	//std::shared_ptr<TaskInfo> findTask(const std::string& wallet, const std::string& task_id);
+	std::shared_ptr<TaskInfo> findTask(const std::string& wallet, const std::string& task_id);
 
     int32_t getRunningTasksSize(const std::string& wallet);
 

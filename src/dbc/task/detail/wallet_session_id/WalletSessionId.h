@@ -7,7 +7,7 @@
 
 class WalletSessionId {
 public:
-	friend class WalletRentTaskManager;
+	friend class WalletSessionIDManager;
 
 	WalletSessionId() {
 		m_db_info = std::make_shared<dbc::db_wallet_sessionid>();
