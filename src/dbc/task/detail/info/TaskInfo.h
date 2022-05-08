@@ -258,6 +258,16 @@ public:
 		m_db_info->__set_desc(desc);
 	}
 
+    std::string getVdaRootBackfile() const {
+        RwMutex::ReadLock rlock(m_mtx);
+        return m_db_info->vda_rootbackfile;
+    }
+
+    void setVdaRootBackfile(const std::string& file) {
+        RwMutex::WriteLock wlock(m_mtx);
+        m_db_info->__set_vda_rootbackfile(file);
+    }
+
     std::string getNetworkName() const {
         RwMutex::ReadLock rlock(m_mtx);
         return m_db_info->network_name;

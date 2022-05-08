@@ -675,7 +675,7 @@ void node_request_service::task_list(const network::base_header& header,
             memset(buf, 0, sizeof(char) * 256);
             strftime(buf, sizeof(char) * 256, "%Y-%m-%d %H:%M:%S", &_tm);
             ss_tasks << ", \"create_time\":" << "\"" << buf << "\"";
-
+            ss_tasks << ", \"desc\":" << "\"" << taskinfo->getDesc() << "\"";
             ss_tasks << ", \"status\":" << "\"" 
                 << task_status_string(m_task_scheduler.queryTaskStatus(taskinfo->getTaskId())) << "\"";
             ss_tasks << "}";
@@ -726,7 +726,7 @@ void node_request_service::task_list(const network::base_header& header,
             memset(buf, 0, sizeof(char) * 256);
             strftime(buf, sizeof(char) * 256, "%Y-%m-%d %H:%M:%S", &_tm);
             ss_tasks << ", \"create_time\":" << "\"" << buf << "\"";
-
+            ss_tasks << ", \"desc\":" << "\"" << taskinfo->getDesc() << "\"";
             ss_tasks << ", \"status\":" << "\"" 
                 << task_status_string(m_task_scheduler.queryTaskStatus(taskinfo->getTaskId())) << "\"";
 
@@ -925,6 +925,7 @@ void node_request_service::task_create(const network::base_header& header,
         memset(buf, 0, sizeof(char) * 256);
         strftime(buf, sizeof(char) * 256, "%Y-%m-%d %H:%M:%S", &_tm);
         ss << ", \"create_time\":" << "\"" << buf << "\"";
+        ss << ", \"desc\":" << "\"" << taskinfo->getDesc() << "\"";
         ss << ", \"status\":" << "\"" << "creating" << "\"";
         ss << "}";
         ss << "}";

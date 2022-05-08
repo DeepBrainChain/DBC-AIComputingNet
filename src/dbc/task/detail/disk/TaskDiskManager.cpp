@@ -44,23 +44,6 @@ FResult TaskDiskManager::init(const std::vector<std::string>& task_ids) {
         }
     }
 
-    for (auto& iter : m_task_disks) {
-        if (!iter.second.empty() && !iter.second.empty()) {
-            std::string source_file = iter.second.crbegin()->second->getSourceFile();
-            std::string cmd = "qemu-img info " + source_file + " | grep -i 'backing file:' | awk -F ': ' '{print $2}'";
-            std::string back_file = run_shell(cmd);
-            std::string base_backfile = source_file;
-            while (!back_file.empty()) {
-                base_backfile = back_file;
-
-                cmd = "qemu-img info " + back_file + " | grep -i 'backing file:' | awk -F ': ' '{print $2}'";
-                back_file = run_shell(cmd);
-            }
-            
-            m_vda_root_backfile[iter.first] = base_backfile;
-        }
-    }
-
     // snapshot
 	bool ret = m_snapshot_db.init_db(EnvManager::instance().get_db_path(), "snapshot.db");
 	if (!ret) {
@@ -103,16 +86,6 @@ void TaskDiskManager::delDisks(const std::string& task_id) {
 void TaskDiskManager::addDisk(const std::string& task_id, const std::shared_ptr<DiskInfo>& diskinfo) {
     RwMutex::WriteLock wlock(m_disk_mtx);
     m_task_disks[task_id].insert({ diskinfo->getName(), diskinfo});
-	std::string cmd = "qemu-img info " + diskinfo->getSourceFile() + " | grep -i 'backing file:' | awk -F ': ' '{print $2}'";
-	std::string back_file = run_shell(cmd);
-	std::string root_backfile = diskinfo->getSourceFile();
-	while (!back_file.empty()) {
-		root_backfile = back_file;
-
-		cmd = "qemu-img info " + back_file + " | grep -i 'backing file:' | awk -F ': ' '{print $2}'";
-		back_file = run_shell(cmd);
-	}
-	m_vda_root_backfile[task_id] = root_backfile;
 }
 
 void TaskDiskManager::listDisks(const std::string& task_id, std::map<std::string, std::shared_ptr<DiskInfo> >& disks) {
@@ -283,11 +256,11 @@ FResult TaskDiskManager::createAndUploadSnapshot(const std::string& task_id, con
                 return FResult(ERR_ERROR, "please close task first and try again");
             }
 
-            auto iter_backfile = m_vda_root_backfile.find(task_id);
-            if (iter_backfile == m_vda_root_backfile.end() || iter_backfile->second.empty()) {
+            auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
+            if (taskinfo == nullptr || taskinfo->getVdaRootBackfile().empty()) {
                 return FResult(ERR_ERROR, "not found vda's root backfile");
             }
-
+            
             auto diskinfo = iter_disk->second;
 			time_t tnow = time(nullptr);
 			std::string snapshot_file = "/tmp/dbc_snapshots/snap_" + std::to_string(rand() % 100000) + "_" + util::time2str(tnow) +
@@ -314,7 +287,7 @@ FResult TaskDiskManager::createAndUploadSnapshot(const std::string& task_id, con
             
             std::shared_ptr<CreateAndUploadSnapshotEvent> ev = std::make_shared<CreateAndUploadSnapshotEvent>(task_id);
             ev->snapshot_name = snapshot_name;
-            ev->root_backfile = iter_backfile->second;
+            ev->root_backfile = taskinfo->getVdaRootBackfile();
             ev->source_file = diskinfo->getSourceFile();
             ev->snapshot_file = snapshot_file;
             ev->create_time = tnow;

@@ -17,7 +17,7 @@ namespace dbc {
 	class db_task_info;
 
 	typedef struct _db_task_info__isset {
-		_db_task_info__isset() : image_name(false), login_password(false), ssh_port(false), create_time(false), operation_system(false), bios_mode(false), rdp_port(false), custom_port(false), multicast(false), desc(false), network_name(false), public_ip(false), nwfilter(false) {}
+		_db_task_info__isset() : image_name(false), login_password(false), ssh_port(false), create_time(false), operation_system(false), bios_mode(false), rdp_port(false), custom_port(false), multicast(false), desc(false), vda_rootbackfile(false), network_name(false), public_ip(false), nwfilter(false) {}
 		bool image_name : 1;
 		bool login_password : 1;
 		bool ssh_port : 1;
@@ -28,6 +28,7 @@ namespace dbc {
 		bool custom_port : 1;
 		bool multicast : 1;
 		bool desc : 1;
+		bool vda_rootbackfile : 1;
 		bool network_name : 1;
 		bool public_ip : 1;
 		bool nwfilter : 1;
@@ -38,7 +39,7 @@ namespace dbc {
 
 		db_task_info(const db_task_info&);
 		db_task_info& operator=(const db_task_info&);
-		db_task_info() : task_id(), image_name(), login_password(), ssh_port(), create_time(0), operation_system(), bios_mode(), rdp_port(), desc(), network_name(), public_ip() {
+		db_task_info() : task_id(), image_name(), login_password(), ssh_port(), create_time(0), operation_system(), bios_mode(), rdp_port(), desc(), vda_rootbackfile(), network_name(), public_ip() {
 		}
 
 		virtual ~db_task_info() throw();
@@ -53,6 +54,7 @@ namespace dbc {
 		std::vector<std::string>  custom_port;
 		std::vector<std::string>  multicast;
 		std::string desc;
+		std::string vda_rootbackfile;
 		std::string network_name;
 		std::string public_ip;
 		std::vector<std::string>  nwfilter;
@@ -80,6 +82,8 @@ namespace dbc {
 		void __set_multicast(const std::vector<std::string>& val);
 
 		void __set_desc(const std::string& val);
+
+		void __set_vda_rootbackfile(const std::string& val);
 
 		void __set_network_name(const std::string& val);
 
@@ -130,6 +134,10 @@ namespace dbc {
 			if (__isset.desc != rhs.__isset.desc)
 				return false;
 			else if (__isset.desc && !(desc == rhs.desc))
+				return false;
+			if (__isset.vda_rootbackfile != rhs.__isset.vda_rootbackfile)
+				return false;
+			else if (__isset.vda_rootbackfile && !(vda_rootbackfile == rhs.vda_rootbackfile))
 				return false;
 			if (__isset.network_name != rhs.__isset.network_name)
 				return false;

@@ -69,6 +69,11 @@ namespace dbc {
 		__isset.desc = true;
 	}
 
+	void db_task_info::__set_vda_rootbackfile(const std::string& val) {
+		this->vda_rootbackfile = val;
+		__isset.vda_rootbackfile = true;
+	}
+
 	void db_task_info::__set_network_name(const std::string& val) {
 		this->network_name = val;
 		__isset.network_name = true;
@@ -235,6 +240,15 @@ namespace dbc {
 					xfer += iprot->skip(ftype);
 				}
 				break;
+			case 22:
+				if (ftype == ::apache::thrift::protocol::T_STRING) {
+					xfer += iprot->readString(this->vda_rootbackfile);
+					this->__isset.vda_rootbackfile = true;
+				}
+				else {
+					xfer += iprot->skip(ftype);
+				}
+				break;
 			case 24:
 				if (ftype == ::apache::thrift::protocol::T_STRING) {
 					xfer += iprot->readString(this->network_name);
@@ -363,6 +377,11 @@ namespace dbc {
 			xfer += oprot->writeString(this->desc);
 			xfer += oprot->writeFieldEnd();
 		}
+		if (this->__isset.vda_rootbackfile) {
+			xfer += oprot->writeFieldBegin("vda_rootbackfile", ::apache::thrift::protocol::T_STRING, 22);
+			xfer += oprot->writeString(this->vda_rootbackfile);
+			xfer += oprot->writeFieldEnd();
+		}
 		if (this->__isset.network_name) {
 			xfer += oprot->writeFieldBegin("network_name", ::apache::thrift::protocol::T_STRING, 24);
 			xfer += oprot->writeString(this->network_name);
@@ -404,6 +423,7 @@ namespace dbc {
 		swap(a.custom_port, b.custom_port);
 		swap(a.multicast, b.multicast);
 		swap(a.desc, b.desc);
+		swap(a.vda_rootbackfile, b.vda_rootbackfile);
 		swap(a.network_name, b.network_name);
 		swap(a.public_ip, b.public_ip);
 		swap(a.nwfilter, b.nwfilter);
@@ -422,6 +442,7 @@ namespace dbc {
 		custom_port = other18.custom_port;
 		multicast = other18.multicast;
 		desc = other18.desc;
+		vda_rootbackfile = other18.vda_rootbackfile;
 		network_name = other18.network_name;
 		public_ip = other18.public_ip;
 		nwfilter = other18.nwfilter;
@@ -439,6 +460,7 @@ namespace dbc {
 		custom_port = other19.custom_port;
 		multicast = other19.multicast;
 		desc = other19.desc;
+		vda_rootbackfile = other19.vda_rootbackfile;
 		network_name = other19.network_name;
 		public_ip = other19.public_ip;
 		nwfilter = other19.nwfilter;
@@ -459,6 +481,7 @@ namespace dbc {
 		out << ", " << "custom_port="; (__isset.custom_port ? (out << to_string(custom_port)) : (out << "<null>"));
 		out << ", " << "multicast="; (__isset.multicast ? (out << to_string(multicast)) : (out << "<null>"));
 		out << ", " << "desc="; (__isset.desc ? (out << to_string(desc)) : (out << "<null>"));
+		out << ", " << "vda_rootbackfile="; (__isset.vda_rootbackfile ? (out << to_string(vda_rootbackfile)) : (out << "<null>"));
 		out << ", " << "network_name="; (__isset.network_name ? (out << to_string(network_name)) : (out << "<null>"));
 		out << ", " << "public_ip="; (__isset.public_ip ? (out << to_string(public_ip)) : (out << "<null>"));
 		out << ", " << "nwfilter="; (__isset.nwfilter ? (out << to_string(nwfilter)) : (out << "<null>"));

@@ -132,6 +132,30 @@ void TaskManager::broadcast_message(const std::string& msg) {
 }
 
 FResult TaskManager::init_tasks_status() {
+    // vda root backfile
+    do {
+        auto taskinfos = TaskInfoMgr::instance().getAllTaskInfos();
+        for (auto& iter : taskinfos) {
+            virDomainState st = VmClient::instance().GetDomainStatus(iter.first);
+            if (st == VIR_DOMAIN_SHUTOFF) {
+                if (iter.second->getVdaRootBackfile().empty()) {
+                    std::string vda_backfile = "/data/" + iter.second->getImageName();
+                    std::string cmd = "qemu-img info " + vda_backfile + " | grep -i 'backing file:' | awk -F ': ' '{print $2}'";
+                    std::string back_file = run_shell(cmd);
+                    std::string root_backfile = vda_backfile;
+                    while (!back_file.empty()) {
+                        root_backfile = back_file;
+
+                        cmd = "qemu-img info " + back_file + " | grep -i 'backing file:' | awk -F ': ' '{print $2}'";
+                        back_file = run_shell(cmd);
+                    }
+                    iter.second->setVdaRootBackfile(root_backfile);
+                    TaskInfoMgr::instance().update(iter.second);
+                }
+            }
+        }
+    } while (0);
+
     // restore tasks
     auto running_tasks = TaskInfoMgr::instance().getRunningTasks();
     for (auto& task_id : running_tasks) {
@@ -532,6 +556,18 @@ FResult TaskManager::createTask(const std::string& wallet,
     taskinfo->setVncPort(create_params.vnc_port);
     taskinfo->setVncPassword(create_params.vnc_password);
     taskinfo->setTaskStatus(TaskStatus::TS_Task_Creating);
+	// vda root backfile
+	std::string vda_backfile = "/data/" + create_params.image_name;
+	std::string cmd = "qemu-img info " + vda_backfile + " | grep -i 'backing file:' | awk -F ': ' '{print $2}'";
+	std::string back_file = run_shell(cmd);
+	std::string root_backfile = vda_backfile;
+	while (!back_file.empty()) {
+		root_backfile = back_file;
+
+		cmd = "qemu-img info " + back_file + " | grep -i 'backing file:' | awk -F ': ' '{print $2}'";
+		back_file = run_shell(cmd);
+	}
+    taskinfo->setVdaRootBackfile(root_backfile);
     TaskInfoMgr::instance().add(taskinfo);
 
     // add disks
@@ -2134,6 +2170,24 @@ void TaskManager::process_shutdown_task(const std::shared_ptr<TaskEvent>& ev) {
         }
         remove_iptable_from_system(ev->task_id);
         TASK_LOG_INFO(ev->task_id, "shutdown task successful");
+
+		// vda root backfile
+		do {
+            if (taskinfo->getVdaRootBackfile().empty()) {
+                std::string vda_backfile = "/data/" + taskinfo->getImageName();
+                std::string cmd = "qemu-img info " + vda_backfile + " | grep -i 'backing file:' | awk -F ': ' '{print $2}'";
+                std::string back_file = run_shell(cmd);
+                std::string root_backfile = vda_backfile;
+                while (!back_file.empty()) {
+                    root_backfile = back_file;
+
+                    cmd = "qemu-img info " + back_file + " | grep -i 'backing file:' | awk -F ': ' '{print $2}'";
+                    back_file = run_shell(cmd);
+                }
+                taskinfo->setVdaRootBackfile(root_backfile);
+                TaskInfoMgr::instance().update(taskinfo);
+            }
+		} while (0);
     }
 }
 
@@ -2157,6 +2211,24 @@ void TaskManager::process_poweroff_task(const std::shared_ptr<TaskEvent>& ev) {
         }
 		remove_iptable_from_system(ev->task_id);
 		TASK_LOG_INFO(ev->task_id, "poweroff task successful");
+
+		// vda root backfile
+		do {
+            if (taskinfo->getVdaRootBackfile().empty()) {
+                std::string vda_backfile = "/data/" + taskinfo->getImageName();
+                std::string cmd = "qemu-img info " + vda_backfile + " | grep -i 'backing file:' | awk -F ': ' '{print $2}'";
+                std::string back_file = run_shell(cmd);
+                std::string root_backfile = vda_backfile;
+                while (!back_file.empty()) {
+                    root_backfile = back_file;
+
+                    cmd = "qemu-img info " + back_file + " | grep -i 'backing file:' | awk -F ': ' '{print $2}'";
+                    back_file = run_shell(cmd);
+                }
+                taskinfo->setVdaRootBackfile(root_backfile);
+                TaskInfoMgr::instance().update(taskinfo);
+            }
+		} while (0);
 	}
 }
 

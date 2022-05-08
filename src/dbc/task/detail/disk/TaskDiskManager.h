@@ -66,7 +66,6 @@ protected:
 private:
     mutable RwMutex m_disk_mtx;
     std::map<std::string, std::map<std::string, std::shared_ptr<DiskInfo> > > m_task_disks;
-    std::map<std::string, std::string> m_vda_root_backfile;
 
     mutable RwMutex m_snapshot_mtx;
     TaskSnapshotDB m_snapshot_db;
