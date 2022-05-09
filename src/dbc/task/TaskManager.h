@@ -21,42 +21,42 @@ namespace bp = boost::process;
 
 struct CreateTaskParams {
     std::string task_id;
-	// ÃèÊö
+	// ï¿½ï¿½ï¿½ï¿½
 	std::string desc;
-	// µÇÂ¼ÃÜÂë
+	// ï¿½ï¿½Â¼ï¿½ï¿½ï¿½ï¿½
 	std::string login_password;
-	// ¾µÏñÃû×Ö (ubuntu.qcow2 ...)
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ (ubuntu.qcow2 ...)
 	std::string image_name;
-	// sshÁ¬½Ó¶Ë¿Ú£¨linux£©
+	// sshï¿½ï¿½ï¿½Ó¶Ë¿Ú£ï¿½linuxï¿½ï¿½
 	uint16_t ssh_port;
-	// rdpÁ¬½Ó¶Ë¿Ú£¨windows£©
+	// rdpï¿½ï¿½ï¿½Ó¶Ë¿Ú£ï¿½windowsï¿½ï¿½
 	uint16_t rdp_port;
-	// ×Ô¶¨Òå¶Ë¿ÚÓ³Éä
+	// ï¿½Ô¶ï¿½ï¿½ï¿½Ë¿ï¿½Ó³ï¿½ï¿½
 	std::vector<std::string> custom_port;
-	// cpuÎïÀí¸öÊý
+	// cpuï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	int32_t cpu_sockets;
-	// Ã¿¸öÎïÀícpuµÄÎïÀíºËÊý
+	// Ã¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½cpuï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	int32_t cpu_cores;
-	// Ã¿¸öÎïÀíºËµÄÏß³ÌÊý
+	// Ã¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ëµï¿½ï¿½ß³ï¿½ï¿½ï¿½
 	int32_t cpu_threads;
-	// ÄÚ´æ£¨KB£©
+	// ï¿½Ú´æ£¨KBï¿½ï¿½
 	int64_t mem_size;
-	// Êý¾ÝÅÌ´óÐ¡£¨KB£©
+	// ï¿½ï¿½ï¿½ï¿½ï¿½Ì´ï¿½Ð¡ï¿½ï¿½KBï¿½ï¿½
 	int64_t disk_size;
-	// GPUÁÐ±í
+	// GPUï¿½Ð±ï¿½
 	std::map<std::string, std::list<std::string>> gpus;
-	// ×Ô¶¨ÒåÊý¾ÝÅÌÂ·¾¶
+	// ï¿½Ô¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â·ï¿½ï¿½
 	std::string data_file_name;
 	// vnc
 	uint16_t vnc_port;
 	std::string vnc_password;
 
-	// ²Ù×÷ÏµÍ³(Èçgeneric, ubuntu 18.04, windows 10)£¬Ä¬ÈÏubuntu£¬´øÓÐwinÔòÈÏÎªÊÇwindowsÏµÍ³£¬±ØÐëÈ«Ð¡Ð´¡£
+	// ï¿½ï¿½ï¿½ï¿½ÏµÍ³(ï¿½ï¿½generic, ubuntu 18.04, windows 10)ï¿½ï¿½Ä¬ï¿½ï¿½ubuntuï¿½ï¿½ï¿½ï¿½ï¿½ï¿½winï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½windowsÏµÍ³ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È«Ð¡Ð´ï¿½ï¿½
 	std::string operation_system;
-	// BIOSÄ£Ê½(Èçlegacy,uefi)£¬Ä¬ÈÏ´«Í³BIOS£¬±ØÐëÈ«Ð¡Ð´¡£
+	// BIOSÄ£Ê½(ï¿½ï¿½legacy,uefi)ï¿½ï¿½Ä¬ï¿½Ï´ï¿½Í³BIOSï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È«Ð¡Ð´ï¿½ï¿½
 	std::string bios_mode;
 
-	//×é²¥µØÖ·(Èç£º"230.0.0.1:5558")
+	//ï¿½é²¥ï¿½ï¿½Ö·(ï¿½ç£º"230.0.0.1:5558")
 	std::vector<std::string> multicast;
 
 	// vxlan network name
@@ -64,9 +64,9 @@ struct CreateTaskParams {
 
 	int64_t create_time = 0;
 
-    // ¹«Íøip
+    // ï¿½ï¿½ï¿½ï¿½ip
     std::string public_ip;
-    //°²È«×é£¬Ö»ÓÐÉèÖÃÁË¹«Íøip²Å»áÊ¹ÓÃ
+    //ï¿½ï¿½È«ï¿½é£¬Ö»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ë¹ï¿½ï¿½ï¿½ipï¿½Å»ï¿½Ê¹ï¿½ï¿½
     std::vector<std::string> nwfilter;
 };
 
@@ -101,6 +101,8 @@ public:
     FResult deleteTask(const std::string& wallet, const std::string &task_id);
 
     FResult modifyTask(const std::string& wallet, const std::shared_ptr<dbc::node_modify_task_req_data>& data);
+    
+    FResult passwdTask(const std::string& wallet, const std::shared_ptr<dbc::node_passwd_task_req_data>& data);
 
     FResult
     getTaskLog(const std::string &task_id, QUERY_LOG_DIRECTION direction, int32_t nlines, std::string &log_content);

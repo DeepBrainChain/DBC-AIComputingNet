@@ -8224,6 +8224,756 @@ namespace dbc {
 	}
 
 
+	node_passwd_task_req_data::~node_passwd_task_req_data() throw() {
+	}
+
+
+	void node_passwd_task_req_data::__set_task_id(const std::string& val) {
+		this->task_id = val;
+	}
+
+	void node_passwd_task_req_data::__set_peer_nodes_list(const std::vector<std::string> & val) {
+		this->peer_nodes_list = val;
+	}
+
+	void node_passwd_task_req_data::__set_additional(const std::string& val) {
+		this->additional = val;
+	}
+
+	void node_passwd_task_req_data::__set_wallet(const std::string& val) {
+		this->wallet = val;
+	}
+
+	void node_passwd_task_req_data::__set_nonce(const std::string& val) {
+		this->nonce = val;
+	}
+
+	void node_passwd_task_req_data::__set_sign(const std::string& val) {
+		this->sign = val;
+	}
+
+	void node_passwd_task_req_data::__set_multisig_wallets(const std::vector<std::string> & val) {
+		this->multisig_wallets = val;
+	}
+
+	void node_passwd_task_req_data::__set_multisig_threshold(const int32_t val) {
+		this->multisig_threshold = val;
+	}
+
+	void node_passwd_task_req_data::__set_multisig_signs(const std::vector<multisig_sign_item> & val) {
+		this->multisig_signs = val;
+	}
+
+	void node_passwd_task_req_data::__set_session_id(const std::string& val) {
+		this->session_id = val;
+	}
+
+	void node_passwd_task_req_data::__set_session_id_sign(const std::string& val) {
+		this->session_id_sign = val;
+	}
+	std::ostream& operator<<(std::ostream& out, const node_passwd_task_req_data& obj)
+	{
+		obj.printTo(out);
+		return out;
+	}
+
+
+	uint32_t node_passwd_task_req_data::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+		::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+		uint32_t xfer = 0;
+		std::string fname;
+		::apache::thrift::protocol::TType ftype;
+		int16_t fid;
+
+		xfer += iprot->readStructBegin(fname);
+
+		using ::apache::thrift::protocol::TProtocolException;
+
+		bool isset_task_id = false;
+		bool isset_peer_nodes_list = false;
+		bool isset_additional = false;
+		bool isset_wallet = false;
+		bool isset_nonce = false;
+		bool isset_sign = false;
+		bool isset_multisig_wallets = false;
+		bool isset_multisig_threshold = false;
+		bool isset_multisig_signs = false;
+		bool isset_session_id = false;
+		bool isset_session_id_sign = false;
+
+		while (true)
+		{
+			xfer += iprot->readFieldBegin(fname, ftype, fid);
+			if (ftype == ::apache::thrift::protocol::T_STOP) {
+				break;
+			}
+			switch (fid)
+			{
+			case 1:
+				if (ftype == ::apache::thrift::protocol::T_STRING) {
+					xfer += iprot->readString(this->task_id);
+					isset_task_id = true;
+				} else {
+					xfer += iprot->skip(ftype);
+				}
+				break;
+			case 2:
+				if (ftype == ::apache::thrift::protocol::T_LIST) {
+					{
+						this->peer_nodes_list.clear();
+						uint32_t _size290;
+						::apache::thrift::protocol::TType _etype293;
+						xfer += iprot->readListBegin(_etype293, _size290);
+						this->peer_nodes_list.resize(_size290);
+						uint32_t _i294;
+						for (_i294 = 0; _i294 < _size290; ++_i294)
+						{
+							xfer += iprot->readString(this->peer_nodes_list[_i294]);
+						}
+						xfer += iprot->readListEnd();
+					}
+					isset_peer_nodes_list = true;
+				} else {
+					xfer += iprot->skip(ftype);
+				}
+				break;
+			case 3:
+				if (ftype == ::apache::thrift::protocol::T_STRING) {
+					xfer += iprot->readString(this->additional);
+					isset_additional = true;
+				} else {
+					xfer += iprot->skip(ftype);
+				}
+				break;
+			case 4:
+				if (ftype == ::apache::thrift::protocol::T_STRING) {
+					xfer += iprot->readString(this->wallet);
+					isset_wallet = true;
+				} else {
+					xfer += iprot->skip(ftype);
+				}
+				break;
+			case 5:
+				if (ftype == ::apache::thrift::protocol::T_STRING) {
+					xfer += iprot->readString(this->nonce);
+					isset_nonce = true;
+				} else {
+					xfer += iprot->skip(ftype);
+				}
+				break;
+			case 6:
+				if (ftype == ::apache::thrift::protocol::T_STRING) {
+					xfer += iprot->readString(this->sign);
+					isset_sign = true;
+				} else {
+					xfer += iprot->skip(ftype);
+				}
+				break;
+			case 7:
+				if (ftype == ::apache::thrift::protocol::T_LIST) {
+					{
+						this->multisig_wallets.clear();
+						uint32_t _size295;
+						::apache::thrift::protocol::TType _etype298;
+						xfer += iprot->readListBegin(_etype298, _size295);
+						this->multisig_wallets.resize(_size295);
+						uint32_t _i299;
+						for (_i299 = 0; _i299 < _size295; ++_i299)
+						{
+							xfer += iprot->readString(this->multisig_wallets[_i299]);
+						}
+						xfer += iprot->readListEnd();
+					}
+					isset_multisig_wallets = true;
+				} else {
+					xfer += iprot->skip(ftype);
+				}
+				break;
+			case 8:
+				if (ftype == ::apache::thrift::protocol::T_I32) {
+					xfer += iprot->readI32(this->multisig_threshold);
+					isset_multisig_threshold = true;
+				} else {
+					xfer += iprot->skip(ftype);
+				}
+				break;
+			case 9:
+				if (ftype == ::apache::thrift::protocol::T_LIST) {
+					{
+						this->multisig_signs.clear();
+						uint32_t _size300;
+						::apache::thrift::protocol::TType _etype303;
+						xfer += iprot->readListBegin(_etype303, _size300);
+						this->multisig_signs.resize(_size300);
+						uint32_t _i304;
+						for (_i304 = 0; _i304 < _size300; ++_i304)
+						{
+							xfer += this->multisig_signs[_i304].read(iprot);
+						}
+						xfer += iprot->readListEnd();
+					}
+					isset_multisig_signs = true;
+				} else {
+					xfer += iprot->skip(ftype);
+				}
+				break;
+			case 10:
+				if (ftype == ::apache::thrift::protocol::T_STRING) {
+					xfer += iprot->readString(this->session_id);
+					isset_session_id = true;
+				} else {
+					xfer += iprot->skip(ftype);
+				}
+				break;
+			case 11:
+				if (ftype == ::apache::thrift::protocol::T_STRING) {
+					xfer += iprot->readString(this->session_id_sign);
+					isset_session_id_sign = true;
+				} else {
+					xfer += iprot->skip(ftype);
+				}
+				break;
+			default:
+				xfer += iprot->skip(ftype);
+				break;
+			}
+			xfer += iprot->readFieldEnd();
+		}
+
+		xfer += iprot->readStructEnd();
+
+		if (!isset_task_id)
+			throw TProtocolException(TProtocolException::INVALID_DATA);
+		if (!isset_peer_nodes_list)
+			throw TProtocolException(TProtocolException::INVALID_DATA);
+		if (!isset_additional)
+			throw TProtocolException(TProtocolException::INVALID_DATA);
+		if (!isset_wallet)
+			throw TProtocolException(TProtocolException::INVALID_DATA);
+		if (!isset_nonce)
+			throw TProtocolException(TProtocolException::INVALID_DATA);
+		if (!isset_sign)
+			throw TProtocolException(TProtocolException::INVALID_DATA);
+		if (!isset_multisig_wallets)
+			throw TProtocolException(TProtocolException::INVALID_DATA);
+		if (!isset_multisig_threshold)
+			throw TProtocolException(TProtocolException::INVALID_DATA);
+		if (!isset_multisig_signs)
+			throw TProtocolException(TProtocolException::INVALID_DATA);
+		if (!isset_session_id)
+			throw TProtocolException(TProtocolException::INVALID_DATA);
+		if (!isset_session_id_sign)
+			throw TProtocolException(TProtocolException::INVALID_DATA);
+		return xfer;
+	}
+
+	uint32_t node_passwd_task_req_data::write(::apache::thrift::protocol::TProtocol* oprot) const {
+		uint32_t xfer = 0;
+		::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+		xfer += oprot->writeStructBegin("node_passwd_task_req_data");
+
+		xfer += oprot->writeFieldBegin("task_id", ::apache::thrift::protocol::T_STRING, 1);
+		xfer += oprot->writeString(this->task_id);
+		xfer += oprot->writeFieldEnd();
+
+		xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 2);
+		{
+			xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
+			std::vector<std::string> ::const_iterator _iter305;
+			for (_iter305 = this->peer_nodes_list.begin(); _iter305 != this->peer_nodes_list.end(); ++_iter305)
+			{
+				xfer += oprot->writeString((*_iter305));
+			}
+			xfer += oprot->writeListEnd();
+		}
+		xfer += oprot->writeFieldEnd();
+
+		xfer += oprot->writeFieldBegin("additional", ::apache::thrift::protocol::T_STRING, 3);
+		xfer += oprot->writeString(this->additional);
+		xfer += oprot->writeFieldEnd();
+
+		xfer += oprot->writeFieldBegin("wallet", ::apache::thrift::protocol::T_STRING, 4);
+		xfer += oprot->writeString(this->wallet);
+		xfer += oprot->writeFieldEnd();
+
+		xfer += oprot->writeFieldBegin("nonce", ::apache::thrift::protocol::T_STRING, 5);
+		xfer += oprot->writeString(this->nonce);
+		xfer += oprot->writeFieldEnd();
+
+		xfer += oprot->writeFieldBegin("sign", ::apache::thrift::protocol::T_STRING, 6);
+		xfer += oprot->writeString(this->sign);
+		xfer += oprot->writeFieldEnd();
+
+		xfer += oprot->writeFieldBegin("multisig_wallets", ::apache::thrift::protocol::T_LIST, 7);
+		{
+			xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->multisig_wallets.size()));
+			std::vector<std::string> ::const_iterator _iter306;
+			for (_iter306 = this->multisig_wallets.begin(); _iter306 != this->multisig_wallets.end(); ++_iter306)
+			{
+				xfer += oprot->writeString((*_iter306));
+			}
+			xfer += oprot->writeListEnd();
+		}
+		xfer += oprot->writeFieldEnd();
+
+		xfer += oprot->writeFieldBegin("multisig_threshold", ::apache::thrift::protocol::T_I32, 8);
+		xfer += oprot->writeI32(this->multisig_threshold);
+		xfer += oprot->writeFieldEnd();
+
+		xfer += oprot->writeFieldBegin("multisig_signs", ::apache::thrift::protocol::T_LIST, 9);
+		{
+			xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->multisig_signs.size()));
+			std::vector<multisig_sign_item> ::const_iterator _iter307;
+			for (_iter307 = this->multisig_signs.begin(); _iter307 != this->multisig_signs.end(); ++_iter307)
+			{
+				xfer += (*_iter307).write(oprot);
+			}
+			xfer += oprot->writeListEnd();
+		}
+		xfer += oprot->writeFieldEnd();
+
+		xfer += oprot->writeFieldBegin("session_id", ::apache::thrift::protocol::T_STRING, 10);
+		xfer += oprot->writeString(this->session_id);
+		xfer += oprot->writeFieldEnd();
+
+		xfer += oprot->writeFieldBegin("session_id_sign", ::apache::thrift::protocol::T_STRING, 11);
+		xfer += oprot->writeString(this->session_id_sign);
+		xfer += oprot->writeFieldEnd();
+
+		xfer += oprot->writeFieldStop();
+		xfer += oprot->writeStructEnd();
+		return xfer;
+	}
+
+	void swap(node_passwd_task_req_data &a, node_passwd_task_req_data &b) {
+		using ::std::swap;
+		swap(a.task_id, b.task_id);
+		swap(a.peer_nodes_list, b.peer_nodes_list);
+		swap(a.additional, b.additional);
+		swap(a.wallet, b.wallet);
+		swap(a.nonce, b.nonce);
+		swap(a.sign, b.sign);
+		swap(a.multisig_wallets, b.multisig_wallets);
+		swap(a.multisig_threshold, b.multisig_threshold);
+		swap(a.multisig_signs, b.multisig_signs);
+		swap(a.session_id, b.session_id);
+		swap(a.session_id_sign, b.session_id_sign);
+	}
+
+	node_passwd_task_req_data::node_passwd_task_req_data(const node_passwd_task_req_data& other308) {
+		task_id = other308.task_id;
+		peer_nodes_list = other308.peer_nodes_list;
+		additional = other308.additional;
+		wallet = other308.wallet;
+		nonce = other308.nonce;
+		sign = other308.sign;
+		multisig_wallets = other308.multisig_wallets;
+		multisig_threshold = other308.multisig_threshold;
+		multisig_signs = other308.multisig_signs;
+		session_id = other308.session_id;
+		session_id_sign = other308.session_id_sign;
+	}
+	node_passwd_task_req_data& node_passwd_task_req_data::operator=(const node_passwd_task_req_data& other309) {
+		task_id = other309.task_id;
+		peer_nodes_list = other309.peer_nodes_list;
+		additional = other309.additional;
+		wallet = other309.wallet;
+		nonce = other309.nonce;
+		sign = other309.sign;
+		multisig_wallets = other309.multisig_wallets;
+		multisig_threshold = other309.multisig_threshold;
+		multisig_signs = other309.multisig_signs;
+		session_id = other309.session_id;
+		session_id_sign = other309.session_id_sign;
+		return *this;
+	}
+	void node_passwd_task_req_data::printTo(std::ostream& out) const {
+		using ::apache::thrift::to_string;
+		out << "node_passwd_task_req_data(";
+		out << "task_id=" << to_string(task_id);
+		out << ", " << "peer_nodes_list=" << to_string(peer_nodes_list);
+		out << ", " << "additional=" << to_string(additional);
+		out << ", " << "wallet=" << to_string(wallet);
+		out << ", " << "nonce=" << to_string(nonce);
+		out << ", " << "sign=" << to_string(sign);
+		out << ", " << "multisig_wallets=" << to_string(multisig_wallets);
+		out << ", " << "multisig_threshold=" << to_string(multisig_threshold);
+		out << ", " << "multisig_signs=" << to_string(multisig_signs);
+		out << ", " << "session_id=" << to_string(session_id);
+		out << ", " << "session_id_sign=" << to_string(session_id_sign);
+		out << ")";
+	}
+
+
+	node_passwd_task_req_body::~node_passwd_task_req_body() throw() {
+	}
+
+
+	void node_passwd_task_req_body::__set_data(const std::string& val) {
+		this->data = val;
+	}
+	std::ostream& operator<<(std::ostream& out, const node_passwd_task_req_body& obj)
+	{
+		obj.printTo(out);
+		return out;
+	}
+
+
+	uint32_t node_passwd_task_req_body::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+		::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+		uint32_t xfer = 0;
+		std::string fname;
+		::apache::thrift::protocol::TType ftype;
+		int16_t fid;
+
+		xfer += iprot->readStructBegin(fname);
+
+		using ::apache::thrift::protocol::TProtocolException;
+
+		bool isset_data = false;
+
+		while (true)
+		{
+			xfer += iprot->readFieldBegin(fname, ftype, fid);
+			if (ftype == ::apache::thrift::protocol::T_STOP) {
+				break;
+			}
+			switch (fid)
+			{
+			case 1:
+				if (ftype == ::apache::thrift::protocol::T_STRING) {
+					xfer += iprot->readString(this->data);
+					isset_data = true;
+				} else {
+					xfer += iprot->skip(ftype);
+				}
+				break;
+			default:
+				xfer += iprot->skip(ftype);
+				break;
+			}
+			xfer += iprot->readFieldEnd();
+		}
+
+		xfer += iprot->readStructEnd();
+
+		if (!isset_data)
+			throw TProtocolException(TProtocolException::INVALID_DATA);
+		return xfer;
+	}
+
+	uint32_t node_passwd_task_req_body::write(::apache::thrift::protocol::TProtocol* oprot) const {
+		uint32_t xfer = 0;
+		::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+		xfer += oprot->writeStructBegin("node_passwd_task_req_body");
+
+		xfer += oprot->writeFieldBegin("data", ::apache::thrift::protocol::T_STRING, 1);
+		xfer += oprot->writeString(this->data);
+		xfer += oprot->writeFieldEnd();
+
+		xfer += oprot->writeFieldStop();
+		xfer += oprot->writeStructEnd();
+		return xfer;
+	}
+
+	void swap(node_passwd_task_req_body &a, node_passwd_task_req_body &b) {
+		using ::std::swap;
+		swap(a.data, b.data);
+	}
+
+	node_passwd_task_req_body::node_passwd_task_req_body(const node_passwd_task_req_body& other310) {
+		data = other310.data;
+	}
+	node_passwd_task_req_body& node_passwd_task_req_body::operator=(const node_passwd_task_req_body& other311) {
+		data = other311.data;
+		return *this;
+	}
+	void node_passwd_task_req_body::printTo(std::ostream& out) const {
+		using ::apache::thrift::to_string;
+		out << "node_passwd_task_req_body(";
+		out << "data=" << to_string(data);
+		out << ")";
+	}
+
+
+	node_passwd_task_req::~node_passwd_task_req() throw() {
+	}
+
+
+	void node_passwd_task_req::__set_body(const node_passwd_task_req_body& val) {
+		this->body = val;
+	}
+	std::ostream& operator<<(std::ostream& out, const node_passwd_task_req& obj)
+	{
+		obj.printTo(out);
+		return out;
+	}
+
+
+	uint32_t node_passwd_task_req::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+		::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+		uint32_t xfer = 0;
+		std::string fname;
+		::apache::thrift::protocol::TType ftype;
+		int16_t fid;
+
+		xfer += iprot->readStructBegin(fname);
+
+		using ::apache::thrift::protocol::TProtocolException;
+
+
+		while (true)
+		{
+			xfer += iprot->readFieldBegin(fname, ftype, fid);
+			if (ftype == ::apache::thrift::protocol::T_STOP) {
+				break;
+			}
+			switch (fid)
+			{
+			case 1:
+				if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+					xfer += this->body.read(iprot);
+					this->__isset.body = true;
+				} else {
+					xfer += iprot->skip(ftype);
+				}
+				break;
+			default:
+				xfer += iprot->skip(ftype);
+				break;
+			}
+			xfer += iprot->readFieldEnd();
+		}
+
+		xfer += iprot->readStructEnd();
+
+		return xfer;
+	}
+
+	uint32_t node_passwd_task_req::write(::apache::thrift::protocol::TProtocol* oprot) const {
+		uint32_t xfer = 0;
+		::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+		xfer += oprot->writeStructBegin("node_passwd_task_req");
+
+		xfer += oprot->writeFieldBegin("body", ::apache::thrift::protocol::T_STRUCT, 1);
+		xfer += this->body.write(oprot);
+		xfer += oprot->writeFieldEnd();
+
+		xfer += oprot->writeFieldStop();
+		xfer += oprot->writeStructEnd();
+		return xfer;
+	}
+
+	void swap(node_passwd_task_req &a, node_passwd_task_req &b) {
+		using ::std::swap;
+		swap(a.body, b.body);
+		swap(a.__isset, b.__isset);
+	}
+
+	node_passwd_task_req::node_passwd_task_req(const node_passwd_task_req& other312) {
+		body = other312.body;
+		__isset = other312.__isset;
+	}
+	node_passwd_task_req& node_passwd_task_req::operator=(const node_passwd_task_req& other313) {
+		body = other313.body;
+		__isset = other313.__isset;
+		return *this;
+	}
+	void node_passwd_task_req::printTo(std::ostream& out) const {
+		using ::apache::thrift::to_string;
+		out << "node_passwd_task_req(";
+		out << "body=" << to_string(body);
+		out << ")";
+	}
+
+
+	node_passwd_task_rsp_body::~node_passwd_task_rsp_body() throw() {
+	}
+
+
+	void node_passwd_task_rsp_body::__set_data(const std::string& val) {
+		this->data = val;
+	}
+	std::ostream& operator<<(std::ostream& out, const node_passwd_task_rsp_body& obj)
+	{
+		obj.printTo(out);
+		return out;
+	}
+
+
+	uint32_t node_passwd_task_rsp_body::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+		::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+		uint32_t xfer = 0;
+		std::string fname;
+		::apache::thrift::protocol::TType ftype;
+		int16_t fid;
+
+		xfer += iprot->readStructBegin(fname);
+
+		using ::apache::thrift::protocol::TProtocolException;
+
+		bool isset_data = false;
+
+		while (true)
+		{
+			xfer += iprot->readFieldBegin(fname, ftype, fid);
+			if (ftype == ::apache::thrift::protocol::T_STOP) {
+				break;
+			}
+			switch (fid)
+			{
+			case 1:
+				if (ftype == ::apache::thrift::protocol::T_STRING) {
+					xfer += iprot->readString(this->data);
+					isset_data = true;
+				} else {
+					xfer += iprot->skip(ftype);
+				}
+				break;
+			default:
+				xfer += iprot->skip(ftype);
+				break;
+			}
+			xfer += iprot->readFieldEnd();
+		}
+
+		xfer += iprot->readStructEnd();
+
+		if (!isset_data)
+			throw TProtocolException(TProtocolException::INVALID_DATA);
+		return xfer;
+	}
+
+	uint32_t node_passwd_task_rsp_body::write(::apache::thrift::protocol::TProtocol* oprot) const {
+		uint32_t xfer = 0;
+		::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+		xfer += oprot->writeStructBegin("node_passwd_task_rsp_body");
+
+		xfer += oprot->writeFieldBegin("data", ::apache::thrift::protocol::T_STRING, 1);
+		xfer += oprot->writeString(this->data);
+		xfer += oprot->writeFieldEnd();
+
+		xfer += oprot->writeFieldStop();
+		xfer += oprot->writeStructEnd();
+		return xfer;
+	}
+
+	void swap(node_passwd_task_rsp_body &a, node_passwd_task_rsp_body &b) {
+		using ::std::swap;
+		swap(a.data, b.data);
+	}
+
+	node_passwd_task_rsp_body::node_passwd_task_rsp_body(const node_passwd_task_rsp_body& other314) {
+		data = other314.data;
+	}
+	node_passwd_task_rsp_body& node_passwd_task_rsp_body::operator=(const node_passwd_task_rsp_body& other315) {
+		data = other315.data;
+		return *this;
+	}
+	void node_passwd_task_rsp_body::printTo(std::ostream& out) const {
+		using ::apache::thrift::to_string;
+		out << "node_passwd_task_rsp_body(";
+		out << "data=" << to_string(data);
+		out << ")";
+	}
+
+
+	node_passwd_task_rsp::~node_passwd_task_rsp() throw() {
+	}
+
+
+	void node_passwd_task_rsp::__set_body(const node_passwd_task_rsp_body& val) {
+		this->body = val;
+	}
+	std::ostream& operator<<(std::ostream& out, const node_passwd_task_rsp& obj)
+	{
+		obj.printTo(out);
+		return out;
+	}
+
+
+	uint32_t node_passwd_task_rsp::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+		::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+		uint32_t xfer = 0;
+		std::string fname;
+		::apache::thrift::protocol::TType ftype;
+		int16_t fid;
+
+		xfer += iprot->readStructBegin(fname);
+
+		using ::apache::thrift::protocol::TProtocolException;
+
+
+		while (true)
+		{
+			xfer += iprot->readFieldBegin(fname, ftype, fid);
+			if (ftype == ::apache::thrift::protocol::T_STOP) {
+				break;
+			}
+			switch (fid)
+			{
+			case 1:
+				if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+					xfer += this->body.read(iprot);
+					this->__isset.body = true;
+				} else {
+					xfer += iprot->skip(ftype);
+				}
+				break;
+			default:
+				xfer += iprot->skip(ftype);
+				break;
+			}
+			xfer += iprot->readFieldEnd();
+		}
+
+		xfer += iprot->readStructEnd();
+
+		return xfer;
+	}
+
+	uint32_t node_passwd_task_rsp::write(::apache::thrift::protocol::TProtocol* oprot) const {
+		uint32_t xfer = 0;
+		::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+		xfer += oprot->writeStructBegin("node_passwd_task_rsp");
+
+		xfer += oprot->writeFieldBegin("body", ::apache::thrift::protocol::T_STRUCT, 1);
+		xfer += this->body.write(oprot);
+		xfer += oprot->writeFieldEnd();
+
+		xfer += oprot->writeFieldStop();
+		xfer += oprot->writeStructEnd();
+		return xfer;
+	}
+
+	void swap(node_passwd_task_rsp &a, node_passwd_task_rsp &b) {
+		using ::std::swap;
+		swap(a.body, b.body);
+		swap(a.__isset, b.__isset);
+	}
+
+	node_passwd_task_rsp::node_passwd_task_rsp(const node_passwd_task_rsp& other316) {
+		body = other316.body;
+		__isset = other316.__isset;
+	}
+	node_passwd_task_rsp& node_passwd_task_rsp::operator=(const node_passwd_task_rsp& other317) {
+		body = other317.body;
+		__isset = other317.__isset;
+		return *this;
+	}
+	void node_passwd_task_rsp::printTo(std::ostream& out) const {
+		using ::apache::thrift::to_string;
+		out << "node_passwd_task_rsp(";
+		out << "body=" << to_string(body);
+		out << ")";
+	}
+
+
 	node_list_images_req_data::~node_list_images_req_data() throw() {
 	}
 

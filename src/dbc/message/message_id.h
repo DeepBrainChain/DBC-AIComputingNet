@@ -105,6 +105,11 @@
 #define NODE_MODIFY_TASK_RSP      "node_modify_task_rsp"
 #define NODE_MODIFY_TASK_TIMER    "node_modify_task_timer"
 
+// set task user password
+#define NODE_PASSWD_TASK_REQ      "node_passwd_task_req"
+#define NODE_PASSWD_TASK_RSP      "node_passwd_task_rsp"
+#define NODE_PASSWD_TASK_TIMER    "node_passwd_task_timer"
+
 // list nodes
 #define NODE_QUERY_NODE_INFO_REQ       "node_query_node_info_req"
 #define NODE_QUERY_NODE_INFO_RSP       "node_query_node_info_rsp"

@@ -1510,18 +1510,19 @@ int32_t VmClient::GetDomainInterfaceAddress(const std::string& domain_name, std:
     return ifaces_count;
 }
 
-bool VmClient::SetDomainUserPassword(const std::string &domain_name, const std::string &username, const std::string &pwd) {
+FResult VmClient::SetDomainUserPassword(const std::string &domain_name, const std::string &username, const std::string &pwd, int max_retry_count) {
     if (m_connPtr == nullptr) {
         TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
-        return false;
+        return FResult(ERR_ERROR, "libvirt disconnect");
     }
 
-    bool ret = false;
+    int ret = ERR_ERROR;
+    std::string errmsg;
     virDomainPtr domain_ptr = nullptr;
     do {
         domain_ptr = virDomainLookupByName(m_connPtr, domain_name.c_str());
         if (domain_ptr == nullptr) {
-            ret = false;
+            errmsg = "task not existed";
             TASK_LOG_ERROR(domain_name, "lookup domain:" << domain_name << " is nullptr");
             break;
         }
@@ -1529,24 +1530,25 @@ bool VmClient::SetDomainUserPassword(const std::string &domain_name, const std::
         int try_count = 0;
         int succ = -1;
         // max: 5min
-        while (succ != 0 && try_count < 100) {
-            TASK_LOG_ERROR(domain_name, "set_vm_password try_count: " << (try_count + 1));
+        while (succ != 0 && try_count < max_retry_count) {
+            LOG_INFO << domain_name << " set_vm_password try_count: " << (try_count + 1);
             succ = virDomainSetUserPassword(domain_ptr, username.c_str(), pwd.c_str(), 0);
             if (succ != 0) {
                 virErrorPtr error = virGetLastError();
-                TASK_LOG_ERROR(domain_name, "virDomainSetUserPassword error: " << (error ? error->message : ""));
+                errmsg = error ? error->message : "unknown error";
+                LOG_ERROR << domain_name << " virDomainSetUserPassword error: " << errmsg;
+                sleep(3);
             }
 
             try_count++;
-            sleep(3);
         }
 
         if (succ == 0) {
-            ret = true;
+            ret = ERR_SUCCESS;
             TASK_LOG_INFO(domain_name, "set vm user password successful, user:" << username << ", pwd:" << pwd);
         } else {
-            ret = false;
-            TASK_LOG_ERROR(domain_name, "set vm user password failed, user:" << username << ", pwd:" << pwd);
+            TASK_LOG_ERROR(domain_name, "set vm user password failed, user:" << username
+                    << ", pwd:" << pwd << ", error:" << errmsg);
         }
     } while(0);
 
@@ -1554,7 +1556,7 @@ bool VmClient::SetDomainUserPassword(const std::string &domain_name, const std::
         virDomainFree(domain_ptr);
     }
 
-    return ret;
+    return FResult(ret, errmsg);
 }
 
 bool VmClient::IsExistDomain(const std::string &domain_name) {

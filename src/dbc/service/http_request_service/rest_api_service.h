@@ -187,6 +187,17 @@ public:
 
     void on_node_modify_task_timer(const std::shared_ptr<core_timer> &timer);
 
+    // set task user password
+    void rest_passwd_task(const std::shared_ptr<network::http_request> &httpReq, const std::string &path);
+
+    std::shared_ptr<network::message> create_node_passwd_task_req_msg(const std::string &head_session_id,
+                                                                      const req_body &body);
+
+    void on_node_passwd_task_rsp(const std::shared_ptr<network::http_request_context> &hreq_context,
+                                 const std::shared_ptr<network::message> &rsp_msg);
+
+    void on_node_passwd_task_timer(const std::shared_ptr<core_timer> &timer);
+
     // task logs
     void rest_task_logs(const std::shared_ptr<network::http_request> &httpReq, const std::string &path);
 

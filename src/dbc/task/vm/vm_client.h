@@ -72,7 +72,7 @@ public:
 
     FResult GetDomainLog(const std::string& domain_name, QUERY_LOG_DIRECTION direction, int32_t linecount, std::string &log_content);
 
-	bool SetDomainUserPassword(const std::string& domain_name, const std::string& username, const std::string& pwd);
+	FResult SetDomainUserPassword(const std::string& domain_name, const std::string& username, const std::string& pwd, int max_retry_count = 100);
 
     bool ListDomainDiskInfo(const std::string& domain_name, std::map<std::string, domainDiskInfo>& disks);
 

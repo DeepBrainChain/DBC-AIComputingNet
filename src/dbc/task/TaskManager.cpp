@@ -244,7 +244,7 @@ void TaskManager::add_iptable_to_system(const std::string &task_id) {
 
 void TaskManager::shell_remove_iptable_from_system(const std::string& task_id, const std::string &host_ip,
                                                    uint16_t ssh_port, const std::string &task_local_ip) {
-    auto func_remove_chain = [](std::string main_chain, std::string task_chain) {
+    auto func_remove_chain = [](const std::string main_chain, const std::string task_chain) {
         std::string cmd = "sudo iptables -t nat -F " + task_chain;
         run_shell(cmd);
         cmd = "sudo iptables -t nat -D " + main_chain + " -j " + task_chain;
@@ -254,10 +254,9 @@ void TaskManager::shell_remove_iptable_from_system(const std::string& task_id, c
     };
 
     // remove chain
-    std::string chain_name = "chain_" + task_id;
-    func_remove_chain("PREROUTING", chain_name);
-    func_remove_chain("PREROUTING", chain_name + "_dnat");
-    func_remove_chain("POSTROUTING", chain_name + "_snat");
+    func_remove_chain("PREROUTING", "chain_" + task_id);
+    func_remove_chain("PREROUTING", task_id + "_dnat");
+    func_remove_chain("POSTROUTING", task_id + "_snat");
 
     // remove old rules
     std::string cmd = "sudo iptables --table nat -D PREROUTING --protocol tcp --destination " + host_ip
@@ -318,13 +317,12 @@ void TaskManager::shell_add_iptable_to_system(const std::string& task_id, const 
 	};
 
     // remove chain
-    std::string chain_name = "chain_" + task_id;
-    func_remove_chain("PREROUTING", chain_name);
-    func_remove_chain("PREROUTING", chain_name + "_dnat");
-    func_remove_chain("POSTROUTING", chain_name + "_snat");
+    func_remove_chain("PREROUTING", "chain_" + task_id);
+    func_remove_chain("PREROUTING", task_id + "_dnat");
+    func_remove_chain("POSTROUTING", task_id + "_snat");
 
     if (public_ip.empty()) {
-        chain_name += "_dnat";
+        std::string chain_name = task_id + "_dnat";
 
         // add chain and rules
         std::string cmd = "sudo iptables -t nat -N " + chain_name;
@@ -399,8 +397,8 @@ void TaskManager::shell_add_iptable_to_system(const std::string& task_id, const 
         cmd = "sudo iptables -t nat -I PREROUTING -j " + chain_name;
         run_shell(cmd);
     } else {
-        std::string chain_name_dnat = chain_name + "_dnat";
-        std::string chain_name_snat = chain_name + "_snat";
+        std::string chain_name_dnat = task_id + "_dnat";
+        std::string chain_name_snat = task_id + "_snat";
 
         // add chain and rules
         std::string cmd = "sudo iptables -t nat -N " + chain_name_dnat;
@@ -700,6 +698,8 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     //operation_system: "win"/"ubuntu"/""
     if (operation_system.empty()) {
         operation_system = "generic";
+    } else {
+        std::transform(operation_system.begin(), operation_system.end(), operation_system.begin(), ::tolower);
     }
 
     // rdp_port
@@ -733,6 +733,8 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     //bios_mode
     if (bios_mode.empty()) {
         bios_mode = "legacy";
+    } else {
+        std::transform(bios_mode.begin(), bios_mode.end(), bios_mode.begin(), ::tolower);
     }
 
     if (!network_name.empty()) {
@@ -1503,6 +1505,40 @@ FResult TaskManager::modifyTask(const std::string& wallet,
     return FResultOk;
 }
 
+FResult TaskManager::passwdTask(const std::string& wallet, const std::shared_ptr<dbc::node_passwd_task_req_data>& data) {
+    std::string task_id = data->task_id;
+    auto taskinfoPtr = TaskInfoManager::instance().getTaskInfo(task_id);
+    if (taskinfoPtr == nullptr) {
+        return FResult(ERR_ERROR, "task not exist");
+    }
+
+	if (!VmClient::instance().IsExistDomain(task_id)) {
+		return FResult(ERR_ERROR, "task not exist");
+	}
+
+    virDomainState vm_status = VmClient::instance().GetDomainStatus(task_id);
+    if (vm_status != VIR_DOMAIN_RUNNING) {
+        return FResult(ERR_ERROR, "Only the running task can change the password");
+    }
+
+    rapidjson::Document doc;
+    doc.Parse(data->additional.c_str());
+    if (!doc.IsObject()) {
+        return FResult(ERR_ERROR, "additional parse failed");
+    }
+
+    std::string username, password;
+    JSON_PARSE_STRING(doc, "username", username);
+    JSON_PARSE_STRING(doc, "password", password);
+    if (password.empty()) return FResult(ERR_ERROR, "password can not be empty");
+    if (username.empty()) return FResult(ERR_ERROR, "user name can not be empty");
+    FResult fret = VmClient::instance().SetDomainUserPassword(task_id, username, password, 1);
+    if (fret.errcode == ERR_SUCCESS) {
+        taskinfoPtr->setLoginPassword(password);
+    }
+    return fret;
+}
+
 FResult TaskManager::getTaskLog(const std::string &task_id, QUERY_LOG_DIRECTION direction, int32_t nlines,
                                 std::string &log_content) {
     auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
@@ -2040,46 +2076,50 @@ void TaskManager::process_create_task(const std::shared_ptr<TaskEvent>& ev) {
             taskinfo->setTaskStatus(TaskStatus::TS_CreateTaskError);
         }
         TASK_LOG_ERROR(ev->task_id, "create domain failed");
-    } else {
-        std::string local_ip = VmClient::instance().GetDomainLocalIP(ev->task_id);
-        if (!local_ip.empty()) {
-            if (!VmClient::instance().SetDomainUserPassword(ev->task_id,
-                    taskinfo->getOperationSystem().find("win") == std::string::npos ? g_vm_ubuntu_login_username : g_vm_windows_login_username,
-                    taskinfo->getLoginPassword())) {
-                VmClient::instance().DestroyDomain(ev->task_id);
-
-                if (taskinfo->getTaskStatus() == TaskStatus::TS_Task_Creating) {
-                    taskinfo->setTaskStatus(TaskStatus::TS_CreateTaskError);
-                }
-                TASK_LOG_ERROR(ev->task_id, "set domain password failed");
-                return;
-            }
-
-			if (!create_task_iptable(ev->task_id, taskinfo->getSSHPort(), taskinfo->getRDPPort(),
-			        taskinfo->getCustomPort(), local_ip, taskinfo->getPublicIP())) {
-				VmClient::instance().DestroyDomain(ev->task_id);
-
-				if (taskinfo->getTaskStatus() == TaskStatus::TS_Task_Creating) {
-					taskinfo->setTaskStatus(TaskStatus::TS_CreateTaskError);
-				}
-                TASK_LOG_ERROR(ev->task_id, "create task iptable failed");
-                return;
-            }
-
-			if (taskinfo->getTaskStatus() == TaskStatus::TS_Task_Creating) {
-				taskinfo->setTaskStatus(TaskStatus::TS_Task_Running);
-			}
-            TASK_LOG_INFO(ev->task_id, "create task successful");
-        } else {
-            VmClient::instance().DestroyDomain(ev->task_id);
-
-			if (taskinfo->getTaskStatus() == TaskStatus::TS_Task_Creating) {
-				taskinfo->setTaskStatus(TaskStatus::TS_CreateTaskError);
-			}
-
-            TASK_LOG_ERROR(ev->task_id, "get domain local ip failed");
-        }
+        return;
     }
+
+    std::string local_ip = VmClient::instance().GetDomainLocalIP(ev->task_id);
+    if (local_ip.empty()) {
+        VmClient::instance().DestroyDomain(ev->task_id);
+
+        if (taskinfo->getTaskStatus() == TaskStatus::TS_Task_Creating) {
+            taskinfo->setTaskStatus(TaskStatus::TS_CreateTaskError);
+        }
+
+        TASK_LOG_ERROR(ev->task_id, "get domain local ip failed");
+        return;
+    }
+
+    if (!create_task_iptable(ev->task_id, taskinfo->getSSHPort(), taskinfo->getRDPPort(),
+			        taskinfo->getCustomPort(), local_ip, taskinfo->getPublicIP())) {
+        VmClient::instance().DestroyDomain(ev->task_id);
+
+        if (taskinfo->getTaskStatus() == TaskStatus::TS_Task_Creating) {
+            taskinfo->setTaskStatus(TaskStatus::TS_CreateTaskError);
+        }
+        TASK_LOG_ERROR(ev->task_id, "create task iptable failed");
+        return;
+    }
+
+    FResult fret = VmClient::instance().SetDomainUserPassword(ev->task_id,
+                    taskinfo->getOperationSystem().find("win") == std::string::npos ? g_vm_ubuntu_login_username : g_vm_windows_login_username,
+                    taskinfo->getLoginPassword());
+    if (fret.errcode != ERR_SUCCESS) {
+        taskinfo->setLoginPassword("N/A");
+        // VmClient::instance().DestroyDomain(ev->task_id);
+
+        // if (taskinfo->getTaskStatus() == TaskStatus::TS_Task_Creating) {
+        //     taskinfo->setTaskStatus(TaskStatus::TS_CreateTaskError);
+        // }
+        // TASK_LOG_ERROR(ev->task_id, "set domain password failed");
+        // return;
+    }
+
+    if (taskinfo->getTaskStatus() == TaskStatus::TS_Task_Creating) {
+        taskinfo->setTaskStatus(TaskStatus::TS_Task_Running);
+    }
+    TASK_LOG_INFO(ev->task_id, "create task successful");
 }
 
 bool TaskManager::create_task_iptable(const std::string& task_id, uint16_t ssh_port,
