@@ -16,10 +16,14 @@ public:
 
     FResult init(const std::vector<std::string>& task_ids);
 
+    void addDiskInfo(const std::string& task_id, const std::shared_ptr<DiskInfo>& diskinfo);
+
+    std::shared_ptr<DiskInfo> getDiskInfo(const std::string& task_id, const std::string& disk_name);
+
+    bool isExistDisk(const std::string& task_id, const std::string& disk_name);
+
 	// 删除task的所有磁盘（包括删除磁盘文件）
 	void delDisks(const std::string& task_id);
-    
-    void addDisk(const std::string& task_id, const std::shared_ptr<DiskInfo>& diskinfo);
 
 
     // 磁盘列表
@@ -35,6 +39,8 @@ public:
     FResult deleteDisk(const std::string& task_id, const std::string& disk_name);
 
     
+    std::shared_ptr<SnapshotInfo> getSnapshotInfo(const std::string& task_id);
+
     // 删除task的所有快照（包括删除文件）
     void delSnapshots(const std::string& task_id);
 

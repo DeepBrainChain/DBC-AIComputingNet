@@ -576,7 +576,7 @@ FResult TaskManager::createTask(const std::string& wallet,
     disk_vda->setName("vda");
     disk_vda->setSourceFile(disk_vda_file);
     disk_vda->setVirtualSize(g_disk_system_size * 1024L * 1024L * 1024L);
-    TaskDiskMgr::instance().addDisk(task_id, disk_vda);
+    TaskDiskMgr::instance().addDiskInfo(task_id, disk_vda);
 
     std::string disk_vdb_file;
 	if (create_params.data_file_name.empty()) {
@@ -589,7 +589,7 @@ FResult TaskManager::createTask(const std::string& wallet,
     disk_vdb->setName("vdb");
     disk_vdb->setSourceFile(disk_vdb_file);
     disk_vdb->setVirtualSize(create_params.disk_size * 1024L);
-    TaskDiskMgr::instance().addDisk(task_id, disk_vdb);
+    TaskDiskMgr::instance().addDiskInfo(task_id, disk_vdb);
 
     // add gpus
     auto& gpus = create_params.gpus;

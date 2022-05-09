@@ -1227,6 +1227,70 @@ void VmClient::ListAllRunningDomains(std::vector<std::string> &domains) {
     }
 }
 
+bool VmClient::ListDomainDiskInfo(const std::string& domain_name, std::map<std::string, domainDiskInfo>& disks) {
+	if (m_connPtr == nullptr) {
+		LOG_ERROR << domain_name << " connPtr is nullptr";
+		return false;
+	}
+
+	bool ret = false;
+	virDomainPtr domain_ptr = nullptr;
+	char* pContent = nullptr;
+	do {
+		domain_ptr = virDomainLookupByName(m_connPtr, domain_name.c_str());
+		if (domain_ptr == nullptr) {
+			LOG_ERROR << " lookup domain:" << domain_name << " is nullptr";
+			break;
+		}
+		pContent = virDomainGetXMLDesc(domain_ptr, VIR_DOMAIN_XML_SECURE);
+		if (!pContent) {
+			LOG_ERROR << domain_name << " get domain xml desc failed";
+			break;
+		}
+		tinyxml2::XMLDocument doc;
+		tinyxml2::XMLError err = doc.Parse(pContent);
+		if (err != tinyxml2::XML_SUCCESS) {
+			LOG_ERROR << domain_name << " parse xml desc failed";
+			break;
+		}
+		tinyxml2::XMLElement* root = doc.RootElement();
+		tinyxml2::XMLElement* devices_node = root->FirstChildElement("devices");
+		if (!devices_node) {
+			LOG_ERROR << domain_name << "not find devices node";
+			break;
+		}
+		tinyxml2::XMLElement* disk_node = devices_node->FirstChildElement("disk");
+		while (disk_node) {
+			domainDiskInfo ddInfo;
+			tinyxml2::XMLElement* disk_driver_node = disk_node->FirstChildElement("driver");
+			if (disk_driver_node) {
+				ddInfo.driverName = disk_driver_node->Attribute("name");
+				ddInfo.driverType = disk_driver_node->Attribute("type");
+			}
+			tinyxml2::XMLElement* disk_source_node = disk_node->FirstChildElement("source");
+			if (disk_source_node) {
+				ddInfo.sourceFile = disk_source_node->Attribute("file");
+			}
+			tinyxml2::XMLElement* disk_target_node = disk_node->FirstChildElement("target");
+			if (disk_target_node) {
+				ddInfo.targetDev = disk_target_node->Attribute("dev");
+				ddInfo.targetBus = disk_target_node->Attribute("bus");
+			}
+			disks[ddInfo.targetDev] = ddInfo;
+			disk_node = disk_node->NextSiblingElement("disk");
+		}
+		ret = true;
+	} while (0);
+
+	if (pContent) {
+		free(pContent);
+	}
+	if (domain_ptr != nullptr) {
+		virDomainFree(domain_ptr);
+	}
+	return ret;
+}
+
 virDomainState VmClient::GetDomainStatus(const std::string &domain_name) {
     if (m_connPtr == nullptr) {
         TASK_LOG_ERROR(domain_name, "connPtr is nullptr");

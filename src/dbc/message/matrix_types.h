@@ -5163,13 +5163,17 @@ namespace dbc {
 
 	std::ostream& operator<<(std::ostream& out, const node_list_snapshot_rsp& obj);
 
+	typedef struct _node_create_snapshot_req_data__isset {
+		_node_create_snapshot_req_data__isset() : image_server(false) {}
+		bool image_server : 1;
+	} _node_create_snapshot_req_data__isset;
 
 	class node_create_snapshot_req_data : public virtual ::apache::thrift::TBase {
 	public:
 
 		node_create_snapshot_req_data(const node_create_snapshot_req_data&);
 		node_create_snapshot_req_data& operator=(const node_create_snapshot_req_data&);
-		node_create_snapshot_req_data() : task_id(), additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign() {
+		node_create_snapshot_req_data() : task_id(), additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign(), image_server() {
 		}
 
 		virtual ~node_create_snapshot_req_data() throw();
@@ -5184,6 +5188,9 @@ namespace dbc {
 		std::vector<multisig_sign_item>  multisig_signs;
 		std::string session_id;
 		std::string session_id_sign;
+		std::string image_server;
+
+		_node_create_snapshot_req_data__isset __isset;
 
 		void __set_task_id(const std::string& val);
 
@@ -5206,6 +5213,8 @@ namespace dbc {
 		void __set_session_id(const std::string& val);
 
 		void __set_session_id_sign(const std::string& val);
+
+		void __set_image_server(const std::string& val);
 
 		bool operator == (const node_create_snapshot_req_data& rhs) const
 		{
@@ -5230,6 +5239,10 @@ namespace dbc {
 			if (!(session_id == rhs.session_id))
 				return false;
 			if (!(session_id_sign == rhs.session_id_sign))
+				return false;
+			if (__isset.image_server != rhs.__isset.image_server)
+				return false;
+			else if (__isset.image_server && !(image_server == rhs.image_server))
 				return false;
 			return true;
 		}

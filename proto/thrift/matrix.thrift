@@ -659,7 +659,8 @@ struct node_create_snapshot_req_data {
   8: required i32 multisig_threshold,
   9: required list<multisig_sign_item> multisig_signs,
   10: required string session_id,
-  11: required string session_id_sign
+  11: required string session_id_sign,
+  12: optional string image_server
 }
 
 struct node_create_snapshot_req_body {
