@@ -34,14 +34,6 @@ std::string createNWFilterXML(const std::string &filterName) {
     rule1->LinkEndChild(tcp1);
     root->LinkEndChild(rule1);
 
-    // <!-- 丢弃所有其他in流量 -->
-    tinyxml2::XMLElement *rulein = doc.NewElement("rule");
-    rulein->SetAttribute("action", "drop");
-    rulein->SetAttribute("direction", "in");
-    tinyxml2::XMLElement *allin = doc.NewElement("all");
-    rulein->LinkEndChild(allin);
-    root->LinkEndChild(rulein);
-
     // <!-- 允许所有out流量 -->
     tinyxml2::XMLElement *ruleout = doc.NewElement("rule");
     ruleout->SetAttribute("action", "accept");
@@ -49,6 +41,14 @@ std::string createNWFilterXML(const std::string &filterName) {
     tinyxml2::XMLElement *allout = doc.NewElement("all");
     ruleout->LinkEndChild(allout);
     root->LinkEndChild(ruleout);
+
+    // <!-- 丢弃所有其他in流量 -->
+    tinyxml2::XMLElement *rulein = doc.NewElement("rule");
+    rulein->SetAttribute("action", "drop");
+    rulein->SetAttribute("direction", "in");
+    tinyxml2::XMLElement *allin = doc.NewElement("all");
+    rulein->LinkEndChild(allin);
+    root->LinkEndChild(rulein);
 
     // doc.SaveFile((filterName + ".xml").c_str());
     tinyxml2::XMLPrinter printer;

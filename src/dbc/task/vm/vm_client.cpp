@@ -419,17 +419,17 @@ static std::string createNWFilterXml(const std::string& nwfilter_name, const std
     root->LinkEndChild(filterref1);
 
     // rule
-    for (const auto& nwfilter_item : nwfilters) {
+    auto rule_func = [&](const std::vector<std::string> v_nwfilter_protocol) -> int {
         //"nwfilter": [
         //    "in,tcp,22,0.0.0.0/0,accept",
-        //    "in,all,all,0.0.0.0/0,drop",
-        //    "out,all,all,0.0.0.0/0,accept"
+        //    "out,all,all,0.0.0.0/0,accept",
+        //    "in,all,all,0.0.0.0/0,drop"
         //]
-        std::vector<std::string> v_nwfilter_protocol = util::split(nwfilter_item, ",");
-        if (v_nwfilter_protocol.size() != 5) continue;
-        if (v_nwfilter_protocol[0] != "in" && v_nwfilter_protocol[0] != "out" && v_nwfilter_protocol[0] != "inout") continue;
+        // std::vector<std::string> v_nwfilter_protocol = util::split(nwfilter_item, ",");
+        // if (v_nwfilter_protocol.size() != 5) return -1;
+        if (v_nwfilter_protocol[0] != "in" && v_nwfilter_protocol[0] != "out" && v_nwfilter_protocol[0] != "inout") return -1;
         // rdp ftp icmp ssh http https 最终还是在xml中配置tcp或者udp端口
-        if (v_nwfilter_protocol[4] != "accept" && v_nwfilter_protocol[4] != "drop") continue;
+        if (v_nwfilter_protocol[4] != "accept" && v_nwfilter_protocol[4] != "drop") return -1;
         tinyxml2::XMLElement *rule = doc.NewElement("rule");
         rule->SetAttribute("action", v_nwfilter_protocol[4].c_str());
         rule->SetAttribute("direction", v_nwfilter_protocol[0].c_str());
@@ -440,7 +440,7 @@ static std::string createNWFilterXml(const std::string& nwfilter_name, const std
             rule->LinkEndChild(all);
         } else if (v_nwfilter_protocol[1] == "tcp" || v_nwfilter_protocol[1] == "udp") {
             std::vector<std::string> v_tcp_range = util::split(v_nwfilter_protocol[2], "-");
-            if (v_tcp_range.empty()) continue;
+            if (v_tcp_range.empty()) return -1;
             tinyxml2::XMLElement *tcp = doc.NewElement(v_nwfilter_protocol[1].c_str());
             tcp->SetAttribute("dstportstart", v_tcp_range[0].c_str());
             if (v_tcp_range.size() == 2)
@@ -480,6 +480,25 @@ static std::string createNWFilterXml(const std::string& nwfilter_name, const std
             rule->LinkEndChild(dns);
         }
         root->LinkEndChild(rule);
+        return 0;
+    };
+
+    std::vector<std::vector<std::string>> vec_rule_all;
+    for (const auto& nwfilter_item : nwfilters) {
+        std::vector<std::string> v_nwfilter_protocol = util::split(nwfilter_item, ",");
+        if (v_nwfilter_protocol.size() != 5) continue;
+        if (v_nwfilter_protocol[1] == "all" && v_nwfilter_protocol[2] == "all" && v_nwfilter_protocol[3] == "0.0.0.0/0") {
+            if (v_nwfilter_protocol[4] == "drop")
+                vec_rule_all.push_back(v_nwfilter_protocol);
+            else if (v_nwfilter_protocol[4] == "accept")
+                vec_rule_all.insert(vec_rule_all.begin(), v_nwfilter_protocol);
+        } else {
+            rule_func(v_nwfilter_protocol);
+        }
+    }
+    // "out,all,all,0.0.0.0/0,accept" 要写在 "in,all,all,0.0.0.0/0,drop" 前面
+    for (const auto& v_nwfilter_protocol : vec_rule_all) {
+        rule_func(v_nwfilter_protocol);
     }
     // tinyxml2::XMLElement *rule1 = doc.NewElement("rule");
     // rule1->SetAttribute("action", "accept");
@@ -489,14 +508,6 @@ static std::string createNWFilterXml(const std::string& nwfilter_name, const std
     // rule1->LinkEndChild(tcp1);
     // root->LinkEndChild(rule1);
 
-    // <!-- 丢弃所有其他in流量 -->
-    // tinyxml2::XMLElement *rulein = doc.NewElement("rule");
-    // rulein->SetAttribute("action", "drop");
-    // rulein->SetAttribute("direction", "in");
-    // tinyxml2::XMLElement *allin = doc.NewElement("all");
-    // rulein->LinkEndChild(allin);
-    // root->LinkEndChild(rulein);
-
     // <!-- 允许所有out流量 -->
     // tinyxml2::XMLElement *ruleout = doc.NewElement("rule");
     // ruleout->SetAttribute("action", "accept");
@@ -504,6 +515,14 @@ static std::string createNWFilterXml(const std::string& nwfilter_name, const std
     // tinyxml2::XMLElement *allout = doc.NewElement("all");
     // ruleout->LinkEndChild(allout);
     // root->LinkEndChild(ruleout);
+
+    // <!-- 丢弃所有其他in流量 -->
+    // tinyxml2::XMLElement *rulein = doc.NewElement("rule");
+    // rulein->SetAttribute("action", "drop");
+    // rulein->SetAttribute("direction", "in");
+    // tinyxml2::XMLElement *allin = doc.NewElement("all");
+    // rulein->LinkEndChild(allin);
+    // root->LinkEndChild(rulein);
 
     // doc.SaveFile((filterName + ".xml").c_str());
     tinyxml2::XMLPrinter printer;

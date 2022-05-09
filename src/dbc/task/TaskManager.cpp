@@ -672,8 +672,8 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     }
     //"nwfilter": [
     //    "in,tcp,22,0.0.0.0/0,accept",
-    //    "in,all,all,0.0.0.0/0,drop",
-    //    "out,all,all,0.0.0.0/0,accept"
+    //    "out,all,all,0.0.0.0/0,accept",
+    //    "in,all,all,0.0.0.0/0,drop"
     //]
     if (doc.HasMember("network_filters")) {
         const rapidjson::Value& v_nwfilters = doc["network_filters"];
