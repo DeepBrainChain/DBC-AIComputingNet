@@ -16,6 +16,7 @@
 #include "cpp_substrate.h"
 #include "service/node_monitor_service/node_monitor_service.h"
 #include "task/detail/VxlanManager.h"
+#include "tinyxml2.h"
 
 #define AI_TRAINING_TASK_TIMER      "training_task"
 #define AI_PRUNE_TASK_TIMER         "prune_task"
@@ -73,9 +74,9 @@ ERRCODE node_request_service::init() {
 	if (Server::NodeType == NODE_TYPE::ComputeNode) {
 		add_self_to_servicelist();
 
-		FResult fresult = m_task_scheduler.init();
-		if (fresult.errcode != ERR_SUCCESS) {
-			LOG_ERROR << fresult.errmsg;
+		FResult fret = TaskMgr::instance().init();
+		if (fret.errcode != ERR_SUCCESS) {
+			LOG_ERROR << fret.errmsg;
 			return ERR_ERROR;
 		}
 	}
@@ -87,7 +88,7 @@ void node_request_service::exit() {
 	service_module::exit();
 
 	if (Server::NodeType == NODE_TYPE::ComputeNode) {
-		m_task_scheduler.exit();
+		TaskMgr::instance().exit();
 	}
 }
 
@@ -108,7 +109,7 @@ void node_request_service::add_self_to_servicelist() {
     kvs["version"] = dbcversion();
 
     /*
-    int32_t count = m_task_scheduler.GetRunningTaskSize();
+    int32_t count = TaskMgr::instance().GetRunningTaskSize();
     std::string state;
     if (count <= 0) {
         state = "idle";
@@ -446,7 +447,7 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
                 result.success = false;
                 result.errmsg = "not in verify time";
             } else {
-                m_task_scheduler.deleteOtherCheckTasks(strMultisigWallet);
+                TaskMgr::instance().deleteOtherCheckTasks(strMultisigWallet);
 
                 result.success = true;
                 result.user_role = USER_ROLE::Verifier;
@@ -460,7 +461,7 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
                 result.success = false;
                 result.errmsg = "not in verify time";
             } else {
-                m_task_scheduler.deleteOtherCheckTasks(strWallet);
+                TaskMgr::instance().deleteOtherCheckTasks(strWallet);
 
                 result.success = true;
                 result.user_role = USER_ROLE::Verifier;
@@ -475,16 +476,16 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
     // 验证完，已上线，但未租用
     else if (str_status == MACHINE_STATUS::Online) {
         result.machine_status = MACHINE_STATUS::Online;
-        m_task_scheduler.deleteAllCheckTasks();
+        TaskMgr::instance().deleteAllCheckTasks();
         result.success = false;
         result.errmsg = "machine is not be rented";
     }
     // 租用中
     else if (str_status == MACHINE_STATUS::Rented) {
         result.machine_status = MACHINE_STATUS::Rented;
-        m_task_scheduler.deleteAllCheckTasks();
+        TaskMgr::instance().deleteAllCheckTasks();
 
-        std::string rent_wallet = m_task_scheduler.checkSessionId(params.session_id, params.session_id_sign);
+        std::string rent_wallet = TaskMgr::instance().checkSessionId(params.session_id, params.session_id_sign);
         if (rent_wallet.empty()) {
             auto wallets = parse_wallet(params);
             std::string strWallet = std::get<0>(wallets);
@@ -510,7 +511,7 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
                     for (auto& it : params.multisig_wallets) {
                         vec.push_back(it);
                     }
-                    m_task_scheduler.createSessionId(strMultisigWallet, vec);
+                    TaskMgr::instance().createSessionId(strMultisigWallet, vec);
                 } else {
                     result.success = false;
                     result.errmsg = "wallet not rented";
@@ -525,7 +526,7 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
                     result.rent_wallet = strWallet;
                     result.rent_end = rent_end;
 
-                    m_task_scheduler.createSessionId(strWallet);
+                    TaskMgr::instance().createSessionId(strWallet);
                 } else {
                     result.success = false;
                     result.errmsg = "wallet not rented";
@@ -553,7 +554,7 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
 
 //广播租用状态
 bool node_request_service::udp_broadcast_rent_status() {
-    m_task_scheduler.broadcast_message("renting");
+    TaskMgr::instance().broadcast_message("renting");
 
     return false;
 
@@ -660,7 +661,7 @@ void node_request_service::task_list(const network::base_header& header,
     if (data->task_id.empty()) {
         ss_tasks << "[";
         std::vector<std::shared_ptr<TaskInfo>> taskinfos;
-        m_task_scheduler.listAllTask(result.rent_wallet, taskinfos);
+        TaskMgr::instance().listAllTask(result.rent_wallet, taskinfos);
         int idx = 0;
         for (auto &taskinfo : taskinfos) {
             if (idx > 0)
@@ -677,14 +678,14 @@ void node_request_service::task_list(const network::base_header& header,
             ss_tasks << ", \"create_time\":" << "\"" << buf << "\"";
             ss_tasks << ", \"desc\":" << "\"" << taskinfo->getDesc() << "\"";
             ss_tasks << ", \"status\":" << "\"" 
-                << task_status_string(m_task_scheduler.queryTaskStatus(taskinfo->getTaskId())) << "\"";
+                << task_status_string(TaskMgr::instance().queryTaskStatus(taskinfo->getTaskId())) << "\"";
             ss_tasks << "}";
 
             idx++;
         }
         ss_tasks << "]";
     } else {
-        auto taskinfo = m_task_scheduler.findTask(result.rent_wallet, data->task_id);
+        auto taskinfo = TaskMgr::instance().findTask(result.rent_wallet, data->task_id);
         if (nullptr != taskinfo) {
             ss_tasks << "{";
             ss_tasks << "\"task_id\":" << "\"" << taskinfo->getTaskId() << "\"";
@@ -728,11 +729,11 @@ void node_request_service::task_list(const network::base_header& header,
             ss_tasks << ", \"create_time\":" << "\"" << buf << "\"";
             ss_tasks << ", \"desc\":" << "\"" << taskinfo->getDesc() << "\"";
             ss_tasks << ", \"status\":" << "\"" 
-                << task_status_string(m_task_scheduler.queryTaskStatus(taskinfo->getTaskId())) << "\"";
+                << task_status_string(TaskMgr::instance().queryTaskStatus(taskinfo->getTaskId())) << "\"";
 
             if (!taskinfo->getMulticast().empty() || !network_name.empty()) {
                 std::vector<std::tuple<std::string, std::string>> address;
-                int addr_ret = m_task_scheduler.getTaskAgentInterfaceAddress(taskinfo->getTaskId(), address);
+                int addr_ret = TaskMgr::instance().getTaskAgentInterfaceAddress(taskinfo->getTaskId(), address);
                 if (addr_ret >= 0 && !address.empty()) {
                     ss_tasks << ", \"local_address\":[";
                     int idx = 0;
@@ -906,7 +907,7 @@ void node_request_service::task_create(const network::base_header& header,
     std::string ret_msg = "ok";
 
     std::string task_id;
-    auto fresult = m_task_scheduler.createTask(result.rent_wallet, data, result.rent_end,
+    auto fresult = TaskMgr::instance().createTask(result.rent_wallet, data, result.rent_end,
                                                result.user_role, task_id);
     ret_code = fresult.errcode;
     ret_msg = fresult.errmsg;
@@ -917,7 +918,7 @@ void node_request_service::task_create(const network::base_header& header,
         ss << "\"errcode\":" << ret_code;
         ss << ", \"message\":" << "{";
         ss << "\"task_id\":" << "\"" << task_id << "\"";
-        auto taskinfo = m_task_scheduler.findTask(result.rent_wallet, task_id);
+        auto taskinfo = TaskMgr::instance().findTask(result.rent_wallet, task_id);
         struct tm _tm{};
         time_t tt = taskinfo == nullptr ? 0 : taskinfo->getCreateTime();
         localtime_r(&tt, &_tm);
@@ -1047,7 +1048,7 @@ void node_request_service::task_start(const network::base_header& header,
     int ret_code = ERR_SUCCESS;
     std::string ret_msg = "ok";
 
-    auto fresult = m_task_scheduler.startTask(result.rent_wallet, data->task_id);
+    auto fresult = TaskMgr::instance().startTask(result.rent_wallet, data->task_id);
     ret_code = fresult.errcode;
     ret_msg = fresult.errmsg;
 
@@ -1144,7 +1145,7 @@ void node_request_service::task_shutdown(const network::base_header& header,
     int ret_code = ERR_SUCCESS;
     std::string ret_msg = "ok";
     
-    auto fresult = m_task_scheduler.shutdownTask(result.rent_wallet, data->task_id);
+    auto fresult = TaskMgr::instance().shutdownTask(result.rent_wallet, data->task_id);
     ret_code = fresult.errcode;
     ret_msg = fresult.errmsg;
 
@@ -1243,7 +1244,7 @@ void node_request_service::task_poweroff(const network::base_header& header,
 	int ret_code = ERR_SUCCESS;
 	std::string ret_msg = "ok";
 
-	auto fresult = m_task_scheduler.poweroffTask(result.rent_wallet, data->task_id);
+	auto fresult = TaskMgr::instance().poweroffTask(result.rent_wallet, data->task_id);
 	ret_code = fresult.errcode;
 	ret_msg = fresult.errmsg;
 
@@ -1347,7 +1348,7 @@ void node_request_service::task_restart(const network::base_header& header,
     int ret_code = ERR_SUCCESS;
     std::string ret_msg = "ok";
 
-    auto fresult = m_task_scheduler.restartTask(result.rent_wallet, data->task_id, data->force_reboot != 0);
+    auto fresult = TaskMgr::instance().restartTask(result.rent_wallet, data->task_id, data->force_reboot != 0);
     ret_code = fresult.errcode;
     ret_msg = fresult.errmsg;
 
@@ -1444,7 +1445,7 @@ void node_request_service::task_reset(const network::base_header& header,
     int ret_code = ERR_SUCCESS;
     std::string ret_msg = "ok";
 
-    auto fresult = m_task_scheduler.resetTask(result.rent_wallet, data->task_id);
+    auto fresult = TaskMgr::instance().resetTask(result.rent_wallet, data->task_id);
     ret_code = fresult.errcode;
     ret_msg = fresult.errmsg;
 
@@ -1541,7 +1542,7 @@ void node_request_service::task_delete(const network::base_header& header,
     int ret_code = ERR_SUCCESS;
     std::string ret_msg = "ok";
 
-    auto fresult = m_task_scheduler.deleteTask(result.rent_wallet, data->task_id);
+    auto fresult = TaskMgr::instance().deleteTask(result.rent_wallet, data->task_id);
     ret_code = fresult.errcode;
     ret_msg = fresult.errmsg;
 
@@ -1654,7 +1655,7 @@ void node_request_service::task_logs(const network::base_header& header,
     }
 
     std::string log_content;
-    auto fresult = m_task_scheduler.getTaskLog(data->task_id, head_or_tail, number_of_lines, log_content);
+    auto fresult = TaskMgr::instance().getTaskLog(data->task_id, head_or_tail, number_of_lines, log_content);
     ret_code = fresult.errcode;
     ret_msg = fresult.errmsg;
 
@@ -1778,7 +1779,7 @@ void node_request_service::task_modify(const network::base_header& header,
 	int ret_code = ERR_SUCCESS;
 	std::string ret_msg = "ok";
 
-	auto fresult = m_task_scheduler.modifyTask(result.rent_wallet, data);
+	auto fresult = TaskMgr::instance().modifyTask(result.rent_wallet, data);
 	ret_code = fresult.errcode;
 	ret_msg = fresult.errmsg;
 
@@ -1875,7 +1876,7 @@ void node_request_service::list_images(const network::base_header& header,
 	std::string ret_msg = "ok";
 
 	std::vector<ImageFile> images;
-	auto fresult = m_task_scheduler.listImages(data, result, images);
+	auto fresult = TaskMgr::instance().listImages(data, result, images);
 	ret_code = fresult.errcode;
 	ret_msg = fresult.errmsg;
 
@@ -2017,7 +2018,7 @@ void node_request_service::download_image(const network::base_header& header,
 	int ret_code = ERR_SUCCESS;
 	std::string ret_msg = "ok";
 
-	auto fresult = m_task_scheduler.downloadImage(result.rent_wallet, data);
+	auto fresult = TaskMgr::instance().downloadImage(result.rent_wallet, data);
 	ret_code = fresult.errcode;
 	ret_msg = fresult.errmsg;
 
@@ -2118,7 +2119,7 @@ void node_request_service::download_image_progress(const network::base_header& h
 	int ret_code = ERR_SUCCESS;
 	std::string ret_msg = "ok";
 
-	auto fresult = m_task_scheduler.downloadImageProgress(result.rent_wallet, data);
+	auto fresult = TaskMgr::instance().downloadImageProgress(result.rent_wallet, data);
 	ret_code = fresult.errcode;
 	ret_msg = fresult.errmsg;
 
@@ -2237,7 +2238,7 @@ void node_request_service::stop_download_image(const network::base_header& heade
 	int ret_code = ERR_SUCCESS;
 	std::string ret_msg = "ok";
 
-	auto fresult = m_task_scheduler.stopDownloadImage(result.rent_wallet, data);
+	auto fresult = TaskMgr::instance().stopDownloadImage(result.rent_wallet, data);
 	ret_code = fresult.errcode;
 	ret_msg = fresult.errmsg;
 
@@ -2356,7 +2357,7 @@ void node_request_service::upload_image(const network::base_header& header,
 	int ret_code = ERR_SUCCESS;
 	std::string ret_msg = "ok";
 
-	auto fresult = m_task_scheduler.uploadImage(result.rent_wallet, data);
+	auto fresult = TaskMgr::instance().uploadImage(result.rent_wallet, data);
 	ret_code = fresult.errcode;
 	ret_msg = fresult.errmsg;
 
@@ -2457,7 +2458,7 @@ void node_request_service::upload_image_progress(const network::base_header& hea
 	int ret_code = ERR_SUCCESS;
 	std::string ret_msg = "ok";
 
-	auto fresult = m_task_scheduler.uploadImageProgress(result.rent_wallet, data);
+	auto fresult = TaskMgr::instance().uploadImageProgress(result.rent_wallet, data);
 	ret_code = fresult.errcode;
 	ret_msg = fresult.errmsg;
 
@@ -2576,7 +2577,7 @@ void node_request_service::stop_upload_image(const network::base_header& header,
 	int ret_code = ERR_SUCCESS;
 	std::string ret_msg = "ok";
 
-	auto fresult = m_task_scheduler.stopUploadImage(result.rent_wallet, data);
+	auto fresult = TaskMgr::instance().stopUploadImage(result.rent_wallet, data);
 	ret_code = fresult.errcode;
 	ret_msg = fresult.errmsg;
 
@@ -2695,7 +2696,7 @@ void node_request_service::delete_image(const network::base_header& header,
 	int ret_code = ERR_SUCCESS;
 	std::string ret_msg = "ok";
 
-	auto fresult = m_task_scheduler.deleteImage(result.rent_wallet, data);
+	auto fresult = TaskMgr::instance().deleteImage(result.rent_wallet, data);
 	ret_code = fresult.errcode;
 	ret_msg = fresult.errmsg;
 
@@ -2796,67 +2797,69 @@ void node_request_service::snapshot_list(const network::base_header& header,
     std::string ret_msg = "ok";
 
     std::stringstream ss_snapshots;
-    auto task = m_task_scheduler.findTask(result.rent_wallet, data->task_id);
-    if (task != nullptr) {
-        if (data->snapshot_name.empty()) {
-			std::vector<dbc::snapshot_info> snapshots;
-			TaskDiskMgr::instance().listSnapshots(data->task_id, snapshots);
+ 
+    auto snapshotinfo = TaskDiskMgr::instance().getSnapshotInfo(data->task_id);
 
-            ss_snapshots << "[";
-            int idx = 0;
-            for (auto &snapshot : snapshots) {
-                if (idx > 0)
-                    ss_snapshots << ",";
+    if (data->snapshot_name.empty()) {
+		std::vector<dbc::snapshot_info> snapshots;
+		TaskDiskMgr::instance().listSnapshots(data->task_id, snapshots);
 
-                ss_snapshots << "{";
-                ss_snapshots << "\"snapshot_name\":" << "\"" << snapshot.name << "\"";
-                ss_snapshots << ", \"description\":" << "\"" << snapshot.desc << "\"";
-                ss_snapshots << ", \"snapshot_file\":" << "\"" << snapshot.file << "\"";
+        ss_snapshots << "[";
+        int idx = 0;
+        for (auto &snapshot : snapshots) {
+            if (idx > 0)
+                ss_snapshots << ",";
 
-                struct tm _tm{};
-                time_t tt = snapshot.create_time;
-                localtime_r(&tt, &_tm);
-                char buf[256] = {0};
-                memset(buf, 0, sizeof(char) * 256);
-                strftime(buf, sizeof(char) * 256, "%Y-%m-%d %H:%M:%S", &_tm);
-                ss_snapshots << ", \"create_time\":" << "\"" << buf << "\"";
+            ss_snapshots << "{";
+            ss_snapshots << "\"snapshot_name\":" << "\"" << snapshot.name << "\"";
+            ss_snapshots << ", \"description\":" << "\"" << snapshot.desc << "\"";
+            ss_snapshots << ", \"snapshot_file\":" << "\"" << snapshot.file << "\"";
 
-                ss_snapshots << "}";
+            struct tm _tm{};
+            time_t tt = snapshot.create_time;
+            localtime_r(&tt, &_tm);
+            char buf[256] = {0};
+            memset(buf, 0, sizeof(char) * 256);
+            strftime(buf, sizeof(char) * 256, "%Y-%m-%d %H:%M:%S", &_tm);
+            ss_snapshots << ", \"create_time\":" << "\"" << buf << "\"";
+            
+            if (snapshotinfo)
+                ss_snapshots << ", \"status\":" << "\""
+                    << snapshot_status_string(snapshotinfo->getSnapshotStatus(snapshot.name)) << "\"";
+            ss_snapshots << "}";
 
-                idx++;
-            }
-            ss_snapshots << "]";
+            idx++;
         }
-        else {
-            dbc::snapshot_info info;
-            bool found = TaskDiskMgr::instance().getSnapshot(data->task_id, data->snapshot_name, info);
-            if (found) {
-                ss_snapshots << "{";
-                ss_snapshots << "\"snapshot_name\":" << "\"" << info.name << "\"";
-                ss_snapshots << ", \"description\":" << "\"" << info.desc << "\"";
-                ss_snapshots << ", \"snapshot_file\":" << "\"" << info.file << "\"";
-
-                struct tm _tm{};
-                time_t tt = info.create_time;
-                localtime_r(&tt, &_tm);
-                char buf[256] = {0};
-                memset(buf, 0, sizeof(char) * 256);
-                strftime(buf, sizeof(char) * 256, "%Y-%m-%d %H:%M:%S", &_tm);
-                ss_snapshots << ", \"create_time\":" << "\"" << buf << "\"";
-                
-                ss_snapshots << "}";
-            }
-            else {
-                ret_code = E_DEFAULT;
-                ret_msg = "snapshot_name not exist";
-            }
-        }
+        ss_snapshots << "]";
     }
     else {
-        ret_code = E_DEFAULT;
-        ret_msg = "task_id not exist";
-    }
+        dbc::snapshot_info info;
+        bool found = TaskDiskMgr::instance().getSnapshot(data->task_id, data->snapshot_name, info);
+        if (found) {
+            ss_snapshots << "{";
+            ss_snapshots << "\"snapshot_name\":" << "\"" << info.name << "\"";
+            ss_snapshots << ", \"description\":" << "\"" << info.desc << "\"";
+            ss_snapshots << ", \"snapshot_file\":" << "\"" << info.file << "\"";
 
+            struct tm _tm{};
+            time_t tt = info.create_time;
+            localtime_r(&tt, &_tm);
+            char buf[256] = {0};
+            memset(buf, 0, sizeof(char) * 256);
+            strftime(buf, sizeof(char) * 256, "%Y-%m-%d %H:%M:%S", &_tm);
+            ss_snapshots << ", \"create_time\":" << "\"" << buf << "\"";
+
+			if (snapshotinfo)
+				ss_snapshots << ", \"status\":" << "\""
+				<< snapshot_status_string(snapshotinfo->getSnapshotStatus(info.name)) << "\"";
+            ss_snapshots << "}";
+        }
+        else {
+            ret_code = ERR_ERROR;
+            ret_msg = "snapshot_name not exist";
+        }
+    }
+ 
     std::stringstream ss;
     ss << "{";
     if (ret_code == ERR_SUCCESS) {
@@ -2975,56 +2978,49 @@ void node_request_service::on_node_create_snapshot_req(const std::shared_ptr<net
 
 void node_request_service::snapshot_create(const network::base_header& header,
     const std::shared_ptr<dbc::node_create_snapshot_req_data>& data, const AuthoriseResult& result) {
-    int ret_code = ERR_SUCCESS;
-    std::string ret_msg = "ok";
+    FResult fret = FResultOk;
+    
+	// 解析请求参数
+	rapidjson::Document doc;
+	doc.Parse(data->additional.c_str());
+	if (!doc.IsObject()) {
+		LOG_ERROR << "parse xml failed";
+		send_response_error<dbc::node_create_snapshot_rsp>(NODE_CREATE_SNAPSHOT_RSP, header, E_DEFAULT, "parse xml failed");
+		return;
+	}
 
-    // todo:
-    ImageServer imgsvr;
-    std::string desc;
+	std::string s_snapshot_name;
+	JSON_PARSE_STRING(doc, "snapshot_name", s_snapshot_name);
+	if (s_snapshot_name.empty()) {
+		LOG_ERROR << "'snapshot_name' is empty";
+		send_response_error<dbc::node_create_snapshot_rsp>(NODE_CREATE_SNAPSHOT_RSP, header, E_DEFAULT, "'snapshot_name' is empty");
+		return;
+	}
 
+	std::string s_desc;
+	JSON_PARSE_STRING(doc, "desc", s_desc);
 
-    auto task = m_task_scheduler.findTask(result.rent_wallet, data->task_id);
-    if (task != nullptr) {
-        auto fresult = m_task_scheduler.createSnapshot(result.rent_wallet, data->additional, data->task_id, imgsvr, desc);
-        ret_code = fresult.errcode;
-        ret_msg = fresult.errmsg;
-    }
-    else {
-        ret_code = E_DEFAULT;
-        ret_msg = "task_id no exist";
-    }
+	ImageServer imgsvr;
+	imgsvr.from_string(data->image_server);
 
+    // 执行逻辑
     std::stringstream ss;
-    if (ret_code == ERR_SUCCESS) {
-        ss << "{";
-        ss << "\"errcode\":" << ret_code;
-        ss << ", \"message\":" << "{";
-        // ss << "\"task_id\":" << "\"" << data->task_id << "\"";
-        /*
-        auto snapshot = m_task_scheduler.getCreatingSnapshot(result.rent_wallet, data->task_id);
-        ss << "\"snapshot_name\":" << "\"" << snapshot->name << "\"";
-        */
-        // struct tm _tm{};
-        // time_t tt = snapshot == nullptr ? 0 : snapshot->creationTime;
-        // localtime_r(&tt, &_tm);
-        // char buf[256] = {0};
-        // memset(buf, 0, sizeof(char) * 256);
-        // strftime(buf, sizeof(char) * 256, "%Y-%m-%d %H:%M:%S", &_tm);
-        // ss << ", \"create_time\":" << "\"" << buf << "\"";
-        /*
-        ss << ", \"description\":" << "\"" << snapshot->description << "\"";
-        ss << ", \"status\":" << "\"" << "creating" << "\"";
-        */
-        ss << "}";
-        ss << "}";
-    }
-    else {
-        ss << "{";
-        ss << "\"errcode\":" << ret_code;
-        ss << ", \"message\":" << "\"" << ret_msg << "\"";
-        ss << "}";
-    }
 
+    fret = TaskDiskMgr::instance().createAndUploadSnapshot(data->task_id, s_snapshot_name, imgsvr, s_desc);
+	if (fret.errcode == ERR_SUCCESS) {
+		ss << "{";
+		ss << "\"errcode\":" << ERR_SUCCESS;
+		ss << ",\"message\":" << "\"ok\"";
+		ss << "}";
+	}
+	else {
+		ss << "{";
+		ss << "\"errcode\":" << fret.errcode;
+		ss << ",\"message\":" << "\"" << fret.errmsg << "\"";
+		ss << "}";
+	}
+
+    // 返回结果
     const std::map<std::string, std::string>& mp = header.exten_info;
     auto it = mp.find("pub_key");
     if (it != mp.end()) {
@@ -3131,61 +3127,624 @@ void node_request_service::on_node_delete_snapshot_req(const std::shared_ptr<net
 
 void node_request_service::snapshot_delete(const network::base_header& header,
     const std::shared_ptr<dbc::node_delete_snapshot_req_data>& data, const AuthoriseResult& result) {
-    int ret_code = ERR_SUCCESS;
-    std::string ret_msg = "ok";
+    FResult fret = FResultOk;
 
-    auto task = m_task_scheduler.findTask(result.rent_wallet, data->task_id);
-    if (task != nullptr) {
+    std::stringstream ss;
+
+    dbc::snapshot_info snapinfo;
+    bool found = TaskDiskMgr::instance().getSnapshot(data->task_id, data->snapshot_name, snapinfo);
+    if (found) {
         TaskDiskMgr::instance().terminateUploadSnapshot(data->task_id, data->snapshot_name);
-    }
-    else {
-        ret_code = E_DEFAULT;
-        ret_msg = "task_id not exist";
-    }
 
-    if (ret_code == ERR_SUCCESS) {
-        send_response_ok<dbc::node_delete_snapshot_rsp>(NODE_DELETE_SNAPSHOT_RSP, header);
+		ss << "{";
+		ss << "\"errcode\":" << ERR_SUCCESS;
+		ss << ",\"message\":" << "\"ok\"";
+		ss << "}";
     }
     else {
-        send_response_error<dbc::node_delete_snapshot_rsp>(NODE_DELETE_SNAPSHOT_RSP, header, ret_code, ret_msg);
+		ss << "{";
+		ss << "\"errcode\":" << ERR_ERROR;
+		ss << ",\"message\":" << "\"" << data->snapshot_name << " not exist" << "\"";
+		ss << "}";
     }
+	
+	// 返回结果
+	const std::map<std::string, std::string>& mp = header.exten_info;
+	auto it = mp.find("pub_key");
+	if (it != mp.end()) {
+		std::string pub_key = it->second;
+		std::string priv_key = ConfManager::instance().GetPrivKey();
+
+		if (!pub_key.empty() && !priv_key.empty()) {
+			std::string s_data = encrypt_data((unsigned char*)ss.str().c_str(), ss.str().size(), pub_key, priv_key);
+			send_response_json<dbc::node_delete_snapshot_rsp>(NODE_DELETE_SNAPSHOT_RSP, header, s_data);
+		}
+		else {
+			LOG_ERROR << "pub_key or priv_key is empty";
+			send_response_error<dbc::node_delete_snapshot_rsp>(NODE_DELETE_SNAPSHOT_RSP, header, E_DEFAULT, "pub_key or priv_key is empty");
+		}
+	}
+	else {
+		LOG_ERROR << "request no pub_key";
+		send_response_error<dbc::node_delete_snapshot_rsp>(NODE_DELETE_SNAPSHOT_RSP, header, E_DEFAULT, "request no pub_key");
+	}
 }
 
 // disk
 void node_request_service::on_node_list_disk_req(const std::shared_ptr<network::message>& msg) {
+	auto node_req_msg = std::dynamic_pointer_cast<dbc::node_list_disk_req>(msg->get_content());
+	if (node_req_msg == nullptr) {
+		return;
+	}
 
+	if (!check_req_header_nonce(node_req_msg->header.nonce)) {
+		return;
+	}
+
+	if (Server::NodeType != NODE_TYPE::ComputeNode) {
+		node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+		network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+		return;
+	}
+
+	if (!check_req_header(msg)) {
+		LOG_ERROR << "request header check failed";
+		node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+		network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+		return;
+	}
+
+	// decrypt
+	std::string pub_key = node_req_msg->header.exten_info["pub_key"];
+	std::string priv_key = ConfManager::instance().GetPrivKey();
+	if (pub_key.empty() || priv_key.empty()) {
+		LOG_ERROR << "pub_key or priv_key is empty";
+		node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+		network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+		return;
+	}
+
+	std::shared_ptr<dbc::node_list_disk_req_data> data = std::make_shared<dbc::node_list_disk_req_data>();
+	try {
+		std::string ori_message;
+		bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
+		if (!succ || ori_message.empty()) {
+			node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+			network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+			return;
+		}
+
+		std::shared_ptr<byte_buf> snapshot_buf = std::make_shared<byte_buf>();
+		snapshot_buf->write_to_byte_buf(ori_message.c_str(), ori_message.size());
+		network::binary_protocol proto(snapshot_buf.get());
+		data->read(&proto);
+	}
+	catch (std::exception& e) {
+		node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+		network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+		return;
+	}
+
+	std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
+	bool hit_self = hit_node(req_peer_nodes, ConfManager::instance().GetNodeId());
+	if (hit_self) {
+		AuthorityParams params;
+		params.wallet = data->wallet;
+		params.nonce = data->nonce;
+		params.sign = data->sign;
+		params.multisig_wallets = data->multisig_wallets;
+		params.multisig_threshold = data->multisig_threshold;
+		params.multisig_signs = data->multisig_signs;
+		params.session_id = data->session_id;
+		params.session_id_sign = data->session_id_sign;
+		AuthoriseResult result;
+		check_authority(params, result);
+		if (!result.success || result.user_role == USER_ROLE::Unknown || result.user_role == USER_ROLE::Verifier) {
+			LOG_ERROR << "check authority failed: " << result.errmsg;
+			send_response_error<dbc::node_list_disk_rsp>(NODE_LIST_DISK_RSP, node_req_msg->header, E_DEFAULT, "check authority failed: " + result.errmsg);
+			return;
+		}
+
+		do_list_disk(node_req_msg->header, data, result);
+	}
+	else {
+		node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+		network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+	}
 }
 
 void node_request_service::do_list_disk(const network::base_header& header, 
     const std::shared_ptr<dbc::node_list_disk_req_data>& data, const AuthoriseResult& result) {
+    FResult fret = FResultOk;
+     
+    std::map<std::string, std::shared_ptr<DiskInfo>> mpdisks;
+    TaskDiskMgr::instance().listDisks(data->task_id, mpdisks);
 
+    std::stringstream ss;
+    ss << "{";
+    ss << "\"errcode\":" << ERR_SUCCESS;
+    ss << ",\"message\":" << "[";
+    int count = 0;
+    for (auto& iter : mpdisks) {
+        if (count > 0)
+            ss << ",";
+
+        ss << "{";
+        ss << "\"name\":" << "\"" << iter.second->getName() << "\"";
+        ss << ",\"file\":" << "\"" << iter.second->getSourceFile() << "\"";
+        ss << ",\"size\":" << "\"" << scale_size(iter.second->getVirtualSize() / 1024L) << "\"";
+        ss << "}";
+
+        count++;
+    }
+    ss << "]";
+    ss << "}";
+
+    const std::map<std::string, std::string>& mp = header.exten_info;
+    auto it = mp.find("pub_key");
+    if (it != mp.end()) {
+        std::string pub_key = it->second;
+        std::string priv_key = ConfManager::instance().GetPrivKey();
+
+        if (!pub_key.empty() && !priv_key.empty()) {
+            std::string s_data = encrypt_data((unsigned char*)ss.str().c_str(), ss.str().size(), pub_key, priv_key);
+            send_response_json<dbc::node_list_disk_rsp>(NODE_LIST_DISK_RSP, header, s_data);
+        }
+        else {
+            LOG_ERROR << "pub_key or priv_key is empty";
+            send_response_error<dbc::node_list_disk_rsp>(NODE_LIST_DISK_RSP, header, E_DEFAULT, "pub_key or priv_key is empty");
+        }
+    }
+    else {
+        LOG_ERROR << "request no pub_key";
+        send_response_error<dbc::node_list_disk_rsp>(NODE_LIST_DISK_RSP, header, E_DEFAULT, "request no pub_key");
+    }
 }
 
 void node_request_service::on_node_resize_disk_req(const std::shared_ptr<network::message>& msg) {
+	auto node_req_msg = std::dynamic_pointer_cast<dbc::node_resize_disk_req>(msg->get_content());
+	if (node_req_msg == nullptr) {
+		return;
+	}
 
+	if (!check_req_header_nonce(node_req_msg->header.nonce)) {
+		return;
+	}
+
+	if (Server::NodeType != NODE_TYPE::ComputeNode) {
+		node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+		network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+		return;
+	}
+
+	if (!check_req_header(msg)) {
+		LOG_ERROR << "request header check failed";
+		node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+		network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+		return;
+	}
+
+	// decrypt
+	std::string pub_key = node_req_msg->header.exten_info["pub_key"];
+	std::string priv_key = ConfManager::instance().GetPrivKey();
+	if (pub_key.empty() || priv_key.empty()) {
+		LOG_ERROR << "pub_key or priv_key is empty";
+		node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+		network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+		return;
+	}
+
+	std::shared_ptr<dbc::node_resize_disk_req_data> data = std::make_shared<dbc::node_resize_disk_req_data>();
+	try {
+		std::string ori_message;
+		bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
+		if (!succ || ori_message.empty()) {
+			node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+			network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+			return;
+		}
+
+		std::shared_ptr<byte_buf> snapshot_buf = std::make_shared<byte_buf>();
+		snapshot_buf->write_to_byte_buf(ori_message.c_str(), ori_message.size());
+		network::binary_protocol proto(snapshot_buf.get());
+		data->read(&proto);
+	}
+	catch (std::exception& e) {
+		node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+		network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+		return;
+	}
+
+	std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
+	bool hit_self = hit_node(req_peer_nodes, ConfManager::instance().GetNodeId());
+	if (hit_self) {
+		AuthorityParams params;
+		params.wallet = data->wallet;
+		params.nonce = data->nonce;
+		params.sign = data->sign;
+		params.multisig_wallets = data->multisig_wallets;
+		params.multisig_threshold = data->multisig_threshold;
+		params.multisig_signs = data->multisig_signs;
+		params.session_id = data->session_id;
+		params.session_id_sign = data->session_id_sign;
+		AuthoriseResult result;
+		check_authority(params, result);
+		if (!result.success || result.user_role == USER_ROLE::Unknown || result.user_role == USER_ROLE::Verifier) {
+			LOG_ERROR << "check authority failed: " << result.errmsg;
+			send_response_error<dbc::node_resize_disk_rsp>(NODE_RESIZE_DISK_RSP, node_req_msg->header, E_DEFAULT, "check authority failed: " + result.errmsg);
+			return;
+		}
+
+		do_resize_disk(node_req_msg->header, data, result);
+	}
+	else {
+		node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+		network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+	}
 }
 
 void node_request_service::do_resize_disk(const network::base_header& header, 
     const std::shared_ptr<dbc::node_resize_disk_req_data>& data, const AuthoriseResult& result) {
+	FResult fret = FResultOk;
 
+    // 解析请求参数
+	rapidjson::Document doc;
+	doc.Parse(data->additional.c_str());
+	if (!doc.IsObject()) {
+		LOG_ERROR << "parse xml failed";
+		send_response_error<dbc::node_resize_disk_rsp>(NODE_RESIZE_DISK_RSP, header, E_DEFAULT, "parse xml failed");
+        return;
+    }
+
+    std::string s_disk;
+    JSON_PARSE_STRING(doc, "disk", s_disk);
+    if (s_disk.empty()) {
+		LOG_ERROR << "'disk' is empty";
+		send_response_error<dbc::node_resize_disk_rsp>(NODE_RESIZE_DISK_RSP, header, E_DEFAULT, "'disk' is empty");
+        return;
+    }
+
+	int n_size; //G
+	JSON_PARSE_INT(doc, "size", n_size);
+	if (n_size <= 0) {
+		LOG_ERROR << "'size' is invalid";
+		send_response_error<dbc::node_resize_disk_rsp>(NODE_RESIZE_DISK_RSP, header, E_DEFAULT, "'size' is invalid");
+		return;
+	}
+
+    // 执行逻辑
+    std::stringstream ss;
+
+    fret = TaskDiskMgr::instance().resizeDisk(data->task_id, s_disk, n_size * 1024L * 1024L);
+	if (fret.errcode == ERR_SUCCESS) {
+		ss << "{";
+		ss << "\"errcode\":" << ERR_SUCCESS;
+		ss << ",\"message\":" << "\"ok\"";
+		ss << "}";
+	}
+	else {
+		ss << "{";
+		ss << "\"errcode\":" << fret.errcode;
+		ss << ",\"message\":" << "\"" << fret.errmsg << "\"";
+		ss << "}";
+	}
+
+    // 返回结果
+	const std::map<std::string, std::string>& mp = header.exten_info;
+	auto it = mp.find("pub_key");
+	if (it != mp.end()) {
+		std::string pub_key = it->second;
+		std::string priv_key = ConfManager::instance().GetPrivKey();
+
+		if (!pub_key.empty() && !priv_key.empty()) {
+			std::string s_data = encrypt_data((unsigned char*)ss.str().c_str(), ss.str().size(), pub_key, priv_key);
+			send_response_json<dbc::node_resize_disk_rsp>(NODE_RESIZE_DISK_RSP, header, s_data);
+		}
+		else {
+			LOG_ERROR << "pub_key or priv_key is empty";
+			send_response_error<dbc::node_resize_disk_rsp>(NODE_RESIZE_DISK_RSP, header, E_DEFAULT, "pub_key or priv_key is empty");
+		}
+	}
+	else {
+		LOG_ERROR << "request no pub_key";
+		send_response_error<dbc::node_resize_disk_rsp>(NODE_RESIZE_DISK_RSP, header, E_DEFAULT, "request no pub_key");
+	}
 }
 
 void node_request_service::on_node_add_disk_req(const std::shared_ptr<network::message>& msg) {
+	auto node_req_msg = std::dynamic_pointer_cast<dbc::node_add_disk_req>(msg->get_content());
+	if (node_req_msg == nullptr) {
+		return;
+	}
 
+	if (!check_req_header_nonce(node_req_msg->header.nonce)) {
+		return;
+	}
+
+	if (Server::NodeType != NODE_TYPE::ComputeNode) {
+		node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+		network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+		return;
+	}
+
+	if (!check_req_header(msg)) {
+		LOG_ERROR << "request header check failed";
+		node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+		network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+		return;
+	}
+
+	// decrypt
+	std::string pub_key = node_req_msg->header.exten_info["pub_key"];
+	std::string priv_key = ConfManager::instance().GetPrivKey();
+	if (pub_key.empty() || priv_key.empty()) {
+		LOG_ERROR << "pub_key or priv_key is empty";
+		node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+		network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+		return;
+	}
+
+	std::shared_ptr<dbc::node_add_disk_req_data> data = std::make_shared<dbc::node_add_disk_req_data>();
+	try {
+		std::string ori_message;
+		bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
+		if (!succ || ori_message.empty()) {
+			node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+			network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+			return;
+		}
+
+		std::shared_ptr<byte_buf> snapshot_buf = std::make_shared<byte_buf>();
+		snapshot_buf->write_to_byte_buf(ori_message.c_str(), ori_message.size());
+		network::binary_protocol proto(snapshot_buf.get());
+		data->read(&proto);
+	}
+	catch (std::exception& e) {
+		node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+		network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+		return;
+	}
+
+	std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
+	bool hit_self = hit_node(req_peer_nodes, ConfManager::instance().GetNodeId());
+	if (hit_self) {
+		AuthorityParams params;
+		params.wallet = data->wallet;
+		params.nonce = data->nonce;
+		params.sign = data->sign;
+		params.multisig_wallets = data->multisig_wallets;
+		params.multisig_threshold = data->multisig_threshold;
+		params.multisig_signs = data->multisig_signs;
+		params.session_id = data->session_id;
+		params.session_id_sign = data->session_id_sign;
+		AuthoriseResult result;
+		check_authority(params, result);
+		if (!result.success || result.user_role == USER_ROLE::Unknown || result.user_role == USER_ROLE::Verifier) {
+			LOG_ERROR << "check authority failed: " << result.errmsg;
+			send_response_error<dbc::node_add_disk_rsp>(NODE_ADD_DISK_RSP, node_req_msg->header, E_DEFAULT, "check authority failed: " + result.errmsg);
+			return;
+		}
+
+		do_add_disk(node_req_msg->header, data, result);
+	}
+	else {
+		node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+		network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+	}
 }
 
 void node_request_service::do_add_disk(const network::base_header& header, 
     const std::shared_ptr<dbc::node_add_disk_req_data>& data, const AuthoriseResult& result) {
+	FResult fret = FResultOk;
 
+	// 解析请求参数
+	rapidjson::Document doc;
+	doc.Parse(data->additional.c_str());
+	if (!doc.IsObject()) {
+		LOG_ERROR << "parse xml failed";
+		send_response_error<dbc::node_add_disk_rsp>(NODE_ADD_DISK_RSP, header, E_DEFAULT, "parse xml failed");
+		return;
+	}
+
+	int n_size; //G
+	JSON_PARSE_INT(doc, "size", n_size);
+	if (n_size <= 0) {
+		LOG_ERROR << "'size' is invalid";
+		send_response_error<dbc::node_add_disk_rsp>(NODE_ADD_DISK_RSP, header, E_DEFAULT, "'size' is invalid");
+		return;
+	}
+
+	std::string s_mount_dir;
+	JSON_PARSE_STRING(doc, "mount_dir", s_mount_dir);
+    if (s_mount_dir.empty()) {
+        s_mount_dir = "/data";
+    }
+
+    if (!bfs::exists(s_mount_dir)) {
+        LOG_ERROR << "mount_dir:" << s_mount_dir << " is not exist";
+		send_response_error<dbc::node_add_disk_rsp>(NODE_ADD_DISK_RSP, header, E_DEFAULT, s_mount_dir + " is not exist");
+		return;
+    }
+
+	// 执行逻辑
+	std::stringstream ss;
+     
+    fret = TaskDiskMgr::instance().addNewDisk(data->task_id, n_size * 1024L * 1024L, s_mount_dir);
+	if (fret.errcode == ERR_SUCCESS) {
+		ss << "{";
+		ss << "\"errcode\":" << ERR_SUCCESS;
+		ss << ",\"message\":" << "\"ok\"";
+		ss << "}";
+	}
+	else {
+		ss << "{";
+		ss << "\"errcode\":" << fret.errcode;
+		ss << ",\"message\":" << "\"" << fret.errmsg << "\"";
+		ss << "}";
+	}
+
+	// 返回结果
+	const std::map<std::string, std::string>& mp = header.exten_info;
+	auto it = mp.find("pub_key");
+	if (it != mp.end()) {
+		std::string pub_key = it->second;
+		std::string priv_key = ConfManager::instance().GetPrivKey();
+
+		if (!pub_key.empty() && !priv_key.empty()) {
+			std::string s_data = encrypt_data((unsigned char*)ss.str().c_str(), ss.str().size(), pub_key, priv_key);
+			send_response_json<dbc::node_add_disk_rsp>(NODE_ADD_DISK_RSP, header, s_data);
+		}
+		else {
+			LOG_ERROR << "pub_key or priv_key is empty";
+			send_response_error<dbc::node_add_disk_rsp>(NODE_ADD_DISK_RSP, header, E_DEFAULT, "pub_key or priv_key is empty");
+		}
+	}
+	else {
+		LOG_ERROR << "request no pub_key";
+		send_response_error<dbc::node_add_disk_rsp>(NODE_ADD_DISK_RSP, header, E_DEFAULT, "request no pub_key");
+	}
 }
 
 void node_request_service::on_node_delete_disk_req(const std::shared_ptr<network::message>& msg) {
+	auto node_req_msg = std::dynamic_pointer_cast<dbc::node_delete_disk_req>(msg->get_content());
+	if (node_req_msg == nullptr) {
+		return;
+	}
 
+	if (!check_req_header_nonce(node_req_msg->header.nonce)) {
+		return;
+	}
+
+	if (Server::NodeType != NODE_TYPE::ComputeNode) {
+		node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+		network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+		return;
+	}
+
+	if (!check_req_header(msg)) {
+		LOG_ERROR << "request header check failed";
+		node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+		network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+		return;
+	}
+
+	// decrypt
+	std::string pub_key = node_req_msg->header.exten_info["pub_key"];
+	std::string priv_key = ConfManager::instance().GetPrivKey();
+	if (pub_key.empty() || priv_key.empty()) {
+		LOG_ERROR << "pub_key or priv_key is empty";
+		node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+		network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+		return;
+	}
+
+	std::shared_ptr<dbc::node_delete_disk_req_data> data = std::make_shared<dbc::node_delete_disk_req_data>();
+	try {
+		std::string ori_message;
+		bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
+		if (!succ || ori_message.empty()) {
+			node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+			network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+			return;
+		}
+
+		std::shared_ptr<byte_buf> snapshot_buf = std::make_shared<byte_buf>();
+		snapshot_buf->write_to_byte_buf(ori_message.c_str(), ori_message.size());
+		network::binary_protocol proto(snapshot_buf.get());
+		data->read(&proto);
+	}
+	catch (std::exception& e) {
+		node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+		network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+		return;
+	}
+
+	std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
+	bool hit_self = hit_node(req_peer_nodes, ConfManager::instance().GetNodeId());
+	if (hit_self) {
+		AuthorityParams params;
+		params.wallet = data->wallet;
+		params.nonce = data->nonce;
+		params.sign = data->sign;
+		params.multisig_wallets = data->multisig_wallets;
+		params.multisig_threshold = data->multisig_threshold;
+		params.multisig_signs = data->multisig_signs;
+		params.session_id = data->session_id;
+		params.session_id_sign = data->session_id_sign;
+		AuthoriseResult result;
+		check_authority(params, result);
+		if (!result.success || result.user_role == USER_ROLE::Unknown || result.user_role == USER_ROLE::Verifier) {
+			LOG_ERROR << "check authority failed: " << result.errmsg;
+			send_response_error<dbc::node_delete_disk_rsp>(NODE_DELETE_DISK_RSP, node_req_msg->header, E_DEFAULT, "check authority failed: " + result.errmsg);
+			return;
+		}
+
+		do_delete_disk(node_req_msg->header, data, result);
+	}
+	else {
+		node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+		network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+	}
 }
 
 void node_request_service::do_delete_disk(const network::base_header& header, 
     const std::shared_ptr<dbc::node_delete_disk_req_data>& data, const AuthoriseResult& result) {
+	FResult fret = FResultOk;
 
+	// 解析请求参数
+	rapidjson::Document doc;
+	doc.Parse(data->additional.c_str());
+	if (!doc.IsObject()) {
+		LOG_ERROR << "parse xml failed";
+		send_response_error<dbc::node_delete_disk_rsp>(NODE_DELETE_DISK_RSP, header, E_DEFAULT, "parse xml failed");
+		return;
+	}
+
+	std::string s_disk;
+	JSON_PARSE_STRING(doc, "disk", s_disk);
+	if (s_disk.empty()) {
+		LOG_ERROR << "'disk' is empty";
+		send_response_error<dbc::node_delete_disk_rsp>(NODE_DELETE_DISK_RSP, header, E_DEFAULT, "'disk' is empty");
+		return;
+	}
+
+	// 执行逻辑
+	std::stringstream ss;
+
+    fret = TaskDiskMgr::instance().deleteDisk(data->task_id, s_disk);
+	if (fret.errcode == ERR_SUCCESS) {
+		ss << "{";
+		ss << "\"errcode\":" << ERR_SUCCESS;
+		ss << ",\"message\":" << "\"ok\"";
+		ss << "}";
+	}
+	else {
+		ss << "{";
+		ss << "\"errcode\":" << fret.errcode;
+		ss << ",\"message\":" << "\"" << fret.errmsg << "\"";
+		ss << "}";
+	}
+
+	// 返回结果
+	const std::map<std::string, std::string>& mp = header.exten_info;
+	auto it = mp.find("pub_key");
+	if (it != mp.end()) {
+		std::string pub_key = it->second;
+		std::string priv_key = ConfManager::instance().GetPrivKey();
+
+		if (!pub_key.empty() && !priv_key.empty()) {
+			std::string s_data = encrypt_data((unsigned char*)ss.str().c_str(), ss.str().size(), pub_key, priv_key);
+			send_response_json<dbc::node_delete_disk_rsp>(NODE_DELETE_DISK_RSP, header, s_data);
+		}
+		else {
+			LOG_ERROR << "pub_key or priv_key is empty";
+			send_response_error<dbc::node_delete_disk_rsp>(NODE_DELETE_DISK_RSP, header, E_DEFAULT, "pub_key or priv_key is empty");
+		}
+	}
+	else {
+		LOG_ERROR << "request no pub_key";
+		send_response_error<dbc::node_delete_disk_rsp>(NODE_DELETE_DISK_RSP, header, E_DEFAULT, "request no pub_key");
+	}
 }
 
 // node
@@ -3320,7 +3879,7 @@ void node_request_service::query_node_info(const network::base_header& header,
     }
     ss << "]";
     /*
-    int32_t count = m_task_scheduler.GetRunningTaskSize();
+    int32_t count = TaskMgr::instance().GetRunningTaskSize();
     std::string state;
     if (count <= 0) {
         state = "idle";
@@ -3436,7 +3995,7 @@ void node_request_service::on_node_session_id_req(const std::shared_ptr<network:
 void node_request_service::node_session_id(const network::base_header &header,
                                            const std::shared_ptr<dbc::node_session_id_req_data> &data, const AuthoriseResult& result) {
     if (result.machine_status == MACHINE_STATUS::Rented && result.user_role == USER_ROLE::WalletRenter) {
-        std::string session_id = m_task_scheduler.getSessionId(result.rent_wallet);
+        std::string session_id = TaskMgr::instance().getSessionId(result.rent_wallet);
         if (session_id.empty()) {
             send_response_error<dbc::node_session_id_rsp>(NODE_SESSION_ID_RSP, header, E_DEFAULT, "no session id");
         } else {
@@ -3474,11 +4033,11 @@ void node_request_service::node_session_id(const network::base_header &header,
 
 
 void node_request_service::on_training_task_timer(const std::shared_ptr<core_timer>& timer) {
-    //m_task_scheduler.ProcessTask();
+    //TaskMgr::instance().ProcessTask();
 }
 
 void node_request_service::on_prune_task_timer(const std::shared_ptr<core_timer>& timer) {
-    //m_task_scheduler.PruneTask();
+    //TaskMgr::instance().PruneTask();
 }
 
 void node_request_service::on_timer_service_broadcast(const std::shared_ptr<core_timer>& timer)
@@ -3490,7 +4049,7 @@ void node_request_service::on_timer_service_broadcast(const std::shared_ptr<core
 
     if (Server::NodeType == NODE_TYPE::ComputeNode) {
         /*
-        int32_t count = m_task_scheduler.GetRunningTaskSize();
+        int32_t count = TaskMgr::instance().GetRunningTaskSize();
         std::string state;
         if (count <= 0) {
             state = "idle";

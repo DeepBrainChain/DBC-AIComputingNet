@@ -5135,9 +5135,23 @@ void rest_api_service::rest_list_disk(const std::shared_ptr<network::http_reques
 		return;
 	}
 
+	std::vector<std::string> path_list;
+	util::split_path(path, path_list);
+	if (path_list.size() != 2) {
+		LOG_ERROR << "path_list's size != 2";
+		httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, please use /disk/list/<task_id>");
+		return;
+	}
+
 	req_body body;
 
-	// parse body
+	body.task_id = path_list[1];
+	if (body.task_id.empty()) {
+		LOG_ERROR << "task_id is empty";
+		httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "task_id is empty");
+		return;
+	}
+
 	std::string s_body = httpReq->read_body();
 	if (s_body.empty()) {
 		httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request body is empty");
@@ -5226,6 +5240,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_list_disk_req_ms
 	req_content->header.__set_path(path);
 	// body
 	dbc::node_list_disk_req_data req_data;
+    req_data.__set_task_id(body.task_id);
 	req_data.__set_peer_nodes_list(body.peer_nodes_list);
 	req_data.__set_additional(body.additional);
 	req_data.__set_wallet(body.wallet);
@@ -5358,7 +5373,22 @@ void rest_api_service::rest_resize_disk(const std::shared_ptr<network::http_requ
 		return;
 	}
 
+	std::vector<std::string> path_list;
+	util::split_path(path, path_list);
+	if (path_list.size() != 2) {
+		LOG_ERROR << "path_list's size != 2";
+		httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, please use /disk/resize/<task_id>");
+		return;
+	}
+
 	req_body body;
+
+	body.task_id = path_list[1];
+	if (body.task_id.empty()) {
+		LOG_ERROR << "task_id is empty";
+		httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "task_id is empty");
+		return;
+	}
 
 	// parse body
 	std::string s_body = httpReq->read_body();
@@ -5449,6 +5479,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_resize_disk_req_
 	req_content->header.__set_path(path);
 	// body
 	dbc::node_list_disk_req_data req_data;
+    req_data.__set_task_id(body.task_id);
 	req_data.__set_peer_nodes_list(body.peer_nodes_list);
 	req_data.__set_additional(body.additional);
 	req_data.__set_wallet(body.wallet);
@@ -5581,7 +5612,22 @@ void rest_api_service::rest_add_disk(const std::shared_ptr<network::http_request
 		return;
 	}
 
+	std::vector<std::string> path_list;
+	util::split_path(path, path_list);
+	if (path_list.size() != 2) {
+		LOG_ERROR << "path_list's size != 2";
+		httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, please use /disk/resize/<task_id>");
+		return;
+	}
+
 	req_body body;
+
+	body.task_id = path_list[1];
+	if (body.task_id.empty()) {
+		LOG_ERROR << "task_id is empty";
+		httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "task_id is empty");
+		return;
+	}
 
 	// parse body
 	std::string s_body = httpReq->read_body();
@@ -5672,6 +5718,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_add_disk_req_msg
 	req_content->header.__set_path(path);
 	// body
 	dbc::node_add_disk_req_data req_data;
+    req_data.__set_task_id(body.task_id);
 	req_data.__set_peer_nodes_list(body.peer_nodes_list);
 	req_data.__set_additional(body.additional);
 	req_data.__set_wallet(body.wallet);
@@ -5804,7 +5851,22 @@ void rest_api_service::rest_delete_disk(const std::shared_ptr<network::http_requ
 		return;
 	}
 
+	std::vector<std::string> path_list;
+	util::split_path(path, path_list);
+	if (path_list.size() != 2) {
+		LOG_ERROR << "path_list's size != 2";
+		httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, please use /disk/resize/<task_id>");
+		return;
+	}
+
 	req_body body;
+
+	body.task_id = path_list[1];
+	if (body.task_id.empty()) {
+		LOG_ERROR << "task_id is empty";
+		httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "task_id is empty");
+		return;
+	}
 
 	// parse body
 	std::string s_body = httpReq->read_body();
@@ -5895,6 +5957,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_delete_disk_req_
 	req_content->header.__set_path(path);
 	// body
 	dbc::node_add_disk_req_data req_data;
+    req_data.__set_task_id(body.task_id);
 	req_data.__set_peer_nodes_list(body.peer_nodes_list);
 	req_data.__set_additional(body.additional);
 	req_data.__set_wallet(body.wallet);
@@ -6838,18 +6901,20 @@ void rest_api_service::rest_snapshot(const std::shared_ptr<network::http_request
     util::split_path(path, path_list);
 
     if (path_list.size() >= 1 && path_list.size() <= 3) {
-        std::string second_param = path_list.size() >= 2 ? path_list[1] : "";
+        std::string second_param = path_list[0];
         if (second_param == "create") {
             rest_create_snapshot(httpReq, path);
+            return;
         } else if (second_param == "delete") {
             rest_delete_snapshot(httpReq, path);
-        } else {
+            return;
+        } else if (second_param == "list") {
             rest_list_snapshot(httpReq, path);
+            return;
         }
-        return;
     }
 
-    httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "invalid uri, please use /snapshot/<task_id>/<snapshot_name> create ...");
+    httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "invalid uri");
 }
 
 // list snapshot
@@ -6860,22 +6925,23 @@ void rest_api_service::rest_list_snapshot(const std::shared_ptr<network::http_re
         return;
     }
 
+	std::vector<std::string> path_list;
+	util::split_path(path, path_list);
+	if (path_list.size() < 2) {
+		LOG_ERROR << "path_list's size < 2";
+		httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, please use /snapshot/list/<task_id>[/snapshot_name]");
+		return;
+	}
+
     req_body body;
-
-    std::vector<std::string> path_list;
-    util::split_path(path, path_list);
-    if (path_list.size() >= 1) {
-        body.task_id = path_list[0];
-    }
+    
     if (path_list.size() >= 2) {
-        body.snapshot_name = path_list[1];
+        body.task_id = path_list[1];
     }
-    if (body.task_id.empty() || path_list.size() > 2) {
-        LOG_ERROR << "invalid uri path " << path;
-        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, please use /snapshot/<task_id>");
-        return;
+    if (path_list.size() >= 3) {
+        body.snapshot_name = path_list[2];
     }
-
+ 
     std::string s_body = httpReq->read_body();
     if (s_body.empty()) {
         LOG_ERROR << "http request body is empty";
@@ -7133,7 +7199,7 @@ void rest_api_service::rest_create_snapshot(const std::shared_ptr<network::http_
 
     req_body body;
 
-    body.task_id = path_list[0];
+    body.task_id = path_list[1];
     if (body.task_id.empty()) {
         LOG_ERROR << "task_id is empty";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "task_id is empty");
@@ -7152,6 +7218,23 @@ void rest_api_service::rest_create_snapshot(const std::shared_ptr<network::http_
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodeid is empty");
         return;
     }
+
+	const rapidjson::Value& v_additional = doc["additional"];
+	if (!v_additional.IsObject()) {
+		httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "parse request params failed: " + strerror);
+		return;
+	}
+	// image_server
+	std::string image_server;
+	JSON_PARSE_STRING(v_additional, "image_server", image_server)
+
+	auto it_svr = ConfManager::instance().FindImageServer(image_server);
+	if (image_server.empty() || it_svr == nullptr) {
+		httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "image_server not exist");
+		return;
+	}
+
+	body.image_server = it_svr->to_string();
 
     if (body.session_id.empty() || body.session_id_sign.empty()) {
         if (!check_wallet_sign(body) && !check_multisig_wallets(body)) {
@@ -7227,6 +7310,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_create_snapshot_
     req_data.__set_multisig_signs(vecMultisigSignItem);
     req_data.__set_session_id(body.session_id);
     req_data.__set_session_id_sign(body.session_id_sign);
+    req_data.__set_image_server(body.image_server);
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
@@ -7349,7 +7433,7 @@ void rest_api_service::rest_delete_snapshot(const std::shared_ptr<network::http_
 
     req_body body;
 
-    body.task_id = path_list[0];
+    body.task_id = path_list[1];
     if (body.task_id.empty()) {
         LOG_ERROR << "task_id is empty";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "task_id is empty");

@@ -9,5 +9,5 @@ struct snapshot_info {
 
 struct db_snapshot_info {
     1: required string task_id,
-    2: optional list<snapshot_info> snapshots
+    2: required list<snapshot_info> snapshots
 }

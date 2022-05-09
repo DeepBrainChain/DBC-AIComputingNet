@@ -15066,6 +15066,11 @@ namespace dbc {
 	void node_create_snapshot_req_data::__set_session_id_sign(const std::string& val) {
 		this->session_id_sign = val;
 	}
+
+	void node_create_snapshot_req_data::__set_image_server(const std::string& val) {
+		this->image_server = val;
+		__isset.image_server = true;
+	}
 	std::ostream& operator<<(std::ostream& out, const node_create_snapshot_req_data& obj)
 	{
 		obj.printTo(out);
@@ -15240,6 +15245,15 @@ namespace dbc {
 					xfer += iprot->skip(ftype);
 				}
 				break;
+			case 12:
+				if (ftype == ::apache::thrift::protocol::T_STRING) {
+					xfer += iprot->readString(this->image_server);
+					this->__isset.image_server = true;
+				}
+				else {
+					xfer += iprot->skip(ftype);
+				}
+				break;
 			default:
 				xfer += iprot->skip(ftype);
 				break;
@@ -15347,6 +15361,11 @@ namespace dbc {
 		xfer += oprot->writeString(this->session_id_sign);
 		xfer += oprot->writeFieldEnd();
 
+		if (this->__isset.image_server) {
+			xfer += oprot->writeFieldBegin("image_server", ::apache::thrift::protocol::T_STRING, 12);
+			xfer += oprot->writeString(this->image_server);
+			xfer += oprot->writeFieldEnd();
+		}
 		xfer += oprot->writeFieldStop();
 		xfer += oprot->writeStructEnd();
 		return xfer;
@@ -15365,6 +15384,8 @@ namespace dbc {
 		swap(a.multisig_signs, b.multisig_signs);
 		swap(a.session_id, b.session_id);
 		swap(a.session_id_sign, b.session_id_sign);
+		swap(a.image_server, b.image_server);
+		swap(a.__isset, b.__isset);
 	}
 
 	node_create_snapshot_req_data::node_create_snapshot_req_data(const node_create_snapshot_req_data& other560) {
@@ -15379,6 +15400,8 @@ namespace dbc {
 		multisig_signs = other560.multisig_signs;
 		session_id = other560.session_id;
 		session_id_sign = other560.session_id_sign;
+		image_server = other560.image_server;
+		__isset = other560.__isset;
 	}
 	node_create_snapshot_req_data& node_create_snapshot_req_data::operator=(const node_create_snapshot_req_data& other561) {
 		task_id = other561.task_id;
@@ -15392,6 +15415,8 @@ namespace dbc {
 		multisig_signs = other561.multisig_signs;
 		session_id = other561.session_id;
 		session_id_sign = other561.session_id_sign;
+		image_server = other561.image_server;
+		__isset = other561.__isset;
 		return *this;
 	}
 	void node_create_snapshot_req_data::printTo(std::ostream& out) const {
@@ -15408,6 +15433,7 @@ namespace dbc {
 		out << ", " << "multisig_signs=" << to_string(multisig_signs);
 		out << ", " << "session_id=" << to_string(session_id);
 		out << ", " << "session_id_sign=" << to_string(session_id_sign);
+		out << ", " << "image_server="; (__isset.image_server ? (out << to_string(image_server)) : (out << "<null>"));
 		out << ")";
 	}
 

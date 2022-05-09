@@ -40,6 +40,7 @@ FResult TaskDiskManager::init(const std::vector<std::string>& task_ids) {
 
             auto& disks = m_task_disks[task_id];
             disks.insert({ diskinfo->getName(), diskinfo});
+            
             disk_node = disk_node->NextSiblingElement("disk");
         }
     }
@@ -55,6 +56,7 @@ FResult TaskDiskManager::init(const std::vector<std::string>& task_ids) {
 
     for (auto& iter : mp_snapshots) {
         std::shared_ptr<SnapshotInfo> ptr = std::make_shared<SnapshotInfo>();
+        ptr->setTaskId(iter.first);
         ptr->m_db_info = iter.second;
         for (auto& it_snapshot : iter.second->snapshots) {
             ptr->setSnapshotStatus(it_snapshot.name, SnapshotStatus::SS_None);
@@ -65,8 +67,41 @@ FResult TaskDiskManager::init(const std::vector<std::string>& task_ids) {
     return FResultOk;
 }
 
+void TaskDiskManager::addDiskInfo(const std::string& task_id, const std::shared_ptr<DiskInfo>& diskinfo) {
+    RwMutex::WriteLock wlock(m_disk_mtx);
+    m_task_disks[task_id].insert({ diskinfo->getName(), diskinfo});
+}
+
+std::shared_ptr<DiskInfo> TaskDiskManager::getDiskInfo(const std::string& task_id, const std::string& disk_name) {
+	RwMutex::ReadLock rlock(m_disk_mtx);
+	auto iter = m_task_disks.find(task_id);
+	if (iter != m_task_disks.end()) {
+		auto& mpdisks = iter->second;
+		auto iter_disk = mpdisks.find(disk_name);
+		if (iter_disk != mpdisks.end()) {
+            return iter_disk->second;
+		}
+	}
+
+    return nullptr;
+}
+
+bool TaskDiskManager::isExistDisk(const std::string& task_id, const std::string& disk_name) {
+    RwMutex::ReadLock rlock(m_disk_mtx);
+    auto iter = m_task_disks.find(task_id);
+    if (iter != m_task_disks.end()) {
+        auto& mpdisks = iter->second;
+        auto iter_disk = mpdisks.find(disk_name);
+        if (iter_disk != mpdisks.end()) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void TaskDiskManager::delDisks(const std::string& task_id) {
-    std::map<std::string, std::shared_ptr<DiskInfo> > disks;
+	std::map<std::string, std::shared_ptr<DiskInfo> > disks;
 	this->listDisks(task_id, disks);
 
 	do {
@@ -81,11 +116,6 @@ void TaskDiskManager::delDisks(const std::string& task_id) {
 			TASK_LOG_INFO(task_id, "remove disk file: " + source_file);
 		}
 	}
-}
-
-void TaskDiskManager::addDisk(const std::string& task_id, const std::shared_ptr<DiskInfo>& diskinfo) {
-    RwMutex::WriteLock wlock(m_disk_mtx);
-    m_task_disks[task_id].insert({ diskinfo->getName(), diskinfo});
 }
 
 void TaskDiskManager::listDisks(const std::string& task_id, std::map<std::string, std::shared_ptr<DiskInfo> >& disks) {
@@ -116,12 +146,12 @@ FResult TaskDiskManager::resizeDisk(const std::string& task_id, const std::strin
 
             auto diskinfo = iter_disks[disk_name];
 
-            std::shared_ptr<ResizeDiskEvent> ev = std::make_shared<ResizeDiskEvent>(task_id);
+            auto ev = std::make_shared<ResizeDiskEvent>(task_id);
             ev->disk_name = disk_name;
             ev->size_k = size_k;
             ev->source_file = diskinfo->getSourceFile();
             TaskMgr::instance().pushTaskEvent(ev);
-            
+
             return FResultOk;
         }
         else {
@@ -243,6 +273,17 @@ bool TaskDiskManager::getSnapshot(const std::string& task_id, const std::string&
     return found;
 }
 
+std::shared_ptr<SnapshotInfo> TaskDiskManager::getSnapshotInfo(const std::string& task_id) {
+    RwMutex::ReadLock rlock(m_snapshot_mtx);
+    auto iter = m_task_snapshots.find(task_id);
+    if (iter != m_task_snapshots.end()) {
+        return iter->second;
+    }
+    else {
+        return nullptr;
+    }
+}
+
 FResult TaskDiskManager::createAndUploadSnapshot(const std::string& task_id, const std::string& snapshot_name, 
     const ImageServer& image_server, const std::string& desc) {
     RwMutex::ReadLock rlock(m_disk_mtx);
@@ -264,13 +305,13 @@ FResult TaskDiskManager::createAndUploadSnapshot(const std::string& task_id, con
             auto diskinfo = iter_disk->second;
 			time_t tnow = time(nullptr);
 			std::string snapshot_file = "/tmp/dbc_snapshots/snap_" + std::to_string(rand() % 100000) + "_" + util::time2str(tnow) +
-				"_" + snapshot_name + "-vda.qcow2";
+				"_" + "vda.qcow2";
 
             // add snapshot
             do {
                 RwMutex::WriteLock wlock(m_snapshot_mtx);
-                auto iter = m_task_snapshots.find(task_id);
-                if (iter == m_task_snapshots.end()) {
+                auto iter_snapshotinfo = m_task_snapshots.find(task_id);
+                if (iter_snapshotinfo == m_task_snapshots.end()) {
                     std::shared_ptr<SnapshotInfo> ptr = std::make_shared<SnapshotInfo>();
                     ptr->setTaskId(task_id);
                     ptr->addSnapshot(snapshot_name, snapshot_file, tnow, desc);
@@ -279,9 +320,9 @@ FResult TaskDiskManager::createAndUploadSnapshot(const std::string& task_id, con
                     ptr->updateToDB(m_snapshot_db);
                 }
                 else {
-                    iter->second->addSnapshot(snapshot_name, snapshot_file, tnow, desc);
-                    iter->second->setSnapshotStatus(snapshot_name, SnapshotStatus::SS_Creating);
-                    iter->second->updateToDB(m_snapshot_db);
+                    iter_snapshotinfo->second->addSnapshot(snapshot_name, snapshot_file, tnow, desc);
+                    iter_snapshotinfo->second->setSnapshotStatus(snapshot_name, SnapshotStatus::SS_Creating);
+                    iter_snapshotinfo->second->updateToDB(m_snapshot_db);
                 }
             } while (0);
             
@@ -358,7 +399,8 @@ void TaskDiskManager::terminateUploadSnapshot(const std::string& task_id, const 
 
         if (found) {
             ImageManager::instance().terminateUpload(snapshotinfo.file);
-            bfs::remove(snapshotinfo.file);
+            if (bfs::exists(snapshotinfo.file))
+                bfs::remove(snapshotinfo.file);
             m_task_snapshots[task_id]->delSnapshot(snapshot_name);
             m_task_snapshots[task_id]->updateToDB(m_snapshot_db);
         }
@@ -370,6 +412,7 @@ void TaskDiskManager::process_resize_disk(const std::shared_ptr<TaskEvent>& ev) 
     if (ev_resizedisk == nullptr) return;
 
     std::string cmd = "qemu-img resize " + ev_resizedisk->source_file + " +" + std::to_string(ev_resizedisk->size_k) + "K";
+    TASK_LOG_INFO(ev->task_id, "resize disk cmd: " << cmd);
     run_shell(cmd);
 
     RwMutex::WriteLock wlock(m_disk_mtx);
@@ -380,6 +423,8 @@ void TaskDiskManager::process_resize_disk(const std::shared_ptr<TaskEvent>& ev) 
         if (iter_disk != iter_disks.end()) {
             auto diskinfo = iter_disks[ev_resizedisk->disk_name];
             diskinfo->setVirtualSize(VmClient::instance().GetDiskVirtualSize(ev_resizedisk->task_id, ev_resizedisk->disk_name));
+            TASK_LOG_INFO(ev_resizedisk->task_id, "disk '" << ev_resizedisk->disk_name << "' after resize: " 
+                << scale_size(diskinfo->getVirtualSize() / 1024L));
         }
         else {
             TASK_LOG_ERROR(ev_resizedisk->task_id, "task have no disk:" + ev_resizedisk->disk_name);
@@ -407,13 +452,14 @@ void TaskDiskManager::process_add_disk(const std::shared_ptr<TaskEvent>& ev) {
     std::string source_file = ev_adddisk->mount_dir + "/data_" + std::to_string(rand() % 100000) + "_" +
         util::time2str(time(nullptr)) + ".qcow2";
     std::string cmd = "qemu-img create -f qcow2 " + source_file + " " + std::to_string(ev_adddisk->size_k) + "K";
+    TASK_LOG_INFO(ev->task_id, "add disk: " << source_file << ", size:" << scale_size(ev_adddisk->size_k));
     run_shell(cmd);
 
     FResult ret = VmClient::instance().AttachDisk(ev_adddisk->task_id, disk_name, source_file);
 
     if (ret.errcode != ERR_SUCCESS) {
         bfs::remove(source_file);
-        TASK_LOG_ERROR(ev_adddisk->task_id, "attach disk failed:" + ret.errmsg);
+        TASK_LOG_ERROR(ev_adddisk->task_id, "vm attach disk failed:" + ret.errmsg);
         return;
     }
 
@@ -476,15 +522,11 @@ void TaskDiskManager::process_create_snapshot(const std::shared_ptr<TaskEvent>& 
     if (ret.errcode == ERR_SUCCESS) {
 		RwMutex::WriteLock wlock(m_snapshot_mtx);
 		auto ptr = m_task_snapshots[task_id];
-		ptr->addSnapshot(snapshot_name, ev_createsnapshot->snapshot_file, ev_createsnapshot->create_time, 
-            ev_createsnapshot->desc);
 		ptr->setSnapshotStatus(snapshot_name, SnapshotStatus::SS_Uploading);
-		ptr->updateToDB(m_snapshot_db);
     }
     else {
-        bfs::remove(ev_createsnapshot->snapshot_file);
+        terminateUploadSnapshot(task_id, snapshot_name);
         TASK_LOG_ERROR(ev_createsnapshot->task_id, "upload snapshot:" + ev_createsnapshot->snapshot_name
             + " file:" + ev_createsnapshot->snapshot_file + " failed");
-        terminateUploadSnapshot(task_id, snapshot_name);
     }
 }

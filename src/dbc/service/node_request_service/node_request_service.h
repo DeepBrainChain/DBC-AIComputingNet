@@ -211,7 +211,6 @@ private:
     bool udp_broadcast_rent_status();
 
 protected:
-    TaskMgr m_task_scheduler;
     bloomlru_filter m_nonce_filter{ 1000000 };
 };
 

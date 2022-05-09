@@ -131,9 +131,19 @@ void ImageManager::listLocalBaseImages(std::vector<ImageFile>& imagefiles) {
     for (int i = 0; i < vecRunningDomains.size(); i++) {
         std::map<std::string, std::shared_ptr<DiskInfo>> mpdisks;
         TaskDiskMgr::instance().listDisks(vecRunningDomains[i], mpdisks);
-        for (auto& iter : mpdisks) {
-            std::string fname = boost::filesystem::path(iter.second->getSourceFile()).filename().string();
-            setRunningImages.insert(fname);
+        if (mpdisks.empty()) {
+            std::map<std::string, domainDiskInfo> domain_disks;
+            VmClient::instance().ListDomainDiskInfo(vecRunningDomains[i], domain_disks);
+            for (auto& iter : domain_disks) {
+                std::string fname = bfs::path(iter.second.sourceFile).filename().string();
+                setRunningImages.insert(fname);
+            }
+        }
+        else {
+            for (auto& iter : mpdisks) {
+                std::string fname = boost::filesystem::path(iter.second->getSourceFile()).filename().string();
+                setRunningImages.insert(fname);
+            }
         }
     }
 
@@ -166,10 +176,20 @@ void ImageManager::listLocalShareImages(const ImageServer &image_server, std::ve
     std::set<std::string> setRunningImages;
     for (int i = 0; i < vecRunningDomains.size(); i++) {
 		std::map<std::string, std::shared_ptr<DiskInfo>> mpdisks;
-		TaskDiskMgr::instance().listDisks(vecRunningDomains[i], mpdisks); 
-        for (auto& iter : mpdisks) {
-            std::string fname = boost::filesystem::path(iter.second->getSourceFile()).filename().string();
-            setRunningImages.insert(fname);
+		TaskDiskMgr::instance().listDisks(vecRunningDomains[i], mpdisks);
+		if (mpdisks.empty()) {
+			std::map<std::string, domainDiskInfo> domain_disks;
+			VmClient::instance().ListDomainDiskInfo(vecRunningDomains[i], domain_disks);
+			for (auto& iter : domain_disks) {
+				std::string fname = bfs::path(iter.second.sourceFile).filename().string();
+				setRunningImages.insert(fname);
+			}
+		}
+        else {
+            for (auto& iter : mpdisks) {
+                std::string fname = boost::filesystem::path(iter.second->getSourceFile()).filename().string();
+                setRunningImages.insert(fname);
+            }
         }
     }
 

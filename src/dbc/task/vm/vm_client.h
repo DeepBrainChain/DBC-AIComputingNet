@@ -21,6 +21,14 @@ struct virDomainInterface {
 };
 }
 
+struct domainDiskInfo {
+	std::string driverName;
+	std::string driverType;
+	std::string sourceFile;
+	std::string targetDev;
+	std::string targetBus;
+};
+
 class VmClient : public Singleton<VmClient> {
 public:
     VmClient();
@@ -65,6 +73,8 @@ public:
     FResult GetDomainLog(const std::string& domain_name, QUERY_LOG_DIRECTION direction, int32_t linecount, std::string &log_content);
 
 	bool SetDomainUserPassword(const std::string& domain_name, const std::string& username, const std::string& pwd);
+
+    bool ListDomainDiskInfo(const std::string& domain_name, std::map<std::string, domainDiskInfo>& disks);
 
     // network
     std::string GetDomainLocalIP(const std::string &domain_name);

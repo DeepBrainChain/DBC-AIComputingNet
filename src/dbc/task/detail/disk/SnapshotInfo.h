@@ -11,6 +11,26 @@ enum class SnapshotStatus {
 	SS_Uploading //正在上传
 };
 
+static std::string snapshot_status_string(SnapshotStatus st) {
+	std::string str_status = "none";
+
+	switch (st) {
+	case SnapshotStatus::SS_None:
+		str_status = "none";
+		break;
+	case SnapshotStatus::SS_Creating:
+		str_status = "creating";
+		break;
+	case SnapshotStatus::SS_Uploading:
+		str_status = "uploading";
+		break;
+	default:
+		break;
+	}
+
+	return str_status;
+}
+
 class SnapshotInfo {
 public:
 	friend class TaskDiskManager;
