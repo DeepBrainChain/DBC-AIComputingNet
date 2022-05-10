@@ -14,7 +14,8 @@ struct db_task_info {
     21: optional string desc,               //虚拟机描述
     22: optional string vda_rootbackfile;   //vda系统盘的根backfile
 
-    24: optional string network_name,   //vxlan network name
-    30: optional string public_ip,      //公网ip
-    31: optional list<string> nwfilter  //安全组，只有设置了公网ip才会使用
+    24: optional string network_name,       //vxlan network name
+    30: optional string public_ip,          //公网ip
+    31: optional list<string> nwfilter,     //安全组，只有设置了公网ip才会使用
+    35: optional string login_username      //登陆用户名
 }

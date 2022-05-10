@@ -718,7 +718,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
         std::transform(operation_system.begin(), operation_system.end(), operation_system.begin(), ::tolower);
     }
 
-    // rdp_port
+    // windows uses rdp port while linux uses ssh port
     if (operation_system.find("win") != std::string::npos) {
         if (s_rdp_port.empty() || !util::is_digits(s_rdp_port) || atoi(s_rdp_port.c_str()) <= 0) {
             return FResult(ERR_ERROR, "rdp_port is invalid");
@@ -726,9 +726,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
         if (check_iptables_port_occupied(atoi(s_rdp_port))) {
             return FResult(ERR_ERROR, "rdp_port is occupied");
         }
-    }
-    // ssh_port
-    else {
+    } else {
         if (s_ssh_port.empty() || !util::is_digits(s_ssh_port) || atoi(s_ssh_port.c_str()) <= 0) {
             return FResult(ERR_ERROR, "ssh_port is invalid");
         }
@@ -1551,6 +1549,9 @@ FResult TaskManager::passwdTask(const std::string& wallet, const std::shared_ptr
     FResult fret = VmClient::instance().SetDomainUserPassword(task_id, username, password, 1);
     if (fret.errcode == ERR_SUCCESS) {
         taskinfoPtr->setLoginPassword(password);
+        std::string old_username = taskinfoPtr->getLoginUsername();
+        if (old_username.empty() || old_username == "N/A")
+            taskinfoPtr->setLoginUsername(username);
     }
     return fret;
 }
@@ -2118,11 +2119,14 @@ void TaskManager::process_create_task(const std::shared_ptr<TaskEvent>& ev) {
         return;
     }
 
+    std::string login_username =
+        taskinfo->getOperationSystem().find("win") == std::string::npos ?
+            g_vm_ubuntu_login_username : g_vm_windows_login_username;
     FResult fret = VmClient::instance().SetDomainUserPassword(ev->task_id,
-                    taskinfo->getOperationSystem().find("win") == std::string::npos ? g_vm_ubuntu_login_username : g_vm_windows_login_username,
-                    taskinfo->getLoginPassword());
+                    login_username, taskinfo->getLoginPassword());
     if (fret.errcode != ERR_SUCCESS) {
         taskinfo->setLoginPassword("N/A");
+        taskinfo->setLoginUsername("N/A");
         // VmClient::instance().DestroyDomain(ev->task_id);
 
         // if (taskinfo->getTaskStatus() == TaskStatus::TS_Task_Creating) {
@@ -2130,6 +2134,8 @@ void TaskManager::process_create_task(const std::shared_ptr<TaskEvent>& ev) {
         // }
         // TASK_LOG_ERROR(ev->task_id, "set domain password failed");
         // return;
+    } else {
+        taskinfo->setLoginUsername(login_username);
     }
 
     if (taskinfo->getTaskStatus() == TaskStatus::TS_Task_Creating) {

@@ -88,6 +88,11 @@ namespace dbc {
 		this->nwfilter = val;
 		__isset.nwfilter = true;
 	}
+
+	void db_task_info::__set_login_username(const std::string& val) {
+		this->login_username = val;
+		__isset.login_username = true;
+	}
 	std::ostream& operator<<(std::ostream& out, const db_task_info& obj)
 	{
 		obj.printTo(out);
@@ -288,6 +293,14 @@ namespace dbc {
 					xfer += iprot->skip(ftype);
 				}
 				break;
+			case 35:
+				if (ftype == ::apache::thrift::protocol::T_STRING) {
+					xfer += iprot->readString(this->login_username);
+					this->__isset.login_username = true;
+				} else {
+					xfer += iprot->skip(ftype);
+				}
+				break;
 			default:
 				xfer += iprot->skip(ftype);
 				break;
@@ -405,6 +418,11 @@ namespace dbc {
 			}
 			xfer += oprot->writeFieldEnd();
 		}
+		if (this->__isset.login_username) {
+			xfer += oprot->writeFieldBegin("login_username", ::apache::thrift::protocol::T_STRING, 35);
+			xfer += oprot->writeString(this->login_username);
+			xfer += oprot->writeFieldEnd();
+		}
 		xfer += oprot->writeFieldStop();
 		xfer += oprot->writeStructEnd();
 		return xfer;
@@ -427,6 +445,7 @@ namespace dbc {
 		swap(a.network_name, b.network_name);
 		swap(a.public_ip, b.public_ip);
 		swap(a.nwfilter, b.nwfilter);
+		swap(a.login_username, b.login_username);
 		swap(a.__isset, b.__isset);
 	}
 
@@ -446,6 +465,7 @@ namespace dbc {
 		network_name = other18.network_name;
 		public_ip = other18.public_ip;
 		nwfilter = other18.nwfilter;
+		login_username = other18.login_username;
 		__isset = other18.__isset;
 	}
 	db_task_info& db_task_info::operator=(const db_task_info& other19) {
@@ -464,6 +484,7 @@ namespace dbc {
 		network_name = other19.network_name;
 		public_ip = other19.public_ip;
 		nwfilter = other19.nwfilter;
+		login_username = other19.login_username;
 		__isset = other19.__isset;
 		return *this;
 	}
@@ -485,6 +506,7 @@ namespace dbc {
 		out << ", " << "network_name="; (__isset.network_name ? (out << to_string(network_name)) : (out << "<null>"));
 		out << ", " << "public_ip="; (__isset.public_ip ? (out << to_string(public_ip)) : (out << "<null>"));
 		out << ", " << "nwfilter="; (__isset.nwfilter ? (out << to_string(nwfilter)) : (out << "<null>"));
+		out << ", " << "login_username="; (__isset.login_username ? (out << to_string(login_username)) : (out << "<null>"));
 		out << ")";
 	}
 
