@@ -556,15 +556,21 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
 //广播租用状态
 bool node_request_service::udp_broadcast_rent_status() {
     TaskMgr::instance().broadcast_message("renting");
-
-    return false;
-
     bool found = false;
-    std::vector<std::string> domains;
-    VmClient::instance().ListAllRunningDomains(domains);
-    for (size_t i = 0; i < domains.size(); i++) {
-        if (!TaskInfoMgr::instance().isExist(domains[i])) {
-            found = true;
+    for (int i = 0; i < 2; i++) {
+		std::vector<std::string> domains;
+		VmClient::instance().ListAllRunningDomains(domains);
+		for (size_t i = 0; i < domains.size(); i++) {
+			if (!TaskInfoMgr::instance().isExist(domains[i])) {
+				found = true;
+				break;
+			}
+		}
+
+		if (found) {
+			sleep(3);
+        }
+        else {
             break;
         }
     }

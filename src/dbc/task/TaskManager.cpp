@@ -569,25 +569,27 @@ FResult TaskManager::createTask(const std::string& wallet,
     TaskInfoMgr::instance().add(taskinfo);
 
     // add disks
-	std::string disk_vda_file = "/data/vm_" + std::to_string(rand() % 100000) + "_" + util::time2str(tnow) + ".qcow2";
-    std::shared_ptr<DiskInfo> disk_vda = std::make_shared<DiskInfo>();
-    disk_vda->setName("vda");
-    disk_vda->setSourceFile(disk_vda_file);
-    disk_vda->setVirtualSize(g_disk_system_size * 1024L * 1024L * 1024L);
-    TaskDiskMgr::instance().addDiskInfo(task_id, disk_vda);
+    if (create_params.bios_mode != "pxe") {
+        std::string disk_vda_file = "/data/vm_" + std::to_string(rand() % 100000) + "_" + util::time2str(tnow) + ".qcow2";
+        std::shared_ptr<DiskInfo> disk_vda = std::make_shared<DiskInfo>();
+        disk_vda->setName("vda");
+        disk_vda->setSourceFile(disk_vda_file);
+        disk_vda->setVirtualSize(g_disk_system_size * 1024L * 1024L * 1024L);
+        TaskDiskMgr::instance().addDiskInfo(task_id, disk_vda);
 
-    std::string disk_vdb_file;
-	if (create_params.data_file_name.empty()) {
-		disk_vdb_file = "/data/data_" + std::to_string(rand() % 100000) + "_" + util::time2str(tnow) + ".qcow2";
-	}
-	else {
-        disk_vdb_file = "/data/" + create_params.data_file_name;
-	}
-    std::shared_ptr<DiskInfo> disk_vdb = std::make_shared<DiskInfo>();
-    disk_vdb->setName("vdb");
-    disk_vdb->setSourceFile(disk_vdb_file);
-    disk_vdb->setVirtualSize(create_params.disk_size * 1024L);
-    TaskDiskMgr::instance().addDiskInfo(task_id, disk_vdb);
+        std::string disk_vdb_file;
+        if (create_params.data_file_name.empty()) {
+            disk_vdb_file = "/data/data_" + std::to_string(rand() % 100000) + "_" + util::time2str(tnow) + ".qcow2";
+        }
+        else {
+            disk_vdb_file = "/data/" + create_params.data_file_name;
+        }
+        std::shared_ptr<DiskInfo> disk_vdb = std::make_shared<DiskInfo>();
+        disk_vdb->setName("vdb");
+        disk_vdb->setSourceFile(disk_vdb_file);
+        disk_vdb->setVirtualSize(create_params.disk_size * 1024L);
+        TaskDiskMgr::instance().addDiskInfo(task_id, disk_vdb);
+    }
 
     // add gpus
     auto& gpus = create_params.gpus;
@@ -1085,6 +1087,7 @@ FResult TaskManager::check_bios_mode(const std::string& bios_mode) {
     if (bios_mode.empty()) return FResultOk;
     if (bios_mode == "legacy") return FResultOk;
     if (bios_mode == "uefi") return FResultOk;
+    if (bios_mode == "pxe") return FResultOk;
     return FResult(ERR_ERROR, "bios mode only supported [legacy] or [uefi]");
 }
 

@@ -13,14 +13,111 @@
 #include "task/detail/disk/TaskDiskManager.h"
 #include "task/detail/gpu/TaskGpuManager.h"
 
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <ifaddrs.h>
+#include <stdio.h>
+#include <netdb.h>
+#include <sys/types.h> 
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <sys/ioctl.h>
+#include <linux/if.h>
+#include <stdlib.h>
+#include <linux/ethtool.h>
+
 static const std::string qemu_tcp_url = "qemu+tcp://localhost:16509/system";
 
+#define ETHTOOL_GDRVINFO 0x00000003
+#define SIOCETHTOOL 0x8946
+
+static int send_ioctl(int fd, struct ifreq* ifr, void* cmd)
+{
+	ifr->ifr_data = (char*)cmd;
+	return ioctl(fd, SIOCETHTOOL, ifr);
+}
+
+static std::string do_gbus_info(const char* name)
+{
+	struct ifreq ifr;
+	int err;
+	struct ethtool_drvinfo drvinfo;
+	int fd;
+
+	if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+		//printf("create socket failed\n");
+		return "";
+	}
+
+	strcpy(ifr.ifr_name, name);
+	drvinfo.cmd = ETHTOOL_GDRVINFO;
+	err = send_ioctl(fd, &ifr, &drvinfo);
+	if (err < 0) {
+		//printf("%s cannot get driver information\n", name);
+		return "";
+	}
+
+	return std::string(drvinfo.bus_info);
+}
+
+struct InterfaceItem {
+    bool default_route = false;
+	std::string name;
+	std::string bus;
+	std::vector<std::string> ipv4;
+	std::vector<std::string> ipv6;
+};
+
+void list_interface(std::map<std::string, InterfaceItem>& mpifa)
+{
+	struct ifaddrs* ifap, * ifa;
+	struct sockaddr_in6* sa;
+	struct sockaddr_in* sa4;
+	char addr6[INET6_ADDRSTRLEN];
+	char addr4[INET_ADDRSTRLEN];
+
+	if (0 != getifaddrs(&ifap)) return;
+
+	std::string nic_name = run_shell("ip route|awk 'NR==1{print $5}'");
+	nic_name = util::rtrim(nic_name, '\n');
+
+	for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
+		std::string name = ifa->ifa_name;
+        if (name == nic_name) continue;
+
+        std::string bus = do_gbus_info(name.c_str());
+        if (bus.empty() || bus == "N/A") continue;
+        if (!((bus.size() == 12) && (bus[4] == ':') && (bus[7] == ':') && (bus[10] == '.'))) continue;
+        
+		mpifa[name].name = name;
+        mpifa[name].bus = bus;
+
+		if (ifa->ifa_addr->sa_family == AF_INET6) {
+			sa = (struct sockaddr_in6*)ifa->ifa_addr;
+			getnameinfo(ifa->ifa_addr, sizeof(struct sockaddr_in6), addr6,
+				sizeof(addr6), NULL, 0, NI_NUMERICHOST);
+
+			mpifa[name].ipv6.push_back(addr6);
+		}
+		else if (ifa->ifa_addr->sa_family == AF_INET) {
+			sa4 = (struct sockaddr_in*)ifa->ifa_addr;
+			getnameinfo(ifa->ifa_addr, sizeof(struct sockaddr_in), addr4,
+				sizeof(addr4), NULL, 0, NI_NUMERICHOST);
+			/*inet_ntop(AF_INET, sa4, addr4, INET_ADDRSTRLEN);*/
+
+			mpifa[name].ipv4.push_back(addr4);
+		}
+	}
+
+	freeifaddrs(ifap);
+}
+
 static std::string createXmlStr(const std::string& uuid, const std::string& domain_name,
-                         int64_t memory, int32_t cpunum, int32_t sockets, int32_t cores, int32_t threads,
-                         const std::string& vedio_pci, const std::string & disk_system,
-                         const std::string& disk_data, int32_t vnc_port, const std::string& vnc_pwd,
-                         const std::vector<std::string>& multicast, const std::string& bridge_name,
-                         bool is_windows = false, bool uefi = false)
+    int64_t memory, int32_t cpunum, int32_t sockets, int32_t cores, int32_t threads,
+    const std::string& vedio_pci, const std::string& disk_system,
+    const std::string& disk_data, int32_t vnc_port, const std::string& vnc_pwd,
+    const std::vector<std::string>& multicast, const std::string& bridge_name,
+    const std::string& bios_mode, bool is_windows = false)
 {
     tinyxml2::XMLDocument doc;
 
@@ -63,28 +160,36 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
     os_sub_node->SetText("hvm");
     os_node->LinkEndChild(os_sub_node);
 
-    if (!is_windows) {
+    if (bios_mode == "pxe") {
         tinyxml2::XMLElement* os_sub_node2 = doc.NewElement("boot");
-        os_sub_node2->SetAttribute("dev", "hd");
+        os_sub_node2->SetAttribute("dev", "network");
         os_node->LinkEndChild(os_sub_node2);
+    }
+    else {
+        if (!is_windows) {
+            tinyxml2::XMLElement* os_sub_node2 = doc.NewElement("boot");
+            os_sub_node2->SetAttribute("dev", "hd");
+            os_node->LinkEndChild(os_sub_node2);
 
-        tinyxml2::XMLElement* os_sub_node3 = doc.NewElement("boot");
-        os_sub_node3->SetAttribute("dev", "cdrom");
-        os_node->LinkEndChild(os_sub_node3);
-    } else {
-        // uefi引导设置
-        if (uefi) {
-            tinyxml2::XMLElement *os_loader = doc.NewElement("loader");
-            os_loader->SetAttribute("readonly", "yes");
-            // 如果加载程序路径指向 UEFI 映像，则类型应为pflash。
-            os_loader->SetAttribute("type", "pflash");
-            // os_loader->SetAttribute("type", "rom");
-            os_loader->SetText("/usr/share/OVMF/OVMF_CODE.fd");
-            os_node->LinkEndChild(os_loader);
+            tinyxml2::XMLElement* os_sub_node3 = doc.NewElement("boot");
+            os_sub_node3->SetAttribute("dev", "cdrom");
+            os_node->LinkEndChild(os_sub_node3);
         }
-        tinyxml2::XMLElement *os_bootmenu_node = doc.NewElement("bootmenu");
-        os_bootmenu_node->SetAttribute("enable", "yes");
-        os_node->LinkEndChild(os_bootmenu_node);
+        else {
+            if (bios_mode == "uefi") { // uefi引导设置
+                tinyxml2::XMLElement* os_loader = doc.NewElement("loader");
+                os_loader->SetAttribute("readonly", "yes");
+                // 如果加载程序路径指向 UEFI 映像，则类型应为pflash。
+                os_loader->SetAttribute("type", "pflash");
+                // os_loader->SetAttribute("type", "rom");
+                os_loader->SetText("/usr/share/OVMF/OVMF_CODE.fd");
+                os_node->LinkEndChild(os_loader);
+            }
+
+            tinyxml2::XMLElement* os_bootmenu_node = doc.NewElement("bootmenu");
+            os_bootmenu_node->SetAttribute("enable", "yes");
+            os_node->LinkEndChild(os_bootmenu_node);
+        }
     }
     root->LinkEndChild(os_node);
 
@@ -153,21 +258,22 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
     tinyxml2::XMLElement* clock_node = doc.NewElement("clock");
     if (!is_windows) {
         clock_node->SetAttribute("offset", "utc");
-    } else {
+    }
+    else {
         clock_node->SetAttribute("offset", "localtime");
-        tinyxml2::XMLElement *clock_rtc_node = doc.NewElement("timer");
+        tinyxml2::XMLElement* clock_rtc_node = doc.NewElement("timer");
         clock_rtc_node->SetAttribute("name", "rtc");
         clock_rtc_node->SetAttribute("tickpolicy", "catchup");
         clock_node->LinkEndChild(clock_rtc_node);
-        tinyxml2::XMLElement *clock_pit_node = doc.NewElement("timer");
+        tinyxml2::XMLElement* clock_pit_node = doc.NewElement("timer");
         clock_pit_node->SetAttribute("name", "pit");
         clock_pit_node->SetAttribute("tickpolicy", "delay");
         clock_node->LinkEndChild(clock_pit_node);
-        tinyxml2::XMLElement *clock_hpet_node = doc.NewElement("timer");
+        tinyxml2::XMLElement* clock_hpet_node = doc.NewElement("timer");
         clock_hpet_node->SetAttribute("name", "hpet");
         clock_hpet_node->SetAttribute("present", "no");
         clock_node->LinkEndChild(clock_hpet_node);
-        tinyxml2::XMLElement *clock_hypervclock_node = doc.NewElement("timer");
+        tinyxml2::XMLElement* clock_hypervclock_node = doc.NewElement("timer");
         clock_hypervclock_node->SetAttribute("name", "hypervclock");
         clock_hypervclock_node->SetAttribute("present", "yes");
         clock_node->LinkEndChild(clock_hypervclock_node);
@@ -206,7 +312,7 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
         dev_node->LinkEndChild(input_node);
     }
 
-    if(vedio_pci != "") {
+    if (vedio_pci != "") {
         std::vector<std::string> vedios = util::split(vedio_pci, "|");
         for (int i = 0; i < vedios.size(); ++i) {
             std::vector<std::string> infos = util::split(vedios[i], ":");
@@ -221,13 +327,13 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
                 continue;
             }
 
-            tinyxml2::XMLElement *hostdev_node = doc.NewElement("hostdev");
+            tinyxml2::XMLElement* hostdev_node = doc.NewElement("hostdev");
             hostdev_node->SetAttribute("mode", "subsystem");
             hostdev_node->SetAttribute("type", "pci");
             hostdev_node->SetAttribute("managed", "yes");
 
-            tinyxml2::XMLElement *source_node = doc.NewElement("source");
-            tinyxml2::XMLElement *address_node = doc.NewElement("address");
+            tinyxml2::XMLElement* source_node = doc.NewElement("source");
+            tinyxml2::XMLElement* address_node = doc.NewElement("address");
             address_node->SetAttribute("type", "pci");
             address_node->SetAttribute("domain", "0x0000");
             address_node->SetAttribute("bus", ("0x" + infos[0]).c_str());
@@ -237,7 +343,7 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
 
             hostdev_node->LinkEndChild(source_node);
             if (is_windows) {
-                tinyxml2::XMLElement *rom_node = doc.NewElement("rom");
+                tinyxml2::XMLElement* rom_node = doc.NewElement("rom");
                 rom_node->SetAttribute("bar", "off");
                 hostdev_node->LinkEndChild(rom_node);
             }
@@ -245,54 +351,57 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
         }
     }
 
-    // disk system
-    tinyxml2::XMLElement* image_node = doc.NewElement("disk");
-    image_node->SetAttribute("type", "file");
-    image_node->SetAttribute("device", "disk");
+    // disk
+    if (bios_mode != "pxe") {
+        // disk system
+        tinyxml2::XMLElement* image_node = doc.NewElement("disk");
+        image_node->SetAttribute("type", "file");
+        image_node->SetAttribute("device", "disk");
 
-    tinyxml2::XMLElement* driver_node = doc.NewElement("driver");
-    driver_node->SetAttribute("name", "qemu");
-    driver_node->SetAttribute("type", "qcow2");
-    image_node->LinkEndChild(driver_node);
+        tinyxml2::XMLElement* driver_node = doc.NewElement("driver");
+        driver_node->SetAttribute("name", "qemu");
+        driver_node->SetAttribute("type", "qcow2");
+        image_node->LinkEndChild(driver_node);
 
-    tinyxml2::XMLElement* source_node = doc.NewElement("source");
-    source_node->SetAttribute("file", disk_system.c_str());
-    image_node->LinkEndChild(source_node);
+        tinyxml2::XMLElement* source_node = doc.NewElement("source");
+        source_node->SetAttribute("file", disk_system.c_str());
+        image_node->LinkEndChild(source_node);
 
-    tinyxml2::XMLElement* target_node = doc.NewElement("target");
-    target_node->SetAttribute("dev", "vda");
-    target_node->SetAttribute("bus", "virtio");
-    image_node->LinkEndChild(target_node);
+        tinyxml2::XMLElement* target_node = doc.NewElement("target");
+        target_node->SetAttribute("dev", "vda");
+        target_node->SetAttribute("bus", "virtio");
+        image_node->LinkEndChild(target_node);
 
-    if (is_windows) {
-        // set boot order
-        tinyxml2::XMLElement *boot_order_node = doc.NewElement("boot");
-        boot_order_node->SetAttribute("order", "1");
-        image_node->LinkEndChild(boot_order_node);
+        if (is_windows) {
+            // set boot order
+            tinyxml2::XMLElement* boot_order_node = doc.NewElement("boot");
+            boot_order_node->SetAttribute("order", "1");
+            image_node->LinkEndChild(boot_order_node);
+        }
+        dev_node->LinkEndChild(image_node);
+
+        // disk data
+        tinyxml2::XMLElement* disk_data_node = doc.NewElement("disk");
+        disk_data_node->SetAttribute("type", "file");
+        disk_data_node->SetAttribute("device", "disk");
+
+        tinyxml2::XMLElement* disk_driver_node = doc.NewElement("driver");
+        disk_driver_node->SetAttribute("name", "qemu");
+        disk_driver_node->SetAttribute("type", "qcow2");
+        disk_data_node->LinkEndChild(disk_driver_node);
+
+        tinyxml2::XMLElement* disk_source_node = doc.NewElement("source");
+        disk_source_node->SetAttribute("file", disk_data.c_str());
+        disk_data_node->LinkEndChild(disk_source_node);
+
+        tinyxml2::XMLElement* disk_target_node = doc.NewElement("target");
+        disk_target_node->SetAttribute("dev", "vdb");
+        disk_target_node->SetAttribute("bus", "virtio");
+        disk_data_node->LinkEndChild(disk_target_node);
+
+        dev_node->LinkEndChild(disk_data_node);
     }
-    dev_node->LinkEndChild(image_node);
 
-    // disk data
-	tinyxml2::XMLElement* disk_data_node = doc.NewElement("disk");
-	disk_data_node->SetAttribute("type", "file");
-	disk_data_node->SetAttribute("device", "disk");
-
-	tinyxml2::XMLElement* disk_driver_node = doc.NewElement("driver");
-	disk_driver_node->SetAttribute("name", "qemu");
-	disk_driver_node->SetAttribute("type", "qcow2");
-	disk_data_node->LinkEndChild(disk_driver_node);
-
-	tinyxml2::XMLElement* disk_source_node = doc.NewElement("source");
-	disk_source_node->SetAttribute("file", disk_data.c_str());
-	disk_data_node->LinkEndChild(disk_source_node);
-
-	tinyxml2::XMLElement* disk_target_node = doc.NewElement("target");
-	disk_target_node->SetAttribute("dev", "vdb");
-	disk_target_node->SetAttribute("bus", "virtio");
-	disk_data_node->LinkEndChild(disk_target_node);
-
-	dev_node->LinkEndChild(disk_data_node);
- 
     // qemu_guest_agent
     tinyxml2::XMLElement* agent_node = doc.NewElement("channel");
     agent_node->SetAttribute("type", "unix");
@@ -307,47 +416,69 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
     dev_node->LinkEndChild(agent_node);
 
     // network
-    tinyxml2::XMLElement* interface_node = doc.NewElement("interface");
-    interface_node->SetAttribute("type", "network");
-    tinyxml2::XMLElement* interface_source_node = doc.NewElement("source");
-    interface_source_node->SetAttribute("network", "default");
-    interface_node->LinkEndChild(interface_source_node);
-    tinyxml2::XMLElement* interface_model_node = doc.NewElement("model");
-    interface_model_node->SetAttribute("type", "virtio");
-    interface_node->LinkEndChild(interface_model_node);
-    tinyxml2::XMLElement* interface_filter_node = doc.NewElement("filterref");
-    interface_filter_node->SetAttribute("filter", domain_name.c_str());
-    interface_node->LinkEndChild(interface_filter_node);
-    dev_node->LinkEndChild(interface_node);
-
-    // multicast
-    if (!multicast.empty()) {
-        for (const auto &address : multicast) {
-            std::vector<std::string> vecSplit = util::split(address, ":");
-            tinyxml2::XMLElement* mcast_node = doc.NewElement("interface");
-            mcast_node->SetAttribute("type", "mcast");
-            tinyxml2::XMLElement* mcast_source_node = doc.NewElement("source");
-            mcast_source_node->SetAttribute("address", vecSplit[0].c_str());
-            mcast_source_node->SetAttribute("port", vecSplit[1].c_str());
-            mcast_node->LinkEndChild(mcast_source_node);
-            dev_node->LinkEndChild(mcast_node);
+    if (bios_mode == "pxe") {
+        std::string pxe_bridge_name;
+        std::map<std::string, InterfaceItem> mpifa;
+        list_interface(mpifa);
+        if (!mpifa.empty()) {
+            pxe_bridge_name = mpifa.begin()->second.name;
         }
+        pxe_bridge_name = "enp1s0f0";
+        
+		tinyxml2::XMLElement* bridge_node = doc.NewElement("interface");
+		bridge_node->SetAttribute("type", "direct");
+		tinyxml2::XMLElement* bridge_source_node = doc.NewElement("source");
+		bridge_source_node->SetAttribute("dev", pxe_bridge_name.c_str());
+        bridge_source_node->SetAttribute("mode", "bridge");
+		bridge_node->LinkEndChild(bridge_source_node);
+		tinyxml2::XMLElement* bridge_model_node = doc.NewElement("model");
+		bridge_model_node->SetAttribute("type", "virtio");
+		bridge_node->LinkEndChild(bridge_model_node);
+		dev_node->LinkEndChild(bridge_node);
     }
+    else {
+        tinyxml2::XMLElement* interface_node = doc.NewElement("interface");
+        interface_node->SetAttribute("type", "network");
+        tinyxml2::XMLElement* interface_source_node = doc.NewElement("source");
+        interface_source_node->SetAttribute("network", "default");
+        interface_node->LinkEndChild(interface_source_node);
+        tinyxml2::XMLElement* interface_model_node = doc.NewElement("model");
+        interface_model_node->SetAttribute("type", "virtio");
+        interface_node->LinkEndChild(interface_model_node);
+        tinyxml2::XMLElement* interface_filter_node = doc.NewElement("filterref");
+        interface_filter_node->SetAttribute("filter", domain_name.c_str());
+        interface_node->LinkEndChild(interface_filter_node);
+        dev_node->LinkEndChild(interface_node);
 
-    // bridge
-    if (!bridge_name.empty()) {
-        tinyxml2::XMLElement* bridge_node = doc.NewElement("interface");
-        bridge_node->SetAttribute("type", "bridge");
-        tinyxml2::XMLElement* bridge_source_node = doc.NewElement("source");
-        bridge_source_node->SetAttribute("bridge", bridge_name.c_str());
-        bridge_node->LinkEndChild(bridge_source_node);
-        tinyxml2::XMLElement* bridge_model_node = doc.NewElement("model");
-        bridge_model_node->SetAttribute("type", "virtio");
-        bridge_node->LinkEndChild(bridge_model_node);
-        tinyxml2::XMLElement* bridge_mtu_node = doc.NewElement("mtu");
-        bridge_mtu_node->SetAttribute("size", "1450");
-        bridge_node->LinkEndChild(bridge_mtu_node);
-        dev_node->LinkEndChild(bridge_node);
+        // multicast
+        if (!multicast.empty()) {
+            for (const auto& address : multicast) {
+                std::vector<std::string> vecSplit = util::split(address, ":");
+                tinyxml2::XMLElement* mcast_node = doc.NewElement("interface");
+                mcast_node->SetAttribute("type", "mcast");
+                tinyxml2::XMLElement* mcast_source_node = doc.NewElement("source");
+                mcast_source_node->SetAttribute("address", vecSplit[0].c_str());
+                mcast_source_node->SetAttribute("port", vecSplit[1].c_str());
+                mcast_node->LinkEndChild(mcast_source_node);
+                dev_node->LinkEndChild(mcast_node);
+            }
+        }
+
+        // bridge
+        if (!bridge_name.empty()) {
+            tinyxml2::XMLElement* bridge_node = doc.NewElement("interface");
+            bridge_node->SetAttribute("type", "bridge");
+            tinyxml2::XMLElement* bridge_source_node = doc.NewElement("source");
+            bridge_source_node->SetAttribute("bridge", bridge_name.c_str());
+            bridge_node->LinkEndChild(bridge_source_node);
+            tinyxml2::XMLElement* bridge_model_node = doc.NewElement("model");
+            bridge_model_node->SetAttribute("type", "virtio");
+            bridge_node->LinkEndChild(bridge_model_node);
+            tinyxml2::XMLElement* bridge_mtu_node = doc.NewElement("mtu");
+            bridge_mtu_node->SetAttribute("size", "1450");
+            bridge_node->LinkEndChild(bridge_mtu_node);
+            dev_node->LinkEndChild(bridge_node);
+        }
     }
 
     // vnc
@@ -588,22 +719,28 @@ int32_t VmClient::CreateDomain(const std::shared_ptr<TaskInfo>& taskinfo) {
         << ", mem: " << memoryTotal << "KB, uuid: " << buf_uuid);
 
     std::map<std::string, std::shared_ptr<DiskInfo>> mpdisks;
-    TaskDiskMgr::instance().listDisks(domain_name, mpdisks);
-    // 系统盘: 创建增量镜像
-    std::string from_image_file = "/data/" + taskinfo->getImageName();
-    std::string cmd_back_system_image = "qemu-img create -f qcow2 -F qcow2 -b " + from_image_file + " " + mpdisks["vda"]->getSourceFile();
-    std::string create_system_image_ret = run_shell(cmd_back_system_image);
-    TASK_LOG_INFO(domain_name, "create vm, cmd: " << cmd_back_system_image << ", result: " << create_system_image_ret);
-    // 数据盘：
-    auto diskinfo_vdb = mpdisks["vdb"];
-    std::string vdbfile = diskinfo_vdb->getSourceFile();
-    if (!bfs::exists(vdbfile)) {
-        int64_t disk_size = diskinfo_vdb->getVirtualSize() / 1024L / 1024L / 1024L;
-        std::string cmd_create_img = "qemu-img create -f qcow2 " + vdbfile + " " + std::to_string(disk_size) + "G";
-        std::string create_ret = run_shell(cmd_create_img);
-        TASK_LOG_INFO(domain_name, "create data: " << cmd_create_img << ", result: " << create_ret);
+    std::string disk_vda, disk_vdb;
+    if (taskinfo->getBiosMode() != "pxe") {
+        TaskDiskMgr::instance().listDisks(domain_name, mpdisks);
+        // 系统盘: 创建增量镜像
+        std::string from_image_file = "/data/" + taskinfo->getImageName();
+        std::string cmd_back_system_image = "qemu-img create -f qcow2 -F qcow2 -b " + from_image_file + " " + mpdisks["vda"]->getSourceFile();
+        std::string create_system_image_ret = run_shell(cmd_back_system_image);
+        disk_vda = mpdisks["vda"]->getSourceFile();
+        TASK_LOG_INFO(domain_name, "create vm, cmd: " << cmd_back_system_image << ", result: " << create_system_image_ret);
+        
+        // 数据盘：
+        auto diskinfo_vdb = mpdisks["vdb"];
+        std::string vdbfile = diskinfo_vdb->getSourceFile();
+        if (!bfs::exists(vdbfile)) {
+            int64_t disk_size = diskinfo_vdb->getVirtualSize() / 1024L / 1024L / 1024L;
+            std::string cmd_create_img = "qemu-img create -f qcow2 " + vdbfile + " " + std::to_string(disk_size) + "G";
+            std::string create_ret = run_shell(cmd_create_img);
+            TASK_LOG_INFO(domain_name, "create data: " << cmd_create_img << ", result: " << create_ret);
+        }
+        disk_vdb = mpdisks["vdb"]->getSourceFile();
     }
- 
+
     if (!taskinfo->getMulticast().empty()) {
         auto multicasts = taskinfo->getMulticast();
         for (const auto & mcast : multicasts) {
@@ -623,11 +760,11 @@ int32_t VmClient::CreateDomain(const std::shared_ptr<TaskInfo>& taskinfo) {
     std::string xml_content = createXmlStr(buf_uuid, domain_name,
         memoryTotal, cpuNumTotal, 
         taskinfo->getCpuSockets(), taskinfo->getCpuCoresPerSocket(), taskinfo->getCpuThreadsPerCore(),
-        vga_pci, mpdisks["vda"]->getSourceFile(), mpdisks["vdb"]->getSourceFile(),
+        vga_pci, disk_vda, disk_vdb,
         taskinfo->getVncPort(), taskinfo->getVncPassword(),
         taskinfo->getMulticast(), bridge_name,
-        taskinfo->getOperationSystem().find("win") != std::string::npos,
-        taskinfo->getBiosMode() == "uefi");
+        taskinfo->getBiosMode(),
+        taskinfo->getOperationSystem().find("win") != std::string::npos);
 
     virDomainPtr domainPtr = nullptr;
     int32_t errorNum = ERR_SUCCESS;
