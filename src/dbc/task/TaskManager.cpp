@@ -223,8 +223,9 @@ void TaskManager::remove_iptable_from_system(const std::string& task_id) {
         uint16_t rdp_port = iptableinfo->getRDPPort();
         std::vector<std::string> custom_port = iptableinfo->getCustomPort();
         std::string task_local_ip = iptableinfo->getTaskLocalIP();
+        std::string public_ip = iptableinfo->getPublicIP();
 
-        shell_remove_iptable_from_system(task_id, host_ip, ssh_port, task_local_ip);
+        shell_remove_iptable_from_system(task_id, host_ip, ssh_port, task_local_ip, public_ip);
     }
 }
 
@@ -243,7 +244,8 @@ void TaskManager::add_iptable_to_system(const std::string &task_id) {
 }
 
 void TaskManager::shell_remove_iptable_from_system(const std::string& task_id, const std::string &host_ip,
-                                                   uint16_t ssh_port, const std::string &task_local_ip) {
+                                                   uint16_t ssh_port, const std::string &task_local_ip,
+                                                   const std::string &public_ip) {
     auto func_remove_chain = [](const std::string main_chain, const std::string task_chain) {
         std::string cmd = "sudo iptables -t nat -F " + task_chain;
         run_shell(cmd);
@@ -257,6 +259,14 @@ void TaskManager::shell_remove_iptable_from_system(const std::string& task_id, c
     func_remove_chain("PREROUTING", "chain_" + task_id);
     func_remove_chain("PREROUTING", task_id + "_dnat");
     func_remove_chain("POSTROUTING", task_id + "_snat");
+
+    if (!public_ip.empty()) {
+        std::string nic_name = get_default_network_device();
+        if (!nic_name.empty()) {
+            std::string cmd = "sudo ip address del " + public_ip + " dev " + nic_name;
+            run_shell(cmd);
+        }
+    }
 
     // remove old rules
     std::string cmd = "sudo iptables --table nat -D PREROUTING --protocol tcp --destination " + host_ip
@@ -418,6 +428,12 @@ void TaskManager::shell_add_iptable_to_system(const std::string& task_id, const 
         run_shell(cmd);
         cmd = "sudo iptables -t nat -I POSTROUTING -j " + chain_name_snat;
         run_shell(cmd);
+
+        std::string nic_name = get_default_network_device();
+        if (!nic_name.empty()) {
+            cmd = "sudo ip address add " + public_ip + " dev " + nic_name;
+            run_shell(cmd);
+        }
     }
 }
 
@@ -1387,7 +1403,7 @@ FResult TaskManager::modifyTask(const std::string& wallet,
 	auto taskIptablePtr = TaskIptableManager::instance().getIptableInfo(task_id);
     if (taskIptablePtr != nullptr) {
         shell_remove_iptable_from_system(task_id, taskIptablePtr->getHostIP(), old_ssh_port, 
-            taskIptablePtr->getTaskLocalIP());
+            taskIptablePtr->getTaskLocalIP(), taskIptablePtr->getPublicIP());
     }
 
     std::string new_public_ip;

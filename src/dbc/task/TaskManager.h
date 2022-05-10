@@ -168,7 +168,8 @@ protected:
     void add_iptable_to_system(const std::string& task_id);
 
     void shell_remove_iptable_from_system(const std::string& task_id, const std::string &host_ip,
-                                          uint16_t ssh_port, const std::string &task_local_ip);
+                                          uint16_t ssh_port, const std::string &task_local_ip,
+                                          const std::string &public_ip);
 
     void shell_add_iptable_to_system(const std::string& task_id, const std::string &host_ip,
                                      uint16_t ssh_port, uint16_t rdp_port,
