@@ -8415,6 +8415,22 @@ void vxlan_network_list(std::shared_ptr<dbc::networkInfo> network, std::string &
     ss << ",\"dhcp_interface\":" << "\"" << network->dhcpInterface << "\"";
     ss << ",\"machine_id\":" << "\"" << network->machineId << "\"";
     ss << ",\"rent_wallet\":" << "\"" << network->rentWallet << "\"";
+    ss << ",\"members\":" << "[";
+    int memberCounts = 0;
+    for (const auto& task_id : network->members) {
+        if (memberCounts > 0) ss << ",";
+        ss << "\"" << task_id << "\"";
+        memberCounts++;
+    }
+    ss << "]";
+    struct tm _tm{};
+    time_t tt = network->lastUseTime;
+    localtime_r(&tt, &_tm);
+    char buf[256] = {0};
+    memset(buf, 0, sizeof(char) * 256);
+    strftime(buf, sizeof(char) * 256, "%Y-%m-%d %H:%M:%S", &_tm);
+    ss << ",\"lastUseTime\":" << "\"" << buf << "\"";
+    ss << ",\"native_flags\":" << "\"" << network->nativeFlags << "\"";
     ss << "}}";
     data_json = ss.str();
 }
@@ -8440,6 +8456,22 @@ void vxlan_network_list(const std::map<std::string, std::shared_ptr<dbc::network
         ss << ",\"dhcp_interface\":" << "\"" << it.second->dhcpInterface << "\"";
         ss << ",\"machine_id\":" << "\"" << it.second->machineId << "\"";
         ss << ",\"rent_wallet\":" << "\"" << it.second->rentWallet << "\"";
+        ss << ",\"members\":" << "[";
+        int memberCounts = 0;
+        for (const auto& task_id : it.second->members) {
+            if (memberCounts > 0) ss << ",";
+            ss << "\"" << task_id << "\"";
+            memberCounts++;
+        }
+        ss << "]";
+        struct tm _tm{};
+        time_t tt = it.second->lastUseTime;
+        localtime_r(&tt, &_tm);
+        char buf[256] = {0};
+        memset(buf, 0, sizeof(char) * 256);
+        strftime(buf, sizeof(char) * 256, "%Y-%m-%d %H:%M:%S", &_tm);
+        ss << ",\"lastUseTime\":" << "\"" << buf << "\"";
+        ss << ",\"native_flags\":" << "\"" << it.second->nativeFlags << "\"";
         ss << "}";
 
         count++;

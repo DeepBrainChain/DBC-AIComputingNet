@@ -130,6 +130,7 @@ void VxlanManager::Exit() {
         UpdateNetworkDb(iter.second);
         p2p_lan_service::instance().send_network_move_request(iter.first, old_machine_id);
     }
+    sleep(1);
 }
 
 FResult VxlanManager::CreateVxlanDevice(const std::string &bridgeName, const std::string &vxlanName, const std::string &vxlanVni) {
@@ -296,11 +297,13 @@ FResult VxlanManager::CreateNetworkClient(const std::string &networkName) {
 
 FResult VxlanManager::AddNetworkFromMulticast(std::shared_ptr<dbc::networkInfo> info) {
     if (info->machineId == ConfManager::instance().GetNodeId()) return FResultOk;
+    bool isSameHost = p2p_lan_service::instance().is_same_host(info->machineId);
+    if (isSameHost)
+        info->__set_nativeFlags(info->nativeFlags | NATIVE_FLAGS_DEVICE);
     {
         std::shared_ptr<dbc::networkInfo> old = GetNetwork(info->networkId);
         if (old) {
             int64_t time = info->lastUpdateTime;
-            info->__set_nativeFlags(old->nativeFlags);
             info->__set_lastUpdateTime(old->lastUpdateTime);
             if (*info == *old) {
                 RwMutex::WriteLock wlock(m_mtx);
@@ -433,7 +436,7 @@ void VxlanManager::MoveNetworkAck(const std::string &networkName, const std::str
     bool isSameHost = p2p_lan_service::instance().is_same_host(newMachineId);
 
     {
-        if (!isSameHost/* && (info->nativeFlags & NATIVE_FLAGS_DHCPSERVER) != 0*/) {
+        if (!isSameHost && (info->nativeFlags & NATIVE_FLAGS_DHCPSERVER) != 0) {
             StopDhcpServer(info->bridgeName, info->vxlanName);
         }
         RwMutex::WriteLock wlock(m_mtx);

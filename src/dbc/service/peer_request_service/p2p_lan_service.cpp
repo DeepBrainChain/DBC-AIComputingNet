@@ -660,8 +660,8 @@ void p2p_lan_service::init_timer() {
     // 50 second
     add_timer(AI_MULTICAST_MACHINE_TIMER, 5 * 1000, 50 * 1000, ULLONG_MAX, "",
         std::bind(&p2p_lan_service::on_multicast_machine_task_timer, this, std::placeholders::_1));
-    // 3 min
-    add_timer(AI_MULTICAST_NETWORK_TIMER, 180 * 1000, 180 * 1000, ULLONG_MAX, "",
+    // 2 min
+    add_timer(AI_MULTICAST_NETWORK_TIMER, 90 * 1000, 120 * 1000, ULLONG_MAX, "",
         std::bind(&p2p_lan_service::on_multicast_network_task_timer, this, std::placeholders::_1));
     // 2 min latter
     add_timer(AI_MULTICAST_NETWORK_RESUME_TIMER, 120 * 1000, 1000, 1, "",
