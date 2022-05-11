@@ -13,6 +13,10 @@ FResult TaskInfoManager::init() {
     m_db.load_datas(mp_tasks);
 
     for (auto& iter : mp_tasks) {
+        if (!VmClient::instance().IsExistDomain(iter.first)) {
+            continue;
+        }
+
         std::shared_ptr<TaskInfo> taskinfo = std::make_shared<TaskInfo>();
         taskinfo->m_db_info = iter.second;
 
@@ -67,6 +71,15 @@ FResult TaskInfoManager::init() {
 	}
 
 	m_running_db.load_datas(m_running_tasks);
+
+    for (std::vector<std::string>::iterator iter = m_running_tasks.begin(); iter != m_running_tasks.end(); ) {
+        if (!VmClient::instance().IsExistDomain(*iter)) {
+            iter = m_running_tasks.erase(iter);
+        }
+        else {
+            iter++;
+        }
+    }
 
     return FResultOk;
 }

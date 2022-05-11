@@ -22,6 +22,7 @@ FResult TaskGpuManager::init(const std::vector<std::string>& task_ids) {
         }
          
         tinyxml2::XMLElement* ele_hostdev = ele_devices->FirstChildElement("hostdev");
+        std::string cur_gpu_id;
         while (ele_hostdev != nullptr) {
             tinyxml2::XMLElement* ele_source = ele_hostdev->FirstChildElement("source");
             if (ele_source != nullptr) {
@@ -50,8 +51,10 @@ FResult TaskGpuManager::init(const std::vector<std::string>& task_ids) {
                         std::shared_ptr<GpuInfo> ptr = std::make_shared<GpuInfo>();
                         ptr->setId(device_id);
                         gpus.insert({ device_id, ptr });
+                        cur_gpu_id = device_id;
                     }
-                    gpus[device_id]->addDeviceId(device_id);
+                    
+                    gpus[cur_gpu_id]->addDeviceId(device_id);
                 }
             }
 
