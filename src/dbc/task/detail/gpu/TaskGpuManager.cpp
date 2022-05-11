@@ -71,3 +71,14 @@ void TaskGpuManager::del(const std::string& task_id) {
     RwMutex::WriteLock wlock(m_mtx);
     m_task_gpus.erase(task_id);
 }
+
+int32_t TaskGpuManager::getTaskGpusCount(const std::string& task_id) {
+    RwMutex::ReadLock rlock(m_mtx);
+	auto iter = m_task_gpus.find(task_id);
+	if (iter != m_task_gpus.end()) {
+		return iter->second.size();
+	}
+	else {
+        return 0;
+	}
+}

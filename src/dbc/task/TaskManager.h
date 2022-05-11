@@ -186,9 +186,9 @@ protected:
 
     bool allocate_gpu(int32_t gpu_count, std::map<std::string, std::list<std::string>>& gpus);
 
-    bool allocate_mem(uint64_t mem_size);
+    bool allocate_mem(int64_t mem_size);
 
-    bool allocate_disk(uint64_t disk_size);
+    bool allocate_disk(int64_t disk_size);
 
     bool check_iptables_port_occupied(uint16_t port);
 

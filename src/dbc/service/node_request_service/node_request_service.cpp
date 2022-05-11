@@ -554,10 +554,11 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
 }
 
 //广播租用状态
-bool node_request_service::udp_broadcast_rent_status() {
+bool node_request_service::found_other_running_domains() {
     TaskMgr::instance().broadcast_message("renting");
+
     bool found = false;
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < 5; i++) {
 		std::vector<std::string> domains;
 		VmClient::instance().ListAllRunningDomains(domains);
 		for (size_t i = 0; i < domains.size(); i++) {
@@ -568,7 +569,7 @@ bool node_request_service::udp_broadcast_rent_status() {
 		}
 
 		if (found) {
-			sleep(3);
+			sleep(2);
         }
         else {
             break;
@@ -578,7 +579,7 @@ bool node_request_service::udp_broadcast_rent_status() {
     return found;
 }
 
-// task
+// task列表
 void node_request_service::on_node_list_task_req(const std::shared_ptr<network::message>& msg) {
     auto node_req_msg = std::dynamic_pointer_cast<dbc::node_list_task_req>(msg->get_content());
     if (node_req_msg == nullptr) {
@@ -699,7 +700,7 @@ void node_request_service::task_list(const network::base_header& header,
             ss_tasks << ", \"os\":" << "\"" << taskinfo->getOperationSystem() << "\"";
             ss_tasks << ", \"ssh_ip\":" << "\"" <<
                      (taskinfo->getPublicIP().empty() ? SystemInfo::instance().GetPublicip() : taskinfo->getPublicIP()) << "\"";
-            bool is_windows = taskinfo->getOperationSystem().find("win") != std::string::npos;
+            bool is_windows = taskinfo->getOperationSystem().find("windows") != std::string::npos;
             if (!is_windows) {
                 ss_tasks << ", \"ssh_port\":" << "\"" << taskinfo->getSSHPort() << "\"";
                 ss_tasks << ", \"user_name\":" << "\"" << g_vm_ubuntu_login_username << "\"";
@@ -821,7 +822,7 @@ void node_request_service::task_list(const network::base_header& header,
     }
 }
 
-
+// 创建task
 void node_request_service::on_node_create_task_req(const std::shared_ptr<network::message>& msg) {
     auto node_req_msg = std::dynamic_pointer_cast<dbc::node_create_task_req>(msg->get_content());
     if (node_req_msg == nullptr) {
@@ -895,7 +896,7 @@ void node_request_service::on_node_create_task_req(const std::shared_ptr<network
             return;
         }
 
-        if (udp_broadcast_rent_status()) {
+        if (found_other_running_domains()) {
             send_response_error<dbc::node_create_task_rsp>(NODE_CREATE_TASK_RSP, node_req_msg->header, E_DEFAULT, "create task failed, please try again in a minute");
             return;
         }
@@ -963,7 +964,7 @@ void node_request_service::task_create(const network::base_header& header,
     }
 }
 
-
+// 启动task
 void node_request_service::on_node_start_task_req(const std::shared_ptr<network::message>& msg) {
     auto node_req_msg = std::dynamic_pointer_cast<dbc::node_start_task_req>(msg->get_content());
     if (node_req_msg == nullptr) {
@@ -1037,7 +1038,7 @@ void node_request_service::on_node_start_task_req(const std::shared_ptr<network:
             return;
         }
 
-        if (udp_broadcast_rent_status()) {
+        if (found_other_running_domains()) {
             send_response_error<dbc::node_start_task_rsp>(NODE_START_TASK_RSP, node_req_msg->header, E_DEFAULT, "start task failed, please try again in a minute");
             return;
         }
@@ -1066,7 +1067,7 @@ void node_request_service::task_start(const network::base_header& header,
     }
 }
 
-
+// shutdown task
 void node_request_service::on_node_shutdown_task_req(const std::shared_ptr<network::message>& msg) {
     auto node_req_msg = std::dynamic_pointer_cast<dbc::node_shutdown_task_req>(msg->get_content());
     if (node_req_msg == nullptr) {
@@ -1163,7 +1164,7 @@ void node_request_service::task_shutdown(const network::base_header& header,
     }
 }
 
-
+// destroy task
 void node_request_service::on_node_poweroff_task_req(const std::shared_ptr<network::message>& msg) {
 	auto node_req_msg = std::dynamic_pointer_cast<dbc::node_poweroff_task_req>(msg->get_content());
 	if (node_req_msg == nullptr) {
@@ -1264,6 +1265,7 @@ void node_request_service::task_poweroff(const network::base_header& header,
 }
 
 
+// 重启task
 void node_request_service::on_node_restart_task_req(const std::shared_ptr<network::message>& msg) {
     auto node_req_msg = std::dynamic_pointer_cast<dbc::node_restart_task_req>(msg->get_content());
     if (node_req_msg == nullptr) {
@@ -1337,7 +1339,7 @@ void node_request_service::on_node_restart_task_req(const std::shared_ptr<networ
             return;
         }
 
-        if (udp_broadcast_rent_status()) {
+        if (found_other_running_domains()) {
             send_response_error<dbc::node_restart_task_rsp>(NODE_RESTART_TASK_RSP, node_req_msg->header, E_DEFAULT, "restart task failed, please try again in a minute");
             return;
         }
@@ -1366,7 +1368,7 @@ void node_request_service::task_restart(const network::base_header& header,
     }
 }
 
-
+// 重置task
 void node_request_service::on_node_reset_task_req(const std::shared_ptr<network::message>& msg) {
     auto node_req_msg = std::dynamic_pointer_cast<dbc::node_reset_task_req>(msg->get_content());
     if (node_req_msg == nullptr) {
@@ -1463,7 +1465,7 @@ void node_request_service::task_reset(const network::base_header& header,
     }
 }
 
-
+// 删除task
 void node_request_service::on_node_delete_task_req(const std::shared_ptr<network::message>& msg) {
     auto node_req_msg = std::dynamic_pointer_cast<dbc::node_delete_task_req>(msg->get_content());
     if (node_req_msg == nullptr) {
@@ -1560,7 +1562,7 @@ void node_request_service::task_delete(const network::base_header& header,
     }
 }
 
-
+// 查询task日志
 void node_request_service::on_node_task_logs_req(const std::shared_ptr<network::message>& msg) {
     auto node_req_msg = std::dynamic_pointer_cast<dbc::node_task_logs_req>(msg->get_content());
     if (node_req_msg == nullptr) {
@@ -1699,6 +1701,7 @@ void node_request_service::task_logs(const network::base_header& header,
     }
 }
 
+// 修改task
 void node_request_service::on_node_modify_task_req(const std::shared_ptr<network::message>& msg) {
 	auto node_req_msg = std::dynamic_pointer_cast<dbc::node_modify_task_req>(msg->get_content());
 	if (node_req_msg == nullptr) {
@@ -1798,6 +1801,7 @@ void node_request_service::task_modify(const network::base_header& header,
 	}
 }
 
+// 设置task密码
 void node_request_service::on_node_passwd_task_req(const std::shared_ptr<network::message>& msg) {
 	auto node_req_msg = std::dynamic_pointer_cast<dbc::node_passwd_task_req>(msg->get_content());
 	if (node_req_msg == nullptr) {
@@ -1896,7 +1900,7 @@ void node_request_service::task_passwd(const network::base_header& header,
 	}
 }
 
-// images
+// 镜像列表
 void node_request_service::on_node_list_images_req(const std::shared_ptr<network::message>& msg) {
 	auto node_req_msg = std::dynamic_pointer_cast<dbc::node_list_images_req>(msg->get_content());
 	if (node_req_msg == nullptr) {
@@ -2034,7 +2038,7 @@ void node_request_service::list_images(const network::base_header& header,
 	}
 }
 
-
+// 下载镜像
 void node_request_service::on_node_download_image_req(const std::shared_ptr<network::message>& msg) {
 	auto node_req_msg = std::dynamic_pointer_cast<dbc::node_download_image_req>(msg->get_content());
 	if (node_req_msg == nullptr) {
@@ -2135,7 +2139,7 @@ void node_request_service::download_image(const network::base_header& header,
 	}
 }
 
-
+// 下载进度
 void node_request_service::on_node_download_image_progress_req(const std::shared_ptr<network::message>& msg) {
 	auto node_req_msg = std::dynamic_pointer_cast<dbc::node_download_image_progress_req>(msg->get_content());
 	if (node_req_msg == nullptr) {
@@ -2254,7 +2258,7 @@ void node_request_service::download_image_progress(const network::base_header& h
 	}
 }
 
-
+// 停止下载
 void node_request_service::on_node_stop_download_image_req(const std::shared_ptr<network::message>& msg) {
 	auto node_req_msg = std::dynamic_pointer_cast<dbc::node_stop_download_image_req>(msg->get_content());
 	if (node_req_msg == nullptr) {
@@ -2373,7 +2377,7 @@ void node_request_service::stop_download_image(const network::base_header& heade
 	}
 }
 
-
+// 上传镜像
 void node_request_service::on_node_upload_image_req(const std::shared_ptr<network::message>& msg) {
 	auto node_req_msg = std::dynamic_pointer_cast<dbc::node_upload_image_req>(msg->get_content());
 	if (node_req_msg == nullptr) {
@@ -2474,7 +2478,7 @@ void node_request_service::upload_image(const network::base_header& header,
 	}
 }
 
-
+// 上传进度
 void node_request_service::on_node_upload_image_progress_req(const std::shared_ptr<network::message>& msg) {
 	auto node_req_msg = std::dynamic_pointer_cast<dbc::node_upload_image_progress_req>(msg->get_content());
 	if (node_req_msg == nullptr) {
@@ -2593,7 +2597,7 @@ void node_request_service::upload_image_progress(const network::base_header& hea
 	}
 }
 
-
+// 停止上传
 void node_request_service::on_node_stop_upload_image_req(const std::shared_ptr<network::message>& msg) {
 	auto node_req_msg = std::dynamic_pointer_cast<dbc::node_stop_upload_image_req>(msg->get_content());
 	if (node_req_msg == nullptr) {
@@ -2712,7 +2716,7 @@ void node_request_service::stop_upload_image(const network::base_header& header,
 	}
 }
 
-
+// 删除镜像
 void node_request_service::on_node_delete_image_req(const std::shared_ptr<network::message>& msg) {
 	auto node_req_msg = std::dynamic_pointer_cast<dbc::node_delete_image_req>(msg->get_content());
 	if (node_req_msg == nullptr) {
@@ -2813,7 +2817,7 @@ void node_request_service::delete_image(const network::base_header& header,
 	}
 }
 
-// snapshot
+// 快照列表
 void node_request_service::on_node_list_snapshot_req(const std::shared_ptr<network::message>& msg) {
     auto node_req_msg = std::dynamic_pointer_cast<dbc::node_list_snapshot_req>(msg->get_content());
     if (node_req_msg == nullptr) {
@@ -2998,7 +3002,7 @@ void node_request_service::snapshot_list(const network::base_header& header,
     }
 }
 
-
+// 创建快照
 void node_request_service::on_node_create_snapshot_req(const std::shared_ptr<network::message>& msg) {
     auto node_req_msg = std::dynamic_pointer_cast<dbc::node_create_snapshot_req>(msg->get_content());
     if (node_req_msg == nullptr) {
@@ -3147,7 +3151,7 @@ void node_request_service::snapshot_create(const network::base_header& header,
     }
 }
 
-
+// 删除快照
 void node_request_service::on_node_delete_snapshot_req(const std::shared_ptr<network::message>& msg) {
     auto node_req_msg = std::dynamic_pointer_cast<dbc::node_delete_snapshot_req>(msg->get_content());
     if (node_req_msg == nullptr) {
@@ -3275,7 +3279,7 @@ void node_request_service::snapshot_delete(const network::base_header& header,
 	}
 }
 
-// disk
+// task的磁盘列表
 void node_request_service::on_node_list_disk_req(const std::shared_ptr<network::message>& msg) {
 	auto node_req_msg = std::dynamic_pointer_cast<dbc::node_list_disk_req>(msg->get_content());
 	if (node_req_msg == nullptr) {
@@ -3358,10 +3362,27 @@ void node_request_service::on_node_list_disk_req(const std::shared_ptr<network::
 	}
 }
 
-void node_request_service::do_list_disk(const network::base_header& header, 
+void node_request_service::do_list_disk(const network::base_header& header,
     const std::shared_ptr<dbc::node_list_disk_req_data>& data, const AuthoriseResult& result) {
     FResult fret = FResultOk;
-     
+
+    auto taskinfo = TaskInfoMgr::instance().getTaskInfo(data->task_id);
+    if (taskinfo == nullptr) {
+        send_response_error<dbc::node_list_disk_rsp>(NODE_LIST_DISK_RSP, header, E_DEFAULT, "task not exist");
+        return;
+    }
+
+    if (!VmClient::instance().IsExistDomain(data->task_id)) {
+        send_response_error<dbc::node_list_disk_rsp>(NODE_LIST_DISK_RSP, header, E_DEFAULT, "task not exist");
+        return;
+    }
+
+    std::string bios_mode = taskinfo->getBiosMode();
+    if (bios_mode == "pxe") {
+		send_response_error<dbc::node_list_disk_rsp>(NODE_LIST_DISK_RSP, header, E_DEFAULT, "pxe not support disk");
+		return;
+    }
+
     std::map<std::string, std::shared_ptr<DiskInfo>> mpdisks;
     TaskDiskMgr::instance().listDisks(data->task_id, mpdisks);
 
@@ -3406,6 +3427,7 @@ void node_request_service::do_list_disk(const network::base_header& header,
     }
 }
 
+// 磁盘扩容
 void node_request_service::on_node_resize_disk_req(const std::shared_ptr<network::message>& msg) {
 	auto node_req_msg = std::dynamic_pointer_cast<dbc::node_resize_disk_req>(msg->get_content());
 	if (node_req_msg == nullptr) {
@@ -3492,6 +3514,23 @@ void node_request_service::do_resize_disk(const network::base_header& header,
     const std::shared_ptr<dbc::node_resize_disk_req_data>& data, const AuthoriseResult& result) {
 	FResult fret = FResultOk;
 
+	auto taskinfo = TaskInfoMgr::instance().getTaskInfo(data->task_id);
+	if (taskinfo == nullptr) {
+		send_response_error<dbc::node_resize_disk_rsp>(NODE_RESIZE_DISK_RSP, header, E_DEFAULT, "task not exist");
+		return;
+	}
+
+	if (!VmClient::instance().IsExistDomain(data->task_id)) {
+		send_response_error<dbc::node_resize_disk_rsp>(NODE_RESIZE_DISK_RSP, header, E_DEFAULT, "task not exist");
+		return;
+	}
+
+	std::string bios_mode = taskinfo->getBiosMode();
+	if (bios_mode == "pxe") {
+		send_response_error<dbc::node_resize_disk_rsp>(NODE_RESIZE_DISK_RSP, header, E_DEFAULT, "pxe not support disk");
+		return;
+	}
+
     // 解析请求参数
 	rapidjson::Document doc;
 	doc.Parse(data->additional.c_str());
@@ -3556,6 +3595,7 @@ void node_request_service::do_resize_disk(const network::base_header& header,
 	}
 }
 
+// 增加新数据盘
 void node_request_service::on_node_add_disk_req(const std::shared_ptr<network::message>& msg) {
 	auto node_req_msg = std::dynamic_pointer_cast<dbc::node_add_disk_req>(msg->get_content());
 	if (node_req_msg == nullptr) {
@@ -3642,6 +3682,23 @@ void node_request_service::do_add_disk(const network::base_header& header,
     const std::shared_ptr<dbc::node_add_disk_req_data>& data, const AuthoriseResult& result) {
 	FResult fret = FResultOk;
 
+	auto taskinfo = TaskInfoMgr::instance().getTaskInfo(data->task_id);
+	if (taskinfo == nullptr) {
+		send_response_error<dbc::node_add_disk_rsp>(NODE_ADD_DISK_RSP, header, E_DEFAULT, "task not exist");
+		return;
+	}
+
+	if (!VmClient::instance().IsExistDomain(data->task_id)) {
+		send_response_error<dbc::node_add_disk_rsp>(NODE_ADD_DISK_RSP, header, E_DEFAULT, "task not exist");
+		return;
+	}
+
+	std::string bios_mode = taskinfo->getBiosMode();
+	if (bios_mode == "pxe") {
+		send_response_error<dbc::node_add_disk_rsp>(NODE_ADD_DISK_RSP, header, E_DEFAULT, "pxe not support disk");
+		return;
+	}
+
 	// 解析请求参数
 	rapidjson::Document doc;
 	doc.Parse(data->additional.c_str());
@@ -3710,6 +3767,7 @@ void node_request_service::do_add_disk(const network::base_header& header,
 	}
 }
 
+// 删除数据盘
 void node_request_service::on_node_delete_disk_req(const std::shared_ptr<network::message>& msg) {
 	auto node_req_msg = std::dynamic_pointer_cast<dbc::node_delete_disk_req>(msg->get_content());
 	if (node_req_msg == nullptr) {
@@ -3796,6 +3854,23 @@ void node_request_service::do_delete_disk(const network::base_header& header,
     const std::shared_ptr<dbc::node_delete_disk_req_data>& data, const AuthoriseResult& result) {
 	FResult fret = FResultOk;
 
+	auto taskinfo = TaskInfoMgr::instance().getTaskInfo(data->task_id);
+	if (taskinfo == nullptr) {
+		send_response_error<dbc::node_delete_disk_rsp>(NODE_DELETE_DISK_RSP, header, E_DEFAULT, "task not exist");
+		return;
+	}
+
+	if (!VmClient::instance().IsExistDomain(data->task_id)) {
+		send_response_error<dbc::node_delete_disk_rsp>(NODE_DELETE_DISK_RSP, header, E_DEFAULT, "task not exist");
+		return;
+	}
+
+	std::string bios_mode = taskinfo->getBiosMode();
+	if (bios_mode == "pxe") {
+		send_response_error<dbc::node_delete_disk_rsp>(NODE_DELETE_DISK_RSP, header, E_DEFAULT, "pxe not support disk");
+		return;
+	}
+
 	// 解析请求参数
 	rapidjson::Document doc;
 	doc.Parse(data->additional.c_str());
@@ -3852,7 +3927,7 @@ void node_request_service::do_delete_disk(const network::base_header& header,
 	}
 }
 
-// node
+// 查询节点信息
 void node_request_service::on_node_query_node_info_req(const std::shared_ptr<network::message>& msg) {
     auto node_req_msg = std::dynamic_pointer_cast<dbc::node_query_node_info_req>(msg->get_content());
     if (node_req_msg == nullptr) {
@@ -4018,7 +4093,7 @@ void node_request_service::query_node_info(const network::base_header& header,
     }
 }
 
-
+// 查询session_id
 void node_request_service::on_node_session_id_req(const std::shared_ptr<network::message> &msg) {
     auto node_req_msg = std::dynamic_pointer_cast<dbc::node_session_id_req>(msg->get_content());
     if (node_req_msg == nullptr) {
@@ -4240,67 +4315,6 @@ void node_request_service::on_net_service_broadcast_req(const std::shared_ptr<ne
         service_infos.insert({ it.first, ptr });
     }
     ServiceInfoManager::instance().add(service_infos);
-}
-
-std::string node_request_service::format_logs(const std::string& raw_logs, uint16_t max_lines) {
-    //docker logs has special format with each line of log:
-    // 0x01 0x00  0x00 0x00 0x00 0x00 0x00 0x38
-    //we should remove it
-    //and ends with 0x30 0x0d 0x0a
-    max_lines = (max_lines == 0) ? MAX_NUMBER_OF_LINES : max_lines;
-    size_t size = raw_logs.size();
-    std::vector<unsigned char> log_vector(size);
-
-    int push_char_count = 0;
-    const char* p = raw_logs.c_str();
-
-    uint16_t line_count = 1;
-
-    for (size_t i = 0; i < size;) {
-        //0x30 0x0d 0x0a
-        if ((i + 2 < size)
-            && (0x30 == *p)
-            && (0x0d == *(p + 1))
-            && (0x0a == *(p + 2))) {
-            break;
-        }
-
-        if (max_lines != 0 && line_count > max_lines) {
-            break;
-        }
-
-        //skip: 0x01 0x00  0x00 0x00 0x00 0x00 0x00 0x38
-        if ((i + 7 < size)
-            && ((0x01 == *p) || (0x02 == *p))
-            && (0x00 == *(p + 1))
-            && (0x00 == *(p + 2))
-            && (0x00 == *(p + 3))
-            && (0x00 == *(p + 4))
-            && (0x00 == *(p + 5))) {
-            i += 8;
-            p += 8;
-            continue;
-        }
-
-        log_vector[push_char_count] = *p++;
-
-        if (log_vector[push_char_count] == '\n') {
-            line_count++;
-        }
-
-        ++push_char_count;
-        i++;
-    }
-
-    std::string formatted_str;
-    formatted_str.reserve(push_char_count);
-
-    int i = 0;
-    while (i < push_char_count) {
-        formatted_str += log_vector[i++];
-    }
-
-    return formatted_str;
 }
 
 // monitor

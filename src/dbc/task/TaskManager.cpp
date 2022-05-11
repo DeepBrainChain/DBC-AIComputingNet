@@ -520,7 +520,6 @@ static std::string genpwd() {
     return strpwd;
 }
 
-// create task
 FResult TaskManager::createTask(const std::string& wallet, 
                                 const std::shared_ptr<dbc::node_create_task_req_data>& data,
                                 int64_t rent_end, USER_ROLE role, std::string& task_id) {
@@ -529,19 +528,21 @@ FResult TaskManager::createTask(const std::string& wallet,
     if (fret.errcode != ERR_SUCCESS) {
         return fret;
     }
+    
+    if (create_params.bios_mode != "pxe") {
+        std::vector<std::string> image_files;
+        getNeededBackingImage(create_params.image_name, image_files);
+        if (!image_files.empty()) {
+            std::string str = "image backfile not exist: ";
+            for (size_t i = 0; i < image_files.size(); i++) {
+                if (i > 0)
+                    str += ",";
+                str += image_files[i];
+            }
 
-	std::vector<std::string> image_files;
-	getNeededBackingImage(create_params.image_name, image_files);
-	if (!image_files.empty()) {
-		std::string str = "image backfile not exist: ";
-		for (size_t i = 0; i < image_files.size(); i++) {
-			if (i > 0)
-				str += ",";
-			str += image_files[i];
-		}
-
-        return FResult(ERR_ERROR, str);
-	}
+            return FResult(ERR_ERROR, str);
+        }
+    }
 
     int64_t tnow = time(nullptr);
     task_id = create_params.task_id;
@@ -626,6 +627,7 @@ FResult TaskManager::createTask(const std::string& wallet,
     
     // push event
     auto ev = std::make_shared<CreateTaskEvent>(task_id);
+    ev->bios_mode = create_params.bios_mode;
 	this->pushTaskEvent(ev);
 
     return FResultOk;
@@ -642,22 +644,179 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
         return FResult(ERR_ERROR, "additional parse failed");
     }
 
-    std::string image_name, s_ssh_port, s_rdp_port,
-        s_gpu_count, s_cpu_cores, s_mem_size, s_disk_size,
-        s_vnc_port, data_file_name, operation_system, bios_mode,
-        desc, network_name, public_ip;
+    std::string image_name, desc,
+        operation_system, bios_mode,
+        s_ssh_port, s_rdp_port, s_vnc_port,
+        s_gpu_count, s_cpu_cores, s_mem_size, s_disk_size, data_file_name, 
+        network_name, public_ip;
     std::vector<std::string> custom_ports, multicast, nwfilter;
 
-    JSON_PARSE_STRING(doc, "image_name", image_name)
-    JSON_PARSE_STRING(doc, "desc", desc) 
-    JSON_PARSE_STRING(doc, "ssh_port", s_ssh_port) 
-    JSON_PARSE_STRING(doc, "rdp_port", s_rdp_port) 
-    //custom port: [
-    // "tcp/udp,123",
-    // "tcp/udp,111:222",
-    // "tcp/udp,333-444",
-    // "tcp/udp,555-666:777-888"
-    //]
+    std::string task_id;
+	std::string login_password;
+    std::string vnc_password;
+	int32_t cpu_cores = 0, sockets = 0, cores = 0, threads = 0;
+	int32_t gpu_count = 0;
+	std::map<std::string, std::list<std::string>> gpus;
+	int64_t mem_size_k = 0;  // KB
+	int64_t disk_size_k = 0; // KB
+    uint16_t n_ssh_port, n_rdp_port, n_vnc_port;
+	
+    // “image_name”
+    JSON_PARSE_STRING(doc, "image_name", image_name); //xxx.qcow2
+	FResult fret = check_image(image_name);
+	if (fret.errcode != ERR_SUCCESS) {
+		return fret;
+	}
+
+    // "desc"
+    JSON_PARSE_STRING(doc, "desc", desc);
+    
+    // "operation_system"
+    JSON_PARSE_STRING(doc, "operation_system", operation_system);
+	if (!operation_system.empty()) {
+		std::transform(operation_system.begin(), operation_system.end(), operation_system.begin(), ::tolower);
+    }
+    else {
+        operation_system = "linux";
+    }
+	// check: "linux"、"windows"
+	fret = check_operation_system(operation_system);
+	if (fret.errcode != ERR_SUCCESS) {
+		return fret;
+	}
+    
+    // "bios_mode"
+    JSON_PARSE_STRING(doc, "bios_mode", bios_mode);
+	if (bios_mode.empty()) {
+		bios_mode = "legacy";
+	}
+	else {
+		std::transform(bios_mode.begin(), bios_mode.end(), bios_mode.begin(), ::tolower);
+	}
+	// check: "legacy"、“uefi”、"pxe"
+	fret = check_bios_mode(bios_mode);
+	if (fret.errcode != ERR_SUCCESS) {
+		return fret;
+	}
+    
+    // "ssh_port“
+    JSON_PARSE_STRING(doc, "ssh_port", s_ssh_port);
+    // check
+    n_ssh_port = (uint16_t) atoi(s_ssh_port.c_str());
+    if (operation_system.find("linux") != std::string::npos) {
+        if (s_ssh_port.empty() || !util::is_digits(s_ssh_port)) {
+            return FResult(ERR_ERROR, "ssh_port is invalid");
+        }
+        if (check_iptables_port_occupied(n_ssh_port)) {
+            return FResult(ERR_ERROR, "ssh_port is occupied");
+        }
+    }
+
+    // "rdp_port"
+    JSON_PARSE_STRING(doc, "rdp_port", s_rdp_port);
+    // check
+    n_rdp_port = (uint16_t) atoi(s_rdp_port.c_str());
+    if (operation_system.find("windows") != std::string::npos) {
+        if (s_rdp_port.empty() || !util::is_digits(s_rdp_port)) {
+            return FResult(ERR_ERROR, "rdp_port is invalid");
+        }
+        if (check_iptables_port_occupied(n_rdp_port)) {
+            return FResult(ERR_ERROR, "rdp_port is occupied");
+        }
+    }
+
+    // "vnc_port"
+    JSON_PARSE_STRING(doc, "vnc_port", s_vnc_port);
+	// check: range: [5900, 6000]
+	n_vnc_port = (uint16_t) atoi(s_vnc_port.c_str());
+	if (!util::is_digits(s_vnc_port) || n_vnc_port < 5900 || n_vnc_port > 6000) {
+		return FResult(ERR_ERROR, "vnc_port is invalid (usage: [5900, 6000])");
+	}
+
+    // "gpu_count"
+    JSON_PARSE_STRING(doc, "gpu_count", s_gpu_count);
+	// check
+    gpu_count = atoi(s_gpu_count.c_str());
+	if (!util::is_digits(s_gpu_count) || gpu_count < 0) {
+		return FResult(ERR_ERROR, "gpu_count is invalid (usage: gpu_count >= 0)");
+	}
+	if (role == USER_ROLE::Verifier)
+		gpu_count = SystemInfo::instance().GetGpuInfo().size();
+
+    // "cpu_cores"
+    JSON_PARSE_STRING(doc, "cpu_cores", s_cpu_cores);
+    // check
+    cpu_cores = atoi(s_cpu_cores.c_str());
+	if (!util::is_digits(s_cpu_cores) || cpu_cores <= 0) {
+		return FResult(ERR_ERROR, "cpu_cores is invalid");
+	}
+	if (role == USER_ROLE::Verifier)
+		cpu_cores = SystemInfo::instance().GetCpuInfo().cores;
+
+	// "mem_size" (G)
+    JSON_PARSE_STRING(doc, "mem_size", s_mem_size);
+    // check
+    mem_size_k = atoi(s_mem_size.c_str()) * 1024L * 1024L;
+	if (!util::is_digits(s_mem_size) || mem_size_k <= 0) {
+		return FResult(ERR_ERROR, "mem_size is invalid");
+	}
+	if (role == USER_ROLE::Verifier)
+		mem_size_k = SystemInfo::instance().GetMemInfo().free;
+
+    if (bios_mode != "pxe") {
+        // "disk_size" (G)
+        JSON_PARSE_STRING(doc, "disk_size", s_disk_size);
+        // check
+        disk_size_k = atoi(s_disk_size.c_str()) * 1024L * 1024L;
+        if (!util::is_digits(s_disk_size) || disk_size_k <= 0) {
+            return FResult(ERR_ERROR, "disk_size is invalid");
+        }
+        if (role == USER_ROLE::Verifier)
+            disk_size_k = (SystemInfo::instance().GetDiskInfo().available - g_disk_system_size * 1024L * 1024L);
+
+        // "data_file_name"
+        JSON_PARSE_STRING(doc, "data_file_name", data_file_name);
+        // check
+        if (!data_file_name.empty()) {
+            boost::filesystem::path data_path("/data/" + data_file_name);
+            boost::system::error_code error_code;
+            if (!boost::filesystem::exists(data_path, error_code) || error_code) {
+                return FResult(ERR_ERROR, "data file does not exist");
+            }
+
+            if (!boost::filesystem::is_regular_file(data_path, error_code) || error_code) {
+                return FResult(ERR_ERROR, "data file is not a regular file");
+            }
+        }
+    }
+   
+    // "network_name"
+    JSON_PARSE_STRING(doc, "network_name", network_name);
+	// check
+	if (!network_name.empty()) {
+		FResult fret = VxlanManager::instance().CreateNetworkClient(network_name);
+		if (fret.errcode != ERR_SUCCESS) {
+			return fret;
+		}
+	}
+
+    // "public_ip"
+    JSON_PARSE_STRING(doc, "public_ip", public_ip);
+	// check
+    if (!public_ip.empty()) {
+		ip_validator ip_vdr;
+		variable_value val_ip(public_ip, false);
+		if (!ip_vdr.validate(val_ip))
+			return FResult(ERR_ERROR, "invalid public ip");
+	}
+
+    // "custom port" 
+    // [
+    //    "tcp/udp,123",
+    //    "tcp/udp,111:222",
+    //    "tcp/udp,333-444",
+    //    "tcp/udp,555-666:777-888"
+    // ]
     if (doc.HasMember("custom_port")) {
         const rapidjson::Value& v_custom_port = doc["custom_port"];
         if (v_custom_port.IsArray()) {
@@ -670,10 +829,12 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
             }
         }
     }
-    //multicast: [
-    // "223.1.1.1",
-    // "224.1.1.1"
-    //]
+
+    // "multicast"
+    // [
+    //    "223.1.1.1",
+    //    "224.1.1.1"
+    // ]
     if (doc.HasMember("multicast")) {
         const rapidjson::Value& v_multicast = doc["multicast"];
         if (v_multicast.IsArray()) {
@@ -686,11 +847,18 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
             }
         }
     }
-    //"nwfilter": [
+	// check
+	fret = check_multicast(multicast);
+	if (fret.errcode != ERR_SUCCESS) {
+		return fret;
+	}
+
+    // "nwfilter"
+    // [
     //    "in,tcp,22,0.0.0.0/0,accept",
     //    "out,all,all,0.0.0.0/0,accept",
     //    "in,all,all,0.0.0.0/0,drop"
-    //]
+    // ]
     if (doc.HasMember("network_filters")) {
         const rapidjson::Value& v_nwfilters = doc["network_filters"];
         if (v_nwfilters.IsArray()) {
@@ -703,208 +871,58 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
             }
         }
     }
-    JSON_PARSE_STRING(doc, "gpu_count", s_gpu_count)
-    JSON_PARSE_STRING(doc, "cpu_cores", s_cpu_cores)
-    JSON_PARSE_STRING(doc, "mem_size", s_mem_size)      //G
-    JSON_PARSE_STRING(doc, "disk_size", s_disk_size)    //G
-    JSON_PARSE_STRING(doc, "vnc_port", s_vnc_port)
-    JSON_PARSE_STRING(doc, "data_file_name", data_file_name)
-    JSON_PARSE_STRING(doc, "operation_system", operation_system)
-    JSON_PARSE_STRING(doc, "bios_mode", bios_mode)
-    JSON_PARSE_STRING(doc, "network_name", network_name)
-    JSON_PARSE_STRING(doc, "public_ip", public_ip)
-    //operation_system: "win"/"ubuntu"/""
-    if (operation_system.empty()) {
-        operation_system = "generic";
-    } else {
-        std::transform(operation_system.begin(), operation_system.end(), operation_system.begin(), ::tolower);
-    }
-
-    // rdp_port
-    if (operation_system.find("win") != std::string::npos) {
-        if (s_rdp_port.empty() || !util::is_digits(s_rdp_port) || atoi(s_rdp_port.c_str()) <= 0) {
-            return FResult(ERR_ERROR, "rdp_port is invalid");
-        }
-        if (check_iptables_port_occupied(atoi(s_rdp_port))) {
-            return FResult(ERR_ERROR, "rdp_port is occupied");
-        }
-    }
-    // ssh_port
-    else {
-        if (s_ssh_port.empty() || !util::is_digits(s_ssh_port) || atoi(s_ssh_port.c_str()) <= 0) {
-            return FResult(ERR_ERROR, "ssh_port is invalid");
-        }
-        if (check_iptables_port_occupied(atoi(s_ssh_port))) {
-            return FResult(ERR_ERROR, "ssh_port is occupied");
-        }
-    }
-
-    // vnc port range: [5900, 6000]
-    if (s_vnc_port.empty()) {
-        return FResult(ERR_ERROR, "vnc port is not specified");
-    }
-    int vnc_port = atoi(s_vnc_port.c_str());
-    if (!util::is_digits(s_vnc_port) || vnc_port < 5900 || vnc_port > 6000) {
-        return FResult(ERR_ERROR, "vnc_port out of range : [5900, 6000]");
-    }
-
-    //bios_mode
-    if (bios_mode.empty()) {
-        bios_mode = "legacy";
-    } else {
-        std::transform(bios_mode.begin(), bios_mode.end(), bios_mode.begin(), ::tolower);
-    }
-
-    if (!network_name.empty()) {
-        FResult fret = VxlanManager::instance().CreateNetworkClient(network_name);
-        if (fret.errcode == ERR_SUCCESS) {
-            // do nothing
-        } else {
-            return fret;
-        }
-    }
-
-    if (!public_ip.empty()) {
-        ip_validator ip_vdr;
-        variable_value val_ip(public_ip, false);
-        if (!ip_vdr.validate(val_ip))
-            return FResult(ERR_ERROR, "invalid public ip");
-    }
-
-    std::string login_password = genpwd();
-
-    std::string task_id;
-    int32_t cpu_cores = 0, sockets = 0, cores = 0, threads = 0;
-    int32_t gpu_count = 0;
-    std::map<std::string, std::list<std::string>> gpus;
-    int64_t mem_size = 0; // KB
-    int64_t disk_size = 0; // KB
-    std::string vnc_password = login_password;
-
-    // image
-    FResult fret = check_image(image_name);
-    if (fret.errcode != ERR_SUCCESS) {
-        return fret;
-    }
-        
-    // data disk file name
-    if (!data_file_name.empty()) {
-        boost::filesystem::path data_path("/data/" + data_file_name);
-        boost::system::error_code error_code;
-        if (!boost::filesystem::exists(data_path, error_code) || error_code) {
-            return FResult(ERR_ERROR, "data file does not exist");
-        }
-
-        if (!boost::filesystem::is_regular_file(data_path, error_code) || error_code) {
-            return FResult(ERR_ERROR, "data file is not a regular file");
-        }
-    }
-
+    
     // task_id
     task_id = util::create_task_id();
     if (role == USER_ROLE::Verifier) {
         task_id = "vm_check_" + std::to_string(time(nullptr));
     }
 
-    // cpu
-    if (!util::is_digits(s_cpu_cores) || atoi(s_cpu_cores.c_str()) <= 0) {
-        return FResult(ERR_ERROR, "cpu_cores is invalid");
-    }
+    // password
+    login_password = vnc_password = genpwd();
 
-    cpu_cores = atoi(s_cpu_cores.c_str());
-
-    if (role == USER_ROLE::Verifier)
-        cpu_cores = SystemInfo::instance().GetCpuInfo().cores;
-
-    // gpu
-    if (!util::is_digits(s_gpu_count) || atoi(s_gpu_count.c_str()) < 0) {
-        return FResult(ERR_ERROR, "gpu_count is invalid");
-    }
-
-    gpu_count = atoi(s_gpu_count.c_str());
-
-    if (role == USER_ROLE::Verifier)
-        gpu_count = SystemInfo::instance().GetGpuInfo().size();
-
-    // mem (G)
-    if (!util::is_digits(s_mem_size) || atoi(s_mem_size.c_str()) <= 0) {
-        return FResult(ERR_ERROR, "mem_size is invalid");
-    }
-
-    mem_size = atoi(s_mem_size.c_str()) * 1024L * 1024L;
-
-    if (role == USER_ROLE::Verifier)
-        mem_size = SystemInfo::instance().GetMemInfo().free;
-
-    // disk (G)
-    if (!util::is_digits(s_disk_size) || atoi(s_disk_size.c_str()) <= 0) {
-        return FResult(ERR_ERROR, "disk_size is invalid");
-    }
-
-    disk_size = atoi(s_disk_size.c_str()) * 1024L * 1024L;
-    if (role == USER_ROLE::Verifier)
-        disk_size = (SystemInfo::instance().GetDiskInfo().available - g_disk_system_size * 1024L * 1024L) * 0.75;
-
-    // check
+    // check resource
     if (!allocate_cpu(cpu_cores, sockets, cores, threads)) {
-        LOG_ERROR << "allocate cpu failed";
         return FResult(ERR_ERROR, "allocate cpu failed");
     }
 
     if (!allocate_gpu(gpu_count, gpus)) {
-        LOG_ERROR << "allocate gpu failed";
         return FResult(ERR_ERROR, "allocate gpu failed");
     }
 
-    if (!allocate_mem(mem_size)) {
+    if (!allocate_mem(mem_size_k)) {
         run_shell("echo 3 > /proc/sys/vm/drop_caches");
 
-        if (!allocate_mem(mem_size)) {
-            LOG_ERROR << "allocate mem failed";
+        if (!allocate_mem(mem_size_k)) {
             return FResult(ERR_ERROR, "allocate mem failed");
         }
     }
 
-    if (!allocate_disk(disk_size)) {
-        LOG_ERROR << "allocate disk failed";
-        return FResult(ERR_ERROR, "allocate disk failed");
+    if (bios_mode != "pxe") {
+        if (!allocate_disk(disk_size_k)) {
+            return FResult(ERR_ERROR, "allocate disk failed");
+        }
     }
-
-    // check operation system
-    fret = check_operation_system(operation_system);
-    if (fret.errcode != ERR_SUCCESS) {
-        return fret;
-    }
-    // check bios mode
-    fret = check_bios_mode(bios_mode);
-    if (fret.errcode != ERR_SUCCESS) {
-        return fret;
-    }
-    // check multicast
-    fret = check_multicast(multicast);
-    if (fret.errcode != ERR_SUCCESS) {
-        return fret;
-    }
- 
-	// params
+    
+	// return params
 	params.task_id = task_id;
 	params.login_password = login_password;
 	params.image_name = image_name;
 	params.desc = desc;
-	params.data_file_name = data_file_name;
-    params.ssh_port = (uint16_t) atoi(s_ssh_port.c_str());
-    params.rdp_port = (uint16_t) atoi(s_rdp_port.c_str());
+    params.operation_system = operation_system;
+    params.bios_mode = bios_mode;
+    params.ssh_port = n_ssh_port;
+    params.rdp_port = n_rdp_port;
     params.custom_port = custom_ports;
     params.cpu_sockets = sockets;
     params.cpu_cores = cores;
     params.cpu_threads = threads;
     params.gpus = gpus;
-    params.mem_size = mem_size;
-    params.disk_size = disk_size;
-    params.vnc_port = vnc_port;
+    params.mem_size = mem_size_k;
+    params.disk_size = disk_size_k;
+    params.data_file_name = data_file_name;
+    params.vnc_port = n_vnc_port;
     params.vnc_password = vnc_password;
-    params.operation_system = operation_system;
-    params.bios_mode = bios_mode;
     params.multicast = multicast;
     params.network_name = network_name;
     params.public_ip = public_ip;
@@ -971,11 +989,11 @@ bool TaskManager::allocate_gpu(int32_t gpu_count, std::map<std::string, std::lis
     return cur_count == gpu_count;
 }
 
-bool TaskManager::allocate_mem(uint64_t mem_size) {
+bool TaskManager::allocate_mem(int64_t mem_size) {
     return mem_size > 0 && mem_size <= SystemInfo::instance().GetMemInfo().free;
 }
 
-bool TaskManager::allocate_disk(uint64_t disk_size) {
+bool TaskManager::allocate_disk(int64_t disk_size) {
     return disk_size > 0 && disk_size <= (SystemInfo::instance().GetDiskInfo().available - g_disk_system_size * 1024L * 1024L);
 }
 
@@ -1092,24 +1110,33 @@ FResult TaskManager::check_disk(const std::map<int32_t, uint64_t> &disks) {
 }
 
 FResult TaskManager::check_operation_system(const std::string& os) {
-    if (os.empty()) return FResultOk;
-    if (os == "generic") return FResultOk;
-    if (os.find("ubuntu") != std::string::npos) return FResultOk;
-    if (os.find("win") != std::string::npos) return FResultOk;
-    return FResult(ERR_ERROR, "unsupported operation system");
+    if (os.empty())
+        return FResult(ERR_ERROR, "operation_system is emtpy");
+
+    if (os.find("linux") != std::string::npos
+        || os.find("windows") != std::string::npos) {
+        return FResultOk;
+    }
+    else {
+        return FResult(ERR_ERROR, "unsupported operation system: " + os + " (usage: 'linux' or 'windows')");
+    }
 }
 
 FResult TaskManager::check_bios_mode(const std::string& bios_mode) {
-    if (bios_mode.empty()) return FResultOk;
-    if (bios_mode == "legacy") return FResultOk;
-    if (bios_mode == "uefi") return FResultOk;
-    if (bios_mode == "pxe") return FResultOk;
-    return FResult(ERR_ERROR, "bios mode only supported [legacy] or [uefi]");
+    if (bios_mode.empty())
+        return FResult(ERR_ERROR, "operation_system is emtpy");
+
+    if (bios_mode == "legacy"
+        || bios_mode == "uefi"
+        || bios_mode == "pxe") {
+        return FResultOk;
+    }
+    else {
+        return FResult(ERR_ERROR, "invalid bios mode: " + bios_mode + " (usage: 'legacy'、'uefi'、'pxe')");
+    }
 }
 
 FResult TaskManager::check_multicast(const std::vector<std::string>& multicast) {
-    if (multicast.empty()) return FResultOk;
-
     for (const auto& address : multicast) {
         std::vector<std::string> vecSplit = util::split(address, ":");
         if (vecSplit.size() != 2) {
@@ -1121,6 +1148,7 @@ FResult TaskManager::check_multicast(const std::vector<std::string>& multicast) 
             return FResult(ERR_ERROR, "address is not a multicast address");
         }
     }
+
     return FResultOk;
 }
 
@@ -1149,9 +1177,28 @@ FResult TaskManager::startTask(const std::string& wallet, const std::string &tas
     if (!VmClient::instance().IsExistDomain(task_id)) {
         return FResult(ERR_ERROR, "task not exist");
     }
+    
+	// check resource
+    int cpu_cores = taskinfo->getTotalCores();
+    int sockets, cores, threads;
+	if (!allocate_cpu(cpu_cores, sockets, cores, threads)) {
+		return FResult(ERR_ERROR, "allocate cpu failed");
+	}
 
-    //TODO： check task resource
+    int gpu_count = TaskGpuMgr::instance().getTaskGpusCount(task_id);
+    std::map<std::string, std::list<std::string>> gpus;
+	if (!allocate_gpu(gpu_count, gpus)) {
+		return FResult(ERR_ERROR, "allocate gpu failed");
+	}
 
+    int64_t mem_size_k = taskinfo->getMemSize();
+	if (!allocate_mem(mem_size_k)) {
+		run_shell("echo 3 > /proc/sys/vm/drop_caches");
+
+		if (!allocate_mem(mem_size_k)) {
+			return FResult(ERR_ERROR, "allocate memory failed");
+		}
+	}
 
     virDomainState vm_status = VmClient::instance().GetDomainStatus(task_id);
     if (vm_status == VIR_DOMAIN_NOSTATE || vm_status == VIR_DOMAIN_SHUTOFF || vm_status == VIR_DOMAIN_PMSUSPENDED) {
@@ -1223,8 +1270,27 @@ FResult TaskManager::restartTask(const std::string& wallet, const std::string &t
         return FResult(ERR_ERROR, "task not exist");
     }
 
-    // TODO: check task resource
+	// check resource
+	int cpu_cores = taskinfo->getTotalCores();
+	int sockets, cores, threads;
+	if (!allocate_cpu(cpu_cores, sockets, cores, threads)) {
+		return FResult(ERR_ERROR, "allocate cpu failed");
+	}
 
+	int gpu_count = TaskGpuMgr::instance().getTaskGpusCount(task_id);
+	std::map<std::string, std::list<std::string>> gpus;
+	if (!allocate_gpu(gpu_count, gpus)) {
+		return FResult(ERR_ERROR, "allocate gpu failed");
+	}
+
+	int64_t mem_size_k = taskinfo->getMemSize();
+	if (!allocate_mem(mem_size_k)) {
+		run_shell("echo 3 > /proc/sys/vm/drop_caches");
+
+		if (!allocate_mem(mem_size_k)) {
+			return FResult(ERR_ERROR, "allocate memory failed");
+		}
+	}
 
     virDomainState vm_status = VmClient::instance().GetDomainStatus(task_id);
     if (vm_status == VIR_DOMAIN_NOSTATE || vm_status == VIR_DOMAIN_SHUTOFF || vm_status == VIR_DOMAIN_RUNNING) {
@@ -1985,16 +2051,55 @@ std::string TaskManager::checkSessionId(const std::string &session_id, const std
 }
 
 FResult TaskManager::listTaskSnapshot(const std::string& wallet, const std::string& task_id, std::vector<dbc::snapshot_info>& snapshots) {
+	auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
+	if (taskinfo == nullptr) {
+		return FResult(ERR_ERROR, "task not exist");
+	}
+
+	if (!VmClient::instance().IsExistDomain(task_id)) {
+		return FResult(ERR_ERROR, "task not exist");
+	}
+
+	std::string bios_mode = taskinfo->getBiosMode();
+	if (bios_mode == "pxe")
+		return FResult(ERR_ERROR, "pxe not support snapshot");
+
     TaskDiskMgr::instance().listSnapshots(task_id, snapshots);
 	return FResultOk;
 }
 
 FResult TaskManager::createSnapshot(const std::string& wallet, const std::string& task_id, const std::string& snapshot_name, const ImageServer& imgsvr, const std::string& desc) {
+	auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
+	if (taskinfo == nullptr) {
+		return FResult(ERR_ERROR, "task not exist");
+	}
+
+	if (!VmClient::instance().IsExistDomain(task_id)) {
+		return FResult(ERR_ERROR, "task not exist");
+	}
+
+    std::string bios_mode = taskinfo->getBiosMode();
+    if (bios_mode == "pxe")
+        return FResult(ERR_ERROR, "pxe not support snapshot");
+
     FResult fret = TaskDiskMgr::instance().createAndUploadSnapshot(task_id, snapshot_name, imgsvr, desc);
     return fret;
 }
 
 FResult TaskManager::terminateSnapshot(const std::string& wallet, const std::string &task_id, const std::string& snapshot_name) {
+	auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
+	if (taskinfo == nullptr) {
+		return FResult(ERR_ERROR, "task not exist");
+	}
+
+	if (!VmClient::instance().IsExistDomain(task_id)) {
+		return FResult(ERR_ERROR, "task not exist");
+	}
+
+	std::string bios_mode = taskinfo->getBiosMode();
+	if (bios_mode == "pxe")
+		return FResult(ERR_ERROR, "pxe not support snapshot");
+
     TaskDiskMgr::instance().terminateUploadSnapshot(task_id, snapshot_name);
     return FResultOk;
 }
@@ -2098,41 +2203,44 @@ void TaskManager::process_create_task(const std::shared_ptr<TaskEvent>& ev) {
         return;
     }
 
-    std::string local_ip = VmClient::instance().GetDomainLocalIP(ev->task_id);
-    if (local_ip.empty()) {
-        VmClient::instance().DestroyDomain(ev->task_id);
+    if (ev_createtask->bios_mode != "pxe") {
+        std::string local_ip = VmClient::instance().GetDomainLocalIP(ev->task_id);
+        if (local_ip.empty()) {
+            VmClient::instance().DestroyDomain(ev->task_id);
 
-        if (taskinfo->getTaskStatus() == TaskStatus::TS_Task_Creating) {
-            taskinfo->setTaskStatus(TaskStatus::TS_CreateTaskError);
+            if (taskinfo->getTaskStatus() == TaskStatus::TS_Task_Creating) {
+                taskinfo->setTaskStatus(TaskStatus::TS_CreateTaskError);
+            }
+
+            TASK_LOG_ERROR(ev->task_id, "get domain local ip failed");
+            return;
         }
 
-        TASK_LOG_ERROR(ev->task_id, "get domain local ip failed");
-        return;
-    }
+        if (!create_task_iptable(ev->task_id, taskinfo->getSSHPort(), taskinfo->getRDPPort(),
+            taskinfo->getCustomPort(), local_ip, taskinfo->getPublicIP())) {
+            VmClient::instance().DestroyDomain(ev->task_id);
 
-    if (!create_task_iptable(ev->task_id, taskinfo->getSSHPort(), taskinfo->getRDPPort(),
-			        taskinfo->getCustomPort(), local_ip, taskinfo->getPublicIP())) {
-        VmClient::instance().DestroyDomain(ev->task_id);
-
-        if (taskinfo->getTaskStatus() == TaskStatus::TS_Task_Creating) {
-            taskinfo->setTaskStatus(TaskStatus::TS_CreateTaskError);
+            if (taskinfo->getTaskStatus() == TaskStatus::TS_Task_Creating) {
+                taskinfo->setTaskStatus(TaskStatus::TS_CreateTaskError);
+            }
+            TASK_LOG_ERROR(ev->task_id, "create task iptable failed");
+            return;
         }
-        TASK_LOG_ERROR(ev->task_id, "create task iptable failed");
-        return;
-    }
 
-    FResult fret = VmClient::instance().SetDomainUserPassword(ev->task_id,
-                    taskinfo->getOperationSystem().find("win") == std::string::npos ? g_vm_ubuntu_login_username : g_vm_windows_login_username,
-                    taskinfo->getLoginPassword());
-    if (fret.errcode != ERR_SUCCESS) {
-        taskinfo->setLoginPassword("N/A");
-        // VmClient::instance().DestroyDomain(ev->task_id);
 
-        // if (taskinfo->getTaskStatus() == TaskStatus::TS_Task_Creating) {
-        //     taskinfo->setTaskStatus(TaskStatus::TS_CreateTaskError);
-        // }
-        // TASK_LOG_ERROR(ev->task_id, "set domain password failed");
-        // return;
+        FResult fret = VmClient::instance().SetDomainUserPassword(ev->task_id,
+            taskinfo->getOperationSystem().find("windows") == std::string::npos ? g_vm_ubuntu_login_username : g_vm_windows_login_username,
+            taskinfo->getLoginPassword());
+        if (fret.errcode != ERR_SUCCESS) {
+            taskinfo->setLoginPassword("N/A");
+            // VmClient::instance().DestroyDomain(ev->task_id);
+
+            // if (taskinfo->getTaskStatus() == TaskStatus::TS_Task_Creating) {
+            //     taskinfo->setTaskStatus(TaskStatus::TS_CreateTaskError);
+            // }
+            // TASK_LOG_ERROR(ev->task_id, "set domain password failed");
+            // return;
+        }
     }
 
     if (taskinfo->getTaskStatus() == TaskStatus::TS_Task_Creating) {
@@ -2230,23 +2338,26 @@ void TaskManager::process_shutdown_task(const std::shared_ptr<TaskEvent>& ev) {
         remove_iptable_from_system(ev->task_id);
         TASK_LOG_INFO(ev->task_id, "shutdown task successful");
 
-		// vda root backfile
-		do {
-            if (taskinfo->getVdaRootBackfile().empty()) {
-                std::string vda_backfile = "/data/" + taskinfo->getImageName();
-                std::string cmd = "qemu-img info " + vda_backfile + " | grep -i 'backing file:' | awk -F ': ' '{print $2}'";
-                std::string back_file = run_shell(cmd);
-                std::string root_backfile = vda_backfile;
-                while (!back_file.empty()) {
-                    root_backfile = back_file;
+        std::string bios_mode = taskinfo->getBiosMode();
+        if (bios_mode != "pxe") {
+            // vda root backfile
+            do {
+                if (taskinfo->getVdaRootBackfile().empty()) {
+                    std::string vda_backfile = "/data/" + taskinfo->getImageName();
+                    std::string cmd = "qemu-img info " + vda_backfile + " | grep -i 'backing file:' | awk -F ': ' '{print $2}'";
+                    std::string back_file = run_shell(cmd);
+                    std::string root_backfile = vda_backfile;
+                    while (!back_file.empty()) {
+                        root_backfile = back_file;
 
-                    cmd = "qemu-img info " + back_file + " | grep -i 'backing file:' | awk -F ': ' '{print $2}'";
-                    back_file = run_shell(cmd);
+                        cmd = "qemu-img info " + back_file + " | grep -i 'backing file:' | awk -F ': ' '{print $2}'";
+                        back_file = run_shell(cmd);
+                    }
+                    taskinfo->setVdaRootBackfile(root_backfile);
+                    TaskInfoMgr::instance().update(taskinfo);
                 }
-                taskinfo->setVdaRootBackfile(root_backfile);
-                TaskInfoMgr::instance().update(taskinfo);
-            }
-		} while (0);
+            } while (0);
+        }
     }
 }
 
@@ -2271,23 +2382,26 @@ void TaskManager::process_poweroff_task(const std::shared_ptr<TaskEvent>& ev) {
 		remove_iptable_from_system(ev->task_id);
 		TASK_LOG_INFO(ev->task_id, "poweroff task successful");
 
-		// vda root backfile
-		do {
-            if (taskinfo->getVdaRootBackfile().empty()) {
-                std::string vda_backfile = "/data/" + taskinfo->getImageName();
-                std::string cmd = "qemu-img info " + vda_backfile + " | grep -i 'backing file:' | awk -F ': ' '{print $2}'";
-                std::string back_file = run_shell(cmd);
-                std::string root_backfile = vda_backfile;
-                while (!back_file.empty()) {
-                    root_backfile = back_file;
+		std::string bios_mode = taskinfo->getBiosMode();
+        if (bios_mode != "pxe") {
+            // vda root backfile
+            do {
+                if (taskinfo->getVdaRootBackfile().empty()) {
+                    std::string vda_backfile = "/data/" + taskinfo->getImageName();
+                    std::string cmd = "qemu-img info " + vda_backfile + " | grep -i 'backing file:' | awk -F ': ' '{print $2}'";
+                    std::string back_file = run_shell(cmd);
+                    std::string root_backfile = vda_backfile;
+                    while (!back_file.empty()) {
+                        root_backfile = back_file;
 
-                    cmd = "qemu-img info " + back_file + " | grep -i 'backing file:' | awk -F ': ' '{print $2}'";
-                    back_file = run_shell(cmd);
+                        cmd = "qemu-img info " + back_file + " | grep -i 'backing file:' | awk -F ': ' '{print $2}'";
+                        back_file = run_shell(cmd);
+                    }
+                    taskinfo->setVdaRootBackfile(root_backfile);
+                    TaskInfoMgr::instance().update(taskinfo);
                 }
-                taskinfo->setVdaRootBackfile(root_backfile);
-                TaskInfoMgr::instance().update(taskinfo);
-            }
-		} while (0);
+            } while (0);
+        }
 	}
 }
 

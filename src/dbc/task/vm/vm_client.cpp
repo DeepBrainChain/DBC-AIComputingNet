@@ -423,8 +423,7 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
         if (!mpifa.empty()) {
             pxe_bridge_name = mpifa.begin()->second.name;
         }
-        pxe_bridge_name = "enp1s0f0";
-        
+
 		tinyxml2::XMLElement* bridge_node = doc.NewElement("interface");
 		bridge_node->SetAttribute("type", "direct");
 		tinyxml2::XMLElement* bridge_source_node = doc.NewElement("source");
@@ -764,7 +763,7 @@ int32_t VmClient::CreateDomain(const std::shared_ptr<TaskInfo>& taskinfo) {
         taskinfo->getVncPort(), taskinfo->getVncPassword(),
         taskinfo->getMulticast(), bridge_name,
         taskinfo->getBiosMode(),
-        taskinfo->getOperationSystem().find("win") != std::string::npos);
+        taskinfo->getOperationSystem().find("windows") != std::string::npos);
 
     virDomainPtr domainPtr = nullptr;
     int32_t errorNum = ERR_SUCCESS;

@@ -172,8 +172,6 @@ protected:
 
     void on_net_service_broadcast_req(const std::shared_ptr<network::message> &msg);
 
-    std::string format_logs(const std::string& raw_logs, uint16_t max_lines);
-
     // monitor
     void on_node_list_monitor_server_req(const std::shared_ptr<network::message>& msg);
 
@@ -212,7 +210,7 @@ private:
 
     void check_authority(const AuthorityParams& params, AuthoriseResult& result);
 
-    bool udp_broadcast_rent_status();
+    bool found_other_running_domains();
 
 protected:
     bloomlru_filter m_nonce_filter{ 1000000 };

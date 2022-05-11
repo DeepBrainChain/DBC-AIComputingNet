@@ -38,6 +38,8 @@ struct CreateTaskEvent : public TaskEvent {
         type = TaskEventType::TET_CreateTask;
         task_id = _task_id;
     }
+
+    std::string bios_mode;
 };
 
 struct StartTaskEvent : public TaskEvent { 

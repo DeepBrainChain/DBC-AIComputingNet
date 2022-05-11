@@ -34,6 +34,8 @@ public:
     
     void del(const std::string& task_id);
 
+    int32_t getTaskGpusCount(const std::string& task_id);
+
 private:
     mutable RwMutex m_mtx;
     std::map<std::string, std::map<std::string, std::shared_ptr<GpuInfo> > > m_task_gpus;
