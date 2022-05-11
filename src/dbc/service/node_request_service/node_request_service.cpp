@@ -701,13 +701,15 @@ void node_request_service::task_list(const network::base_header& header,
             ss_tasks << ", \"ssh_ip\":" << "\"" <<
                      (taskinfo->getPublicIP().empty() ? SystemInfo::instance().GetPublicip() : taskinfo->getPublicIP()) << "\"";
             bool is_windows = taskinfo->getOperationSystem().find("windows") != std::string::npos;
+            std::string login_username = taskinfo->getLoginUsername();
             if (!is_windows) {
                 ss_tasks << ", \"ssh_port\":" << "\"" << taskinfo->getSSHPort() << "\"";
-                ss_tasks << ", \"user_name\":" << "\"" << g_vm_ubuntu_login_username << "\"";
+                if (login_username.empty()) login_username = g_vm_ubuntu_login_username;
             } else {
                 ss_tasks << ", \"rdp_port\":" << "\"" << taskinfo->getRDPPort() << "\"";
-                ss_tasks << ", \"user_name\":" << "\"" << g_vm_windows_login_username << "\"";
+                if (login_username.empty()) login_username = g_vm_windows_login_username;
             }
+            ss_tasks << ", \"user_name\":" << "\"" << login_username << "\"";
             ss_tasks << ", \"login_password\":" << "\"" << taskinfo->getLoginPassword() << "\"";
             
             int32_t cpu_cores = taskinfo->getTotalCores();
@@ -4635,8 +4637,8 @@ void node_request_service::list_lan(const network::base_header& header, const st
         const std::map<std::string, std::shared_ptr<dbc::networkInfo>> networks = VxlanManager::instance().GetNetworks();
         int idx = 0;
         for (const auto &it : networks) {
-            if (idx > 0)
-                ss_networks << ",";
+            if (idx > 30) break;
+            if (idx > 0) ss_networks << ",";
 
             ss_networks << "{";
             ss_networks << "\"network_name\":" << "\"" << it.second->networkId << "\"";

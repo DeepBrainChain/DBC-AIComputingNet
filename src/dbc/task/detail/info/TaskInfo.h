@@ -168,6 +168,16 @@ public:
         m_db_info->__set_image_name(name);
     }
 
+    std::string getLoginUsername() const {
+        RwMutex::ReadLock rlock(m_mtx);
+        return m_db_info->login_username;
+    }
+
+    void setLoginUsername(const std::string& username) {
+        RwMutex::WriteLock wlock(m_mtx);
+        m_db_info->__set_login_username(username);
+    }
+
     std::string getLoginPassword() const {
         RwMutex::ReadLock rlock(m_mtx);
         return m_db_info->login_password;
