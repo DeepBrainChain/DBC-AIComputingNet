@@ -190,7 +190,9 @@ protected:
 
     bool allocate_disk(int64_t disk_size);
 
-    bool check_iptables_port_occupied(uint16_t port);
+    bool check_iptables_port_occupied(uint16_t port, const std::string& task_id = "");
+
+    FResult check_public_ip(const std::string& public_ip, const std::string& task_id = "");
 
     FResult check_image(const std::string& image_name);
 

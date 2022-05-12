@@ -331,92 +331,93 @@ void TaskManager::shell_add_iptable_to_system(const std::string& task_id, const 
     func_remove_chain("PREROUTING", task_id + "_dnat");
     func_remove_chain("POSTROUTING", task_id + "_snat");
 
-    if (public_ip.empty()) {
-        std::string chain_name = task_id + "_dnat";
+    std::string task_net_ip = public_ip.empty() ? host_ip : public_ip;
 
-        // add chain and rules
-        std::string cmd = "sudo iptables -t nat -N " + chain_name;
+    std::string chain_name = task_id + "_dnat";
+
+    // add chain and rules
+    std::string cmd = "sudo iptables -t nat -N " + chain_name;
+    run_shell(cmd);
+    if (ssh_port > 0) {
+        cmd = "sudo iptables -t nat -A " + chain_name + " -p tcp --destination " + task_net_ip + " --dport " 
+            + std::to_string(ssh_port) + " --jump DNAT --to-destination " + task_local_ip + ":22";
         run_shell(cmd);
-        if (ssh_port > 0) {
-            cmd = "sudo iptables -t nat -A " + chain_name + " -p tcp --destination " + host_ip + " --dport " 
-                + std::to_string(ssh_port) + " --jump DNAT --to-destination " + task_local_ip + ":22";
-            run_shell(cmd);
-        }
-        if (rdp_port > 0) {
-            cmd = "sudo iptables -t nat -A " + chain_name + " -p tcp --destination " + host_ip + " --dport " 
-                + std::to_string(rdp_port) + " --jump DNAT --to-destination " + task_local_ip + ":3389";
-            run_shell(cmd);
+    }
+    if (rdp_port > 0) {
+        cmd = "sudo iptables -t nat -A " + chain_name + " -p tcp --destination " + task_net_ip + " --dport " 
+            + std::to_string(rdp_port) + " --jump DNAT --to-destination " + task_local_ip + ":3389";
+        run_shell(cmd);
+    }
+
+    for (auto& str : custom_port) {
+        std::vector<std::string> v_protocol_port = util::split(str, ",");
+        if (v_protocol_port.size() != 2 || (v_protocol_port[0] != "tcp" && v_protocol_port[0] != "udp")) {
+            continue;
         }
 
-        for (auto& str : custom_port) {
-            std::vector<std::string> v_protocol_port = util::split(str, ",");
-            if (v_protocol_port.size() != 2 || (v_protocol_port[0] != "tcp" && v_protocol_port[0] != "udp")) {
+        std::string s_protocol = v_protocol_port[0];
+        util::trim(s_protocol);
+        std::string s_port = v_protocol_port[1];
+        util::trim(s_port);
+
+        if (util::is_digits(s_port)) {
+            cmd = "sudo iptables -t nat -A " + chain_name + " -p " + s_protocol + " --destination " + task_net_ip
+                + " --dport " + s_port + " --jump DNAT --to-destination " + task_local_ip + ":" + s_port;
+            run_shell(cmd);
+            continue;
+        }
+
+        if (s_port.find(':') != std::string::npos) {
+            std::vector<std::string> vec = util::split(s_port, ":");
+            if (vec.size() == 2 && util::is_digits(vec[0]) && util::is_digits(vec[1])) {
+                cmd = "sudo iptables -t nat -A " + chain_name + " -p " + s_protocol + " --destination " 
+                    + task_net_ip + " --dport " + vec[0] + " --jump DNAT --to-destination " + task_local_ip + ":" + vec[1];
+                run_shell(cmd);
                 continue;
             }
+        }
 
-            std::string s_protocol = v_protocol_port[0];
-            util::trim(s_protocol);
-            std::string s_port = v_protocol_port[1];
-            util::trim(s_port);
+        if (s_port.find('-') != std::string::npos) {
+            std::vector<std::string> vec = util::split(s_port, "-");
+            if (vec.size() == 2 && util::is_digits(vec[0]) && util::is_digits(vec[1])) {
+                cmd = "sudo iptables -t nat -A " + chain_name + " -p " + s_protocol + " --destination " + task_net_ip 
+                    + " --dport " + vec[0] + ":" + vec[1] + " -j DNAT --to-destination " + task_local_ip + ":" +
+                    vec[0] + "-" + vec[1];
+                run_shell(cmd);
+                continue;
+            }
+        }
 
-			if (util::is_digits(s_port)) {
-				cmd = "sudo iptables -t nat -A " + chain_name + " -p " + s_protocol + " --destination " + host_ip
-					+ " --dport " + s_port + " --jump DNAT --to-destination " + task_local_ip + ":" + s_port;
-				run_shell(cmd);
-				continue;
-			}
-
-			if (s_port.find(':') != std::string::npos) {
-				std::vector<std::string> vec = util::split(s_port, ":");
-				if (vec.size() == 2 && util::is_digits(vec[0]) && util::is_digits(vec[1])) {
-					cmd = "sudo iptables -t nat -A " + chain_name + " -p " + s_protocol + " --destination " 
-                        + host_ip + " --dport " + vec[0] + " --jump DNAT --to-destination " + task_local_ip + ":" + vec[1];
-					run_shell(cmd);
-					continue;
-				}
-			}
-
-            if (s_port.find('-') != std::string::npos) {
-                std::vector<std::string> vec = util::split(s_port, "-");
-                if (vec.size() == 2 && util::is_digits(vec[0]) && util::is_digits(vec[1])) {
-                    cmd = "sudo iptables -t nat -A " + chain_name + " -p " + s_protocol + " --destination " + host_ip 
-                        + " --dport " + vec[0] + ":" + vec[1] + " -j DNAT --to-destination " + task_local_ip + ":" +
-                        vec[0] + "-" + vec[1];
+        if (s_port.find(':') != std::string::npos && s_port.find('-') != std::string::npos) {
+            std::vector<std::string> vec = util::split(s_port, ":");
+            if (vec.size() == 2) {
+                std::vector<std::string> vec1 = util::split(vec[0], "-");
+                std::vector<std::string> vec2 = util::split(vec[1], "-");
+            if (vec1.size() == 2 && vec2.size() == 2) {
+                    cmd = "sudo iptables -t nat -A " + chain_name + " -p " + s_protocol + " --destination " + task_net_ip 
+                        + " --dport " + vec1[0] + ":" + vec1[1] + " -j DNAT --to-destination " + task_local_ip + ":" 
+                        + vec2[0] + "-" + vec2[1];
                     run_shell(cmd);
                     continue;
                 }
             }
-
-            if (s_port.find(':') != std::string::npos && s_port.find('-') != std::string::npos) {
-                std::vector<std::string> vec = util::split(s_port, ":");
-                if (vec.size() == 2) {
-                    std::vector<std::string> vec1 = util::split(vec[0], "-");
-                    std::vector<std::string> vec2 = util::split(vec[1], "-");
-                if (vec1.size() == 2 && vec2.size() == 2) {
-                        cmd = "sudo iptables -t nat -A " + chain_name + " -p " + s_protocol + " --destination " + host_ip 
-                            + " --dport " + vec1[0] + ":" + vec1[1] + " -j DNAT --to-destination " + task_local_ip + ":" 
-                            + vec2[0] + "-" + vec2[1];
-                        run_shell(cmd);
-                        continue;
-                    }
-                }
-            }
         }
+    }
 
-        // add ref
-        cmd = "sudo iptables -t nat -I PREROUTING -j " + chain_name;
+    if (!public_ip.empty()) {
+        cmd = "sudo iptables -t nat -A " + chain_name + " --destination " + public_ip +
+            " --jump DNAT --to-destination " + task_local_ip;
         run_shell(cmd);
-    } else {
-        std::string chain_name_dnat = task_id + "_dnat";
+    }
+
+    // add ref
+    cmd = "sudo iptables -t nat -I PREROUTING -j " + chain_name;
+    run_shell(cmd);
+
+    if (!public_ip.empty()) {
         std::string chain_name_snat = task_id + "_snat";
 
         // add chain and rules
-        std::string cmd = "sudo iptables -t nat -N " + chain_name_dnat;
-        run_shell(cmd);
-        cmd = "sudo iptables -t nat -A " + chain_name_dnat + " --destination " + public_ip +
-            " --jump DNAT --to-destination " + task_local_ip;
-        run_shell(cmd);
-
         cmd = "sudo iptables -t nat -N " + chain_name_snat;
         run_shell(cmd);
         cmd = "sudo iptables -t nat -I " + chain_name_snat + " --source " + task_local_ip +
@@ -424,8 +425,6 @@ void TaskManager::shell_add_iptable_to_system(const std::string& task_id, const 
         run_shell(cmd);
 
         // add ref
-        cmd = "sudo iptables -t nat -I PREROUTING -j " + chain_name_dnat;
-        run_shell(cmd);
         cmd = "sudo iptables -t nat -I POSTROUTING -j " + chain_name_snat;
         run_shell(cmd);
 
@@ -698,6 +697,14 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
 	if (fret.errcode != ERR_SUCCESS) {
 		return fret;
 	}
+
+    // "public_ip"
+    JSON_PARSE_STRING(doc, "public_ip", public_ip);
+	// check
+    fret = check_public_ip(public_ip);
+    if (fret.errcode != ERR_SUCCESS) {
+        return fret;
+	}
     
     // "ssh_port“
     JSON_PARSE_STRING(doc, "ssh_port", s_ssh_port);
@@ -705,9 +712,13 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     n_ssh_port = (uint16_t) atoi(s_ssh_port.c_str());
     if (operation_system.find("linux") != std::string::npos) {
         if (s_ssh_port.empty() || !util::is_digits(s_ssh_port)) {
-            return FResult(ERR_ERROR, "ssh_port is invalid");
+            if (public_ip.empty()) {
+                return FResult(ERR_ERROR, "ssh_port is invalid");
+            } else {
+                n_ssh_port = 22;
+            }
         }
-        if (check_iptables_port_occupied(n_ssh_port)) {
+        if (public_ip.empty() && check_iptables_port_occupied(n_ssh_port)) {
             return FResult(ERR_ERROR, "ssh_port is occupied");
         }
     }
@@ -718,9 +729,13 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     n_rdp_port = (uint16_t) atoi(s_rdp_port.c_str());
     if (operation_system.find("windows") != std::string::npos) {
         if (s_rdp_port.empty() || !util::is_digits(s_rdp_port)) {
-            return FResult(ERR_ERROR, "rdp_port is invalid");
+            if (public_ip.empty()) {
+                return FResult(ERR_ERROR, "rdp_port is invalid");
+            } else {
+                n_rdp_port = 3389;
+            }
         }
-        if (check_iptables_port_occupied(n_rdp_port)) {
+        if (public_ip.empty() && check_iptables_port_occupied(n_rdp_port)) {
             return FResult(ERR_ERROR, "rdp_port is occupied");
         }
     }
@@ -798,16 +813,6 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
 		if (fret.errcode != ERR_SUCCESS) {
 			return fret;
 		}
-	}
-
-    // "public_ip"
-    JSON_PARSE_STRING(doc, "public_ip", public_ip);
-	// check
-    if (!public_ip.empty()) {
-		ip_validator ip_vdr;
-		variable_value val_ip(public_ip, false);
-		if (!ip_vdr.validate(val_ip))
-			return FResult(ERR_ERROR, "invalid public ip");
 	}
 
     // "custom port" 
@@ -997,16 +1002,39 @@ bool TaskManager::allocate_disk(int64_t disk_size) {
     return disk_size > 0 && disk_size <= (SystemInfo::instance().GetDiskInfo().available - g_disk_system_size * 1024L * 1024L);
 }
 
-bool TaskManager::check_iptables_port_occupied(uint16_t port) {
+bool TaskManager::check_iptables_port_occupied(uint16_t port, const std::string& task_id) {
 	bool bFind = false;
 	auto taskinfos = TaskInfoMgr::instance().getAllTaskInfos();
 	for (const auto& iter : taskinfos) {
+        if (iter.first == task_id) continue;
+        if (!iter.second->getPublicIP().empty()) continue;
 		if (iter.second->getSSHPort() == port || iter.second->getRDPPort() == port) {
 			bFind = true;
 			break;
 		}
 	}
 	return bFind;
+}
+
+FResult TaskManager::check_public_ip(const std::string& public_ip, const std::string& task_id) {
+    if (public_ip.empty()) return FResultOk;
+    ip_validator ip_vdr;
+    variable_value val_ip(public_ip, false);
+    if (!ip_vdr.validate(val_ip))
+        return FResult(ERR_ERROR, "invalid public ip");
+    if (SystemInfo::instance().GetDefaultRouteIp() == public_ip)
+        return FResult(ERR_ERROR, "public ip being used");
+    bool bFind = false;
+    auto taskinfos = TaskInfoMgr::instance().getAllTaskInfos();
+    for (const auto& iter : taskinfos) {
+        if (iter.first == task_id) continue;
+		if (iter.second->getPublicIP() == public_ip) {
+			bFind = true;
+			break;
+		}
+	}
+    if (bFind) return FResult(ERR_ERROR, "public ip being used");
+    return FResultOk;
 }
 
 FResult TaskManager::check_image(const std::string &image_name) {
@@ -1375,6 +1403,24 @@ FResult TaskManager::modifyTask(const std::string& wallet,
         return FResult(ERR_ERROR, "additional parse failed");
     }
 
+    std::string new_public_ip;
+    JSON_PARSE_STRING(doc, "new_public_ip", new_public_ip);
+    FResult fret = check_public_ip(new_public_ip, task_id);
+    if (fret.errcode != ERR_SUCCESS) {
+        return fret;
+    } else if (new_public_ip != taskinfoPtr->getPublicIP()) {
+        TASK_LOG_INFO(task_id, "modify task old public ip: " << taskinfoPtr->getPublicIP()
+                               << ", new public ip: " << new_public_ip);
+        taskinfoPtr->setPublicIP(new_public_ip);
+        TaskInfoManager::instance().update(taskinfoPtr);
+
+        auto taskIptablePtr = TaskIptableManager::instance().getIptableInfo(task_id);
+        if (taskIptablePtr != nullptr) {
+            taskIptablePtr->setPublicIP(new_public_ip);
+            TaskIptableManager::instance().update(taskIptablePtr);
+        }
+    }
+
     uint16_t old_ssh_port, new_ssh_port;
     std::string s_new_ssh_port;
     JSON_PARSE_STRING(doc, "new_ssh_port", s_new_ssh_port);
@@ -1383,17 +1429,7 @@ FResult TaskManager::modifyTask(const std::string& wallet,
         if (new_ssh_port <= 0) {
             return FResult(ERR_ERROR, "new_ssh_port " + s_new_ssh_port + " is invalid! (usage: > 0)");
         }
-        bool bFound = false;
-        auto taskinfos = TaskInfoMgr::instance().getAllTaskInfos();
-        for (const auto &iter : taskinfos) {
-            if (iter.first != task_id) {
-                if (iter.second->getSSHPort() == new_ssh_port || iter.second->getRDPPort() == new_ssh_port) {
-                    bFound = true;
-                    break;
-                }
-            }
-        }
-        if (bFound) {
+        if (taskinfoPtr->getPublicIP().empty() && check_iptables_port_occupied(new_ssh_port, task_id)) {
             return FResult(ERR_ERROR, "new_ssh_port " + s_new_ssh_port + " has been used!");
         }
 
@@ -1406,6 +1442,8 @@ FResult TaskManager::modifyTask(const std::string& wallet,
             taskIptablePtr->setSSHPort(new_ssh_port);
             TaskIptableManager::instance().update(taskIptablePtr);
         }
+        TASK_LOG_INFO(task_id, "modify task old ssh port: " << old_ssh_port
+                               << ", new ssh port: " << new_ssh_port);
     }
 
     uint16_t new_rdp_port;
@@ -1416,19 +1454,12 @@ FResult TaskManager::modifyTask(const std::string& wallet,
         if (new_rdp_port <= 0) {
             return FResult(ERR_ERROR, "new_rdp_port " + s_new_rdp_port + " is invalid! (usage: > 0)");
         }
-        bool bFound = false;
-        auto task_list = TaskInfoMgr::instance().getAllTaskInfos();
-        for (const auto &iter : task_list) {
-            if (iter.first != task_id) {
-                if (iter.second->getSSHPort() == new_rdp_port || iter.second->getRDPPort() == new_rdp_port) {
-                    bFound = true;
-                    break;
-                }
-            }
-        }
-        if (bFound) {
+        if (taskinfoPtr->getPublicIP().empty() && check_iptables_port_occupied(new_rdp_port, task_id)) {
             return FResult(ERR_ERROR, "new_rdp_port " + s_new_rdp_port + " has been used!");
         }
+
+        TASK_LOG_INFO(task_id, "modify task old rdp port: " << taskinfoPtr->getRDPPort()
+                               << ", new rdp port: " << new_rdp_port);
 
         taskinfoPtr->setRDPPort(new_rdp_port);
         TaskInfoMgr::instance().update(taskinfoPtr);
@@ -1463,6 +1494,7 @@ FResult TaskManager::modifyTask(const std::string& wallet,
                     TaskIptableManager::instance().update(taskIptablePtr);
                 }
             }
+            TASK_LOG_INFO(task_id, "modify task custom port");
         }
     }
 
@@ -1470,24 +1502,6 @@ FResult TaskManager::modifyTask(const std::string& wallet,
     if (taskIptablePtr != nullptr) {
         shell_remove_iptable_from_system(task_id, taskIptablePtr->getHostIP(), old_ssh_port, 
             taskIptablePtr->getTaskLocalIP(), taskIptablePtr->getPublicIP());
-    }
-
-    std::string new_public_ip;
-    JSON_PARSE_STRING(doc, "new_public_ip", new_public_ip);
-    if (!new_public_ip.empty()) {
-        ip_validator ip_vdr;
-        variable_value val_ip(new_public_ip, false);
-        if (!ip_vdr.validate(val_ip))
-            return FResult(ERR_ERROR, "invalid new public ip");
-
-        taskinfoPtr->setPublicIP(new_public_ip);
-        TaskInfoManager::instance().update(taskinfoPtr);
-
-        auto taskIptablePtr = TaskIptableManager::instance().getIptableInfo(task_id);
-        if (taskIptablePtr != nullptr) {
-            taskIptablePtr->setPublicIP(new_public_ip);
-            TaskIptableManager::instance().update(taskIptablePtr);
-        }
     }
 
     std::vector<std::string> new_nwfiter;
@@ -1503,6 +1517,7 @@ FResult TaskManager::modifyTask(const std::string& wallet,
             }
 
             if (!new_nwfiter.empty()) {
+                TASK_LOG_INFO(task_id, "modify task network filter");
                 taskinfoPtr->setNwfilter(new_nwfiter);
                 TaskInfoManager::instance().update(taskinfoPtr);
 
@@ -1522,6 +1537,8 @@ FResult TaskManager::modifyTask(const std::string& wallet,
             return FResult(ERR_ERROR, "new_vnc_port " + s_new_vnc_port + " is invalid! (usage: 5900 =< port <= 6000)");
         }
 
+        TASK_LOG_INFO(task_id, "modify task old vnc port: " << taskinfoPtr->getVncPort()
+                               << ", new vnc port" << new_vnc_port);
         taskinfoPtr->setVncPort(new_vnc_port);
 	}
 
@@ -1542,6 +1559,7 @@ FResult TaskManager::modifyTask(const std::string& wallet,
             }
 
 			TaskGpuMgr::instance().setTaskGpus(task_id, mp_gpus);
+            TASK_LOG_INFO(task_id, "modify task new gpu count: " << new_gpu_count);
 		}
 		else {
 			return FResult(ERR_ERROR, "allocate gpu failed");
@@ -1557,6 +1575,7 @@ FResult TaskManager::modifyTask(const std::string& wallet,
             taskinfoPtr->setCpuSockets(cpu_sockets);
             taskinfoPtr->setCpuCoresPerSocket(cpu_cores);
             taskinfoPtr->setCpuThreadsPerCore(cpu_threads);
+            TASK_LOG_INFO(task_id, "modify task new cpu cores: " << s_new_cpu_cores);
 		}
 		else {
 			return FResult(ERR_ERROR, "allocate cpu failed");
@@ -1569,12 +1588,14 @@ FResult TaskManager::modifyTask(const std::string& wallet,
         int64_t ksize = atoi(new_mem_size.c_str()) * 1024L * 1024L;
         if (allocate_mem(ksize)) {
             taskinfoPtr->setMemSize(ksize);
+            TASK_LOG_INFO(task_id, "modify task new mem size: " << new_mem_size);
         }
         else {
             run_shell("echo 3 > /proc/sys/vm/drop_caches");
 
             if (allocate_mem(ksize)) {
                 taskinfoPtr->setMemSize(ksize);
+                TASK_LOG_INFO(task_id, "modify task new mem size: " << new_mem_size);
             } else {
                 return FResult(ERR_ERROR, "allocate memory failed");
             }
@@ -1582,11 +1603,13 @@ FResult TaskManager::modifyTask(const std::string& wallet,
     }
 
     // being to redefine domain
-	FResult fret = VmClient::instance().RedefineDomain(taskinfoPtr);
+	fret = VmClient::instance().RedefineDomain(taskinfoPtr);
 	if (fret.errcode != ERR_SUCCESS) {
+        TASK_LOG_ERROR(task_id, "modify task error: " << fret.errmsg);
 		return fret;
 	}
 
+    TASK_LOG_INFO(task_id, "modify task successful");
     return FResultOk;
 }
 
@@ -1623,6 +1646,13 @@ FResult TaskManager::passwdTask(const std::string& wallet, const std::shared_ptr
         std::string old_username = taskinfoPtr->getLoginUsername();
         if (old_username.empty() || old_username == "N/A")
             taskinfoPtr->setLoginUsername(username);
+        TASK_LOG_INFO(task_id, "set task user: " << username
+                               << ", password" << password
+                               << " successful");
+    } else {
+        TASK_LOG_ERROR(task_id, "set task user: " << username
+                               << ", password" << password
+                               << " failed, error: " << fret.errmsg);
     }
     return fret;
 }
