@@ -294,22 +294,35 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
 
     tinyxml2::XMLElement* dev_node = doc.NewElement("devices");
     if (is_windows) {
-        tinyxml2::XMLElement* vedio_node = doc.NewElement("video");
-        tinyxml2::XMLElement* model_node = doc.NewElement("model");
-        // model_node->SetAttribute("type", "vga"); //default "cirrus"
-        model_node->SetAttribute("type", "qxl");
-        model_node->SetAttribute("ram", "65536");
-        model_node->SetAttribute("vram", "65536");
-        model_node->SetAttribute("vgamem", "16384");
-        model_node->SetAttribute("heads", "1");
-        model_node->SetAttribute("primary", "yes");
-        vedio_node->LinkEndChild(model_node);
-        dev_node->LinkEndChild(vedio_node);
+        if (bios_mode == "pxe") {
+			tinyxml2::XMLElement* vedio_node = doc.NewElement("video");
+			tinyxml2::XMLElement* model_node = doc.NewElement("model");
+			model_node->SetAttribute("type", "none");
+			vedio_node->LinkEndChild(model_node);
+			dev_node->LinkEndChild(vedio_node);
 
-        tinyxml2::XMLElement* input_node = doc.NewElement("input");
-        input_node->SetAttribute("type", "tablet");
-        input_node->SetAttribute("bus", "usb");
-        dev_node->LinkEndChild(input_node);
+			tinyxml2::XMLElement* memballoon_node = doc.NewElement("memballoon");
+            memballoon_node->SetAttribute("model", "none");
+			dev_node->LinkEndChild(memballoon_node);
+        }
+        else {
+			tinyxml2::XMLElement* vedio_node = doc.NewElement("video");
+			tinyxml2::XMLElement* model_node = doc.NewElement("model");
+			// model_node->SetAttribute("type", "vga"); //default "cirrus"
+			model_node->SetAttribute("type", "qxl");
+			model_node->SetAttribute("ram", "65536");
+			model_node->SetAttribute("vram", "65536");
+			model_node->SetAttribute("vgamem", "16384");
+			model_node->SetAttribute("heads", "1");
+			model_node->SetAttribute("primary", "yes");
+			vedio_node->LinkEndChild(model_node);
+			dev_node->LinkEndChild(vedio_node);
+
+			tinyxml2::XMLElement* input_node = doc.NewElement("input");
+			input_node->SetAttribute("type", "tablet");
+			input_node->SetAttribute("bus", "usb");
+			dev_node->LinkEndChild(input_node);
+        }
     }
 
     if (vedio_pci != "") {
@@ -431,7 +444,7 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
         bridge_source_node->SetAttribute("mode", "bridge");
 		bridge_node->LinkEndChild(bridge_source_node);
 		tinyxml2::XMLElement* bridge_model_node = doc.NewElement("model");
-		bridge_model_node->SetAttribute("type", "virtio");
+		bridge_model_node->SetAttribute("type", "e1000");
 		bridge_node->LinkEndChild(bridge_model_node);
 		dev_node->LinkEndChild(bridge_node);
     }
