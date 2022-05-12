@@ -1646,13 +1646,6 @@ FResult TaskManager::passwdTask(const std::string& wallet, const std::shared_ptr
         std::string old_username = taskinfoPtr->getLoginUsername();
         if (old_username.empty() || old_username == "N/A")
             taskinfoPtr->setLoginUsername(username);
-        TASK_LOG_INFO(task_id, "set task user: " << username
-                               << ", password" << password
-                               << " successful");
-    } else {
-        TASK_LOG_ERROR(task_id, "set task user: " << username
-                               << ", password" << password
-                               << " failed, error: " << fret.errmsg);
     }
     return fret;
 }
