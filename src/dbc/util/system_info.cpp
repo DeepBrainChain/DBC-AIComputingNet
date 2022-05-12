@@ -173,16 +173,21 @@ void SystemInfo::update_mem_info(mem_info &info) {
     info.total = kb_main_total;
     info.free = kb_main_free;
 
-    if (kb_main_free < m_reserved_memory * 1024L * 1024L)
+    int32_t reserved_mem = m_reserved_memory;
+    if (info.total <= 64 * 1024L * 1024L) {
+        reserved_mem = 0;
+    }
+
+    if (kb_main_free < reserved_mem * 1024L * 1024L)
         info.free = 0UL;
     else
-        info.free = kb_main_free - m_reserved_memory * 1024L * 1024L;
+        info.free = kb_main_free - reserved_mem * 1024L * 1024L;
 
-    if (kb_main_total < m_reserved_memory * 1024L * 1024L) {
+    if (kb_main_total < reserved_mem * 1024L * 1024L) {
         info.total = 0LU;
         info.usage = 1.0f;
     } else {
-        info.total = kb_main_total - m_reserved_memory * 1024L * 1024L;
+        info.total = kb_main_total - reserved_mem * 1024L * 1024L;
         info.usage = (info.total - info.free) * 1.0 / info.total;
     }
 
@@ -191,7 +196,7 @@ void SystemInfo::update_mem_info(mem_info &info) {
 	info.cached = kb_page_cache + kb_slab_reclaimable;
 
 	unsigned long mem_available = kb_main_available;
-	info.available = mem_available - m_reserved_memory * 1024L * 1024L;
+	info.available = mem_available - reserved_mem * 1024L * 1024L;
 
 	info.swap_total = kb_swap_total;
 	info.swap_free = kb_swap_free;
