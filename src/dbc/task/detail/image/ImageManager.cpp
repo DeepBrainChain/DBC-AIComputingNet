@@ -147,25 +147,33 @@ void ImageManager::listLocalBaseImages(std::vector<ImageFile>& imagefiles) {
         }
     }
 
-    boost::filesystem::path local_image_dir = "/data";
-    boost::filesystem::directory_iterator iterend;
-    for (boost::filesystem::directory_iterator iter(local_image_dir); iter != iterend; iter++) {
-        if (boost::filesystem::is_regular_file(iter->path()) &&
-            iter->path().extension().string() == ".qcow2" &&
-            iter->path().filename().string().find("data") == std::string::npos) {
-            if (setRunningImages.count(iter->path().filename().string()) <= 0) {
-                std::string cmd_backing_file = "qemu-img info " + iter->path().string() +
-                                               " | grep -w 'backing file:' | awk -F ': ' '{print $2}'";
-                std::string backing_file = run_shell(cmd_backing_file);
-                if (backing_file.empty()) {
-                    ImageFile image_file;
-                    image_file.name = iter->path().filename().string();
-                    image_file.size = bfs::file_size(iter->path());
+    try {
+        boost::filesystem::path local_image_dir = "/data";
+        boost::filesystem::directory_iterator iterend;
+        for (boost::filesystem::directory_iterator iter(local_image_dir); iter != iterend; iter++) {
+            if (boost::filesystem::is_regular_file(iter->path()) &&
+                iter->path().extension().string() == ".qcow2" &&
+                iter->path().filename().string().find("data") == std::string::npos) {
+                if (setRunningImages.count(iter->path().filename().string()) <= 0) {
+                    std::string cmd_backing_file = "qemu-img info " + iter->path().string() +
+                                                " | grep -w 'backing file:' | awk -F ': ' '{print $2}'";
+                    std::string backing_file = run_shell(cmd_backing_file);
+                    if (backing_file.empty()) {
+                        ImageFile image_file;
+                        image_file.name = iter->path().filename().string();
+                        image_file.size = bfs::file_size(iter->path());
 
-                    imagefiles.push_back(image_file);
+                        imagefiles.push_back(image_file);
+                    }
                 }
             }
         }
+    } catch (const std::exception & e) {
+        LOG_ERROR << "list image file in /data error: " << e.what();
+    } catch (const boost::exception & e) {
+        LOG_ERROR << "list image file in /data error: " << diagnostic_information(e);
+    } catch (...) {
+        LOG_ERROR << "unknowned error when list image file in /data";
     }
 }
 
@@ -194,27 +202,35 @@ void ImageManager::listLocalShareImages(const ImageServer &image_server, std::ve
     }
 
     std::set<std::string> set_images;
-    boost::filesystem::path local_image_dir = "/data";
-    boost::filesystem::directory_iterator iterend;
-    for (boost::filesystem::directory_iterator iter(local_image_dir); iter != iterend; iter++) {
-        if (boost::filesystem::is_regular_file(iter->path()) &&
-            iter->path().extension().string() == ".qcow2" &&
-            iter->path().filename().string().find("data") == std::string::npos) {
-            if (setRunningImages.count(iter->path().filename().string()) <= 0) {
-                std::string cmd_backing_file = "qemu-img info " + iter->path().string() +
-                                               " | grep -w 'backing file:' | awk -F ': ' '{print $2}'";
-                std::string backing_file = run_shell(cmd_backing_file);
-                if (backing_file.empty()) {
-                    ImageFile image_file;
-                    image_file.name = iter->path().filename().string();
-                    image_file.size = bfs::file_size(iter->path());
+    try {
+        boost::filesystem::path local_image_dir = "/data";
+        boost::filesystem::directory_iterator iterend;
+        for (boost::filesystem::directory_iterator iter(local_image_dir); iter != iterend; iter++) {
+            if (boost::filesystem::is_regular_file(iter->path()) &&
+                iter->path().extension().string() == ".qcow2" &&
+                iter->path().filename().string().find("data") == std::string::npos) {
+                if (setRunningImages.count(iter->path().filename().string()) <= 0) {
+                    std::string cmd_backing_file = "qemu-img info " + iter->path().string() +
+                                                " | grep -w 'backing file:' | awk -F ': ' '{print $2}'";
+                    std::string backing_file = run_shell(cmd_backing_file);
+                    if (backing_file.empty()) {
+                        ImageFile image_file;
+                        image_file.name = iter->path().filename().string();
+                        image_file.size = bfs::file_size(iter->path());
 
-                    imagefiles.push_back(image_file);
-                } else {
-                    set_images.insert(iter->path().filename().string());
+                        imagefiles.push_back(image_file);
+                    } else {
+                        set_images.insert(iter->path().filename().string());
+                    }
                 }
             }
         }
+    } catch (const std::exception & e) {
+        LOG_ERROR << "list image file in /data error: " << e.what();
+    } catch (const boost::exception & e) {
+        LOG_ERROR << "list image file in /data error: " << diagnostic_information(e);
+    } catch (...) {
+        LOG_ERROR << "unknowned error when list image file in /data";
     }
 
     // mix local and remote
