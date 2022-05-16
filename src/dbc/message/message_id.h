@@ -115,6 +115,11 @@
 #define NODE_QUERY_NODE_INFO_RSP       "node_query_node_info_rsp"
 #define NODE_QUERY_NODE_INFO_TIMER     "node_query_node_info_timer"
 
+// free memory
+#define NODE_FREE_MEMORY_REQ       "node_free_memory_req"
+#define NODE_FREE_MEMORY_RSP       "node_free_memory_rsp"
+#define NODE_FREE_MEMORY_TIMER     "node_free_memory_timer"
+
 // get node session_id
 #define NODE_SESSION_ID_REQ      "node_session_id_req"
 #define NODE_SESSION_ID_RSP      "node_session_id_rsp"
