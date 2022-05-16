@@ -1,4 +1,4 @@
-﻿#ifndef DBC_ERROR_H
+#ifndef DBC_ERROR_H
 #define DBC_ERROR_H
 
 #include <iostream>

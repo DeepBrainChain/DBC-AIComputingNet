@@ -1,4 +1,4 @@
-﻿#include "timer.h"
+#include "timer.h"
 #include "timer_tick_manager.h"
 
 core_timer::core_timer(const std::string &name, uint32_t delay, uint32_t period, uint64_t repeat_times,

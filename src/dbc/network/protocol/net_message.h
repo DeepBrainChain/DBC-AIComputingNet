@@ -1,4 +1,4 @@
-﻿#ifndef DBC_NETWORK_NET_MESSAGE_H
+#ifndef DBC_NETWORK_NET_MESSAGE_H
 #define DBC_NETWORK_NET_MESSAGE_H
 
 #include "../utils/socket_id.h"

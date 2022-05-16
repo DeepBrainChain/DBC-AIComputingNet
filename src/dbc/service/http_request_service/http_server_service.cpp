@@ -1,4 +1,4 @@
-﻿#include "http_server_service.h"
+#include "http_server_service.h"
 #include <assert.h>
 #include <future>
 #include <event2/buffer.h>

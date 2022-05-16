@@ -1,4 +1,4 @@
-﻿#ifndef DBC_COMMON_DEF_H
+#ifndef DBC_COMMON_DEF_H
 #define DBC_COMMON_DEF_H
 
 #include <string>

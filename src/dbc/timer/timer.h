@@ -1,4 +1,4 @@
-﻿#ifndef DBC_TIMER_H
+#ifndef DBC_TIMER_H
 #define DBC_TIMER_H
 
 #include "util/utils.h"
