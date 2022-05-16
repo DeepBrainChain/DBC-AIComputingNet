@@ -786,8 +786,13 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
         if (!util::is_digits(s_disk_size) || disk_size_k <= 0) {
             return FResult(ERR_ERROR, "disk_size is invalid");
         }
-        if (role == USER_ROLE::Verifier)
-            disk_size_k = (SystemInfo::instance().GetDiskInfo().available - g_disk_system_size * 1024L * 1024L);
+        
+        if (role == USER_ROLE::Verifier) {
+			disk_info _disk_info;
+			SystemInfo::instance().GetDiskInfo("/data", _disk_info);
+
+            disk_size_k = (_disk_info.available - g_disk_system_size * 1024L * 1024L);
+        }
 
         // "data_file_name"
         JSON_PARSE_STRING(doc, "data_file_name", data_file_name);
@@ -999,7 +1004,10 @@ bool TaskManager::allocate_mem(int64_t mem_size) {
 }
 
 bool TaskManager::allocate_disk(int64_t disk_size) {
-    return disk_size > 0 && disk_size <= (SystemInfo::instance().GetDiskInfo().available - g_disk_system_size * 1024L * 1024L);
+	disk_info _disk_info;
+	SystemInfo::instance().GetDiskInfo("/data", _disk_info);
+
+    return disk_size > 0 && disk_size <= (_disk_info.available - g_disk_system_size * 1024L * 1024L);
 }
 
 bool TaskManager::check_iptables_port_occupied(uint16_t port, const std::string& task_id) {
@@ -1125,7 +1133,10 @@ FResult TaskManager::check_gpu(const std::map<std::string, std::list<std::string
 }
 
 FResult TaskManager::check_disk(const std::map<int32_t, uint64_t> &disks) {
-    uint64_t disk_available = SystemInfo::instance().GetDiskInfo().available - g_disk_system_size * 1024L * 1024L;
+    disk_info _disk_info;
+    SystemInfo::instance().GetDiskInfo("/data", _disk_info);
+
+    uint64_t disk_available = _disk_info.available - g_disk_system_size * 1024L * 1024L;
     uint64_t need_size = 0;
     for (auto& it : disks) {
         need_size += it.second;

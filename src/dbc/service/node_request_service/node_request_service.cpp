@@ -430,7 +430,7 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
         result.errmsg = "query machine_status failed";
         return;
     }
-
+    
     // 验证中
     if (str_status == MACHINE_STATUS::Verify) {
         result.machine_status = MACHINE_STATUS::Verify;
@@ -788,6 +788,22 @@ void node_request_service::task_list(const network::base_header& header,
                 }
                 ss_tasks << "]";
             }
+
+            // mac address
+            std::vector<domainInterface> vecInterface;
+            VmClient::instance().ListDomainInterface(taskinfo->getTaskId(), vecInterface);
+            
+            ss_tasks << ", \"interface\":[";
+            for (int i = 0; i < vecInterface.size(); i++) {
+                if (i > 0) ss_tasks << ",";
+
+                ss_tasks << "{";
+                ss_tasks << "\"name\":" << "\"" << vecInterface[i].name << "\"";
+                ss_tasks << ",\"type\":" << "\"" << vecInterface[i].type << "\"";
+                ss_tasks << ",\"mac_address\":" << "\"" << vecInterface[i].mac << "\"";
+                ss_tasks << "}";
+            }
+            ss_tasks << "]";
             ss_tasks << "}";
         } else {
             ret_code = E_DEFAULT;
@@ -4035,17 +4051,33 @@ void node_request_service::query_node_info(const network::base_header& header,
     ss << ",\"free\":" << "\"" << size2GB(tmp_meminfo.free) << "\"";
     ss << ",\"used_usage\":" << "\"" << f2s(tmp_meminfo.usage * 100) << "%" << "\"";
     ss << "}";
-    disk_info tmp_diskinfo = SystemInfo::instance().GetDiskInfo();
+    
+    /*
+    disk_info tmp_diskinfo;
+	SystemInfo::instance().GetDiskInfo("/data", tmp_diskinfo);
+    
     ss << ",\"disk_system\":" << "{";
     ss << "\"type\":" << "\"" << (tmp_diskinfo.disk_type == DISK_SSD ? "SSD" : "HDD") << "\"";
     ss << ",\"size\":" << "\"" << g_disk_system_size << "G\"";
     ss << "}";
-    ss << ",\"disk_data\":" << "{";
-    ss << "\"type\":" << "\"" << (tmp_diskinfo.disk_type == DISK_SSD ? "SSD" : "HDD") << "\"";
-    ss << ",\"size\":" << "\"" << size2GB(tmp_diskinfo.total) << "\"";
-    ss << ",\"free\":" << "\"" << size2GB(tmp_diskinfo.available) << "\"";
-    ss << ",\"used_usage\":" << "\"" << f2s(tmp_diskinfo.usage * 100) << "%" << "\"";
-    ss << "}";
+    */
+    ss << ",\"disks\":" << "[";
+    auto mpdisks = SystemInfo::instance().GetDiskInfos();
+    int disk_count = 0;
+    for (auto iter_disk : mpdisks) {
+        if (disk_count > 0) ss << ",";
+
+        ss << "{";
+        ss << "\"path\":" << "\"" << iter_disk.first << "\"";
+		ss << ",\"type\":" << "\"" << (iter_disk.second.disk_type == DISK_SSD ? "SSD" : "HDD") << "\"";
+		ss << ",\"size\":" << "\"" << size2GB(iter_disk.second.total) << "\"";
+		ss << ",\"free\":" << "\"" << size2GB(iter_disk.second.available) << "\"";
+		ss << ",\"used_usage\":" << "\"" << f2s(iter_disk.second.usage * 100) << "%" << "\"";
+        ss << "}";
+
+        disk_count++;
+    }
+    ss << "]";
 
     std::vector<ImageFile> images;
     ImageServer imgsvr;

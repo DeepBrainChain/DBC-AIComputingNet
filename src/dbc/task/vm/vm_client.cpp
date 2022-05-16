@@ -2205,3 +2205,69 @@ int32_t VmClient::UndefineNWFilter(const std::string& nwfilter_name) {
     }
     return ret;
 }
+
+FResult VmClient::ListDomainInterface(const std::string& domain_name, std::vector<domainInterface>& interfaces) {
+	FResult ret = FResultOk;
+	virDomainPtr domainPtr = nullptr;
+	do {
+		domainPtr = virDomainLookupByName(m_connPtr, domain_name.c_str());
+		if (domainPtr == nullptr) {
+			ret = FResult(ERR_ERROR, "task not exist");
+			break;
+		}
+
+		char* pContent = virDomainGetXMLDesc(domainPtr, VIR_DOMAIN_XML_SECURE);
+		tinyxml2::XMLDocument doc;
+		tinyxml2::XMLError err = doc.Parse(pContent);
+		if (err != tinyxml2::XML_SUCCESS) {
+			ret = FResult(ERR_ERROR, "task parse domain xml failed");
+			break;
+		}
+		tinyxml2::XMLElement* root = doc.RootElement();
+		tinyxml2::XMLElement* ele_devices = root->FirstChildElement("devices");
+		tinyxml2::XMLElement* ele_interface = ele_devices->LastChildElement("interface");
+        while (ele_interface) {
+            domainInterface domain_interface;
+
+            std::string interface_type = ele_interface->Attribute("type");
+            if (interface_type == "network") {
+                tinyxml2::XMLElement* ele_source = ele_interface->FirstChildElement("source");
+                std::string i_name = ele_source->Attribute("network");
+                
+				tinyxml2::XMLElement* ele_model = ele_interface->FirstChildElement("model");
+				std::string i_type = ele_model->Attribute("type");
+
+				tinyxml2::XMLElement* ele_mac = ele_interface->FirstChildElement("mac");
+				std::string i_mac = ele_mac->Attribute("address");
+
+                domain_interface.name = i_name;
+                domain_interface.type = i_type;
+                domain_interface.mac = i_mac;
+                interfaces.push_back(domain_interface);
+            }
+            else if (interface_type == "bridge") {
+				tinyxml2::XMLElement* ele_source = ele_interface->FirstChildElement("source");
+				std::string i_name = ele_source->Attribute("bridge");
+
+				tinyxml2::XMLElement* ele_model = ele_interface->FirstChildElement("model");
+				std::string i_type = ele_model->Attribute("type");
+
+				tinyxml2::XMLElement* ele_mac = ele_interface->FirstChildElement("mac");
+				std::string i_mac = ele_mac->Attribute("address");
+
+				domain_interface.name = i_name;
+				domain_interface.type = i_type;
+				domain_interface.mac = i_mac;
+                interfaces.push_back(domain_interface);
+            }
+            
+            ele_interface = ele_interface->NextSiblingElement("interface");
+        }
+	} while (0);
+
+	if (domainPtr != nullptr)
+		virDomainFree(domainPtr);
+
+	return ret;
+}
+

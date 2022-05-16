@@ -282,10 +282,13 @@ void node_monitor_service::on_monitor_data_sender_task_timer(const std::shared_p
     hmData.memFree = SystemInfo::instance().GetMemInfo().free;
     hmData.memUsage = SystemInfo::instance().GetMemInfo().usage * 100;
     // hmData.flow 各虚拟机的流量之和
-    hmData.diskTotal = SystemInfo::instance().GetDiskInfo().total;
-    hmData.diskFree = SystemInfo::instance().GetDiskInfo().available;
-    hmData.diskUsage = SystemInfo::instance().GetDiskInfo().usage * 100;
-    hmData.diskMountStatus = SystemInfo::instance().GetDiskInfo().data_mount_status;
+	disk_info _disk_info;
+	SystemInfo::instance().GetDiskInfo("/data", _disk_info);
+
+    hmData.diskTotal = _disk_info.total;
+    hmData.diskFree = _disk_info.available;
+    hmData.diskUsage = _disk_info.usage * 100;
+    hmData.diskMountStatus = _disk_info.data_mount_status;
     hmData.loadAverage = SystemInfo::instance().loadaverage();
     // hmData.packetLossRate
     hmData.version = dbcversion();

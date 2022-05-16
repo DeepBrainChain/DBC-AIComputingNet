@@ -29,6 +29,12 @@ struct domainDiskInfo {
 	std::string targetBus;
 };
 
+struct domainInterface {
+    std::string name;
+    std::string type;
+    std::string mac;
+};
+
 class VmClient : public Singleton<VmClient> {
 public:
     VmClient();
@@ -82,6 +88,8 @@ public:
     int32_t GetDomainInterfaceAddress(const std::string& domain_name, std::vector<dbc::virDomainInterface> &difaces, unsigned int source = 0);
     
     int32_t IsDomainHasNvram(const std::string& domain_name);
+
+    FResult ListDomainInterface(const std::string& domain_name, std::vector<domainInterface>& interfaces);
 
     // xml
     std::string GetDomainXML(const std::string& domain_name);

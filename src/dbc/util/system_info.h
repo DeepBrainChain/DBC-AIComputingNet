@@ -108,9 +108,9 @@ public:
         return m_gpuinfo;
     }
 
-    const disk_info &GetDiskInfo() const {
+    std::map<std::string, disk_info> GetDiskInfos() const {
         RwMutex::ReadLock rlock(m_disk_mtx);
-        return m_diskinfo;
+        return m_diskinfos;
     }
 
     void GetDiskInfo(const std::string& path, disk_info& info);
@@ -150,8 +150,8 @@ private:
     // gpu
     // <id, gpu_info>
     std::map<std::string, gpu_info> m_gpuinfo;
-    // disk
-    disk_info m_diskinfo;
+    // disk: /data /data2 /data3 ...
+    std::map<std::string, disk_info> m_diskinfos;
     mutable RwMutex m_disk_mtx;
 
     // load average

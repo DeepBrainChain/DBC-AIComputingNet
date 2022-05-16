@@ -50,10 +50,33 @@ ERRCODE SystemInfo::Init(NODE_TYPE node_type, int32_t reserved_cpu_cores, int32_
 
     init_gpu_info();
 
-    if (m_node_type == NODE_TYPE::ComputeNode)
-        update_disk_info("/data", m_diskinfo);
-    else
-        update_disk_info("/", m_diskinfo);
+	// disk
+	do {
+		m_diskinfos.clear();
+
+		if (m_node_type == NODE_TYPE::ComputeNode) {
+			boost::filesystem::path root_dir = "/";
+			boost::filesystem::directory_iterator iterend;
+			for (boost::filesystem::directory_iterator iter(root_dir); iter != iterend; iter++) {
+				if (boost::filesystem::is_directory(iter->path())) {
+					std::string dir = iter->path().string();
+					if (dir.substr(0, 5) == "/data") {
+						disk_info _disk_info;
+						update_disk_info(dir, _disk_info);
+                        
+                        m_diskinfos.insert({ dir, _disk_info });
+					}
+				}
+			}
+		}
+		else {
+			disk_info _disk_info;
+			update_disk_info("/", _disk_info);
+            
+            m_diskinfos.insert({ "/", _disk_info });
+		}
+	} while (0);
+
     update_load_average(m_loadaverage);
 
     m_public_ip = get_public_ip();
@@ -426,13 +449,34 @@ void SystemInfo::update_thread_func() {
 
         // disk
         do {
-            disk_info _disk_info;
-            if (m_node_type == NODE_TYPE::ComputeNode)
-                update_disk_info("/data", _disk_info);
-            else
+            {
+                RwMutex::WriteLock wlock(m_disk_mtx);
+                m_diskinfos.clear();
+            }
+
+            if (m_node_type == NODE_TYPE::ComputeNode) {
+				boost::filesystem::path root_dir = "/";
+				boost::filesystem::directory_iterator iterend;
+                for (boost::filesystem::directory_iterator iter(root_dir); iter != iterend; iter++) {
+                    if (boost::filesystem::is_directory(iter->path())) {
+                        std::string dir = iter->path().string();
+                        if (dir.substr(0, 5) == "/data") {
+                            disk_info _disk_info;
+                            update_disk_info(dir, _disk_info);
+
+                            RwMutex::WriteLock wlock(m_disk_mtx);
+                            m_diskinfos.insert({ dir, _disk_info });
+                        }
+                    }
+                }
+            }
+            else {
+                disk_info _disk_info;
                 update_disk_info("/", _disk_info);
-            RwMutex::WriteLock wlock(m_disk_mtx);
-            m_diskinfo = _disk_info;
+
+				RwMutex::WriteLock wlock(m_disk_mtx);
+                m_diskinfos.insert({ "/", _disk_info });
+            }
         } while (0);
 
         // load average
