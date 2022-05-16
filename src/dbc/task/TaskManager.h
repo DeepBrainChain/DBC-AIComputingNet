@@ -20,43 +20,43 @@
 namespace bp = boost::process;
 
 struct CreateTaskParams {
-    std::string task_id;
-	// ����
+	std::string task_id;
+	// 描述
 	std::string desc;
-	// ��¼����
+	// 登录密码
 	std::string login_password;
-	// �������� (ubuntu.qcow2 ...)
+	// 镜像名字 (ubuntu.qcow2 ...)
 	std::string image_name;
-	// ssh���Ӷ˿ڣ�linux��
+	// ssh连接端口（linux）
 	uint16_t ssh_port;
-	// rdp���Ӷ˿ڣ�windows��
+	// rdp连接端口（windows）
 	uint16_t rdp_port;
-	// �Զ���˿�ӳ��
+	// 自定义端口映射
 	std::vector<std::string> custom_port;
-	// cpu��������
+	// cpu物理个数
 	int32_t cpu_sockets;
-	// ÿ������cpu����������
+	// 每个物理cpu的物理核数
 	int32_t cpu_cores;
-	// ÿ�������˵��߳���
+	// 每个物理核的线程数
 	int32_t cpu_threads;
-	// �ڴ棨KB��
+	// 内存（KB）
 	int64_t mem_size;
-	// �����̴�С��KB��
+	// 数据盘大小（KB）
 	int64_t disk_size;
-	// GPU�б�
+	// GPU列表
 	std::map<std::string, std::list<std::string>> gpus;
-	// �Զ���������·��
+	// 自定义数据盘路径
 	std::string data_file_name;
 	// vnc
 	uint16_t vnc_port;
 	std::string vnc_password;
 
-	// ����ϵͳ(��generic, ubuntu 18.04, windows 10)��Ĭ��ubuntu������win����Ϊ��windowsϵͳ������ȫСд��
+	// 操作系统(如generic, ubuntu 18.04, windows 10)，默认ubuntu，带有win则认为是windows系统，必须全小写。
 	std::string operation_system;
-	// BIOSģʽ(��legacy,uefi)��Ĭ�ϴ�ͳBIOS������ȫСд��
+	// BIOS模式(如legacy,uefi)，默认传统BIOS，必须全小写。
 	std::string bios_mode;
 
-	//�鲥��ַ(�磺"230.0.0.1:5558")
+	//组播地址(如："230.0.0.1:5558")
 	std::vector<std::string> multicast;
 
 	// vxlan network name
@@ -64,10 +64,10 @@ struct CreateTaskParams {
 
 	int64_t create_time = 0;
 
-    // ����ip
-    std::string public_ip;
-    //��ȫ�飬ֻ�������˹���ip�Ż�ʹ��
-    std::vector<std::string> nwfilter;
+	// 公网ip
+	std::string public_ip;
+	//安全组，只有设置了公网ip才会使用
+	std::vector<std::string> nwfilter;
 };
 
 class TaskManager : public Singleton<TaskManager> {
