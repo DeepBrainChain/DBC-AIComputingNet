@@ -1491,14 +1491,11 @@ FResult VmClient::GetDomainLog(const std::string &domain_name, QUERY_LOG_DIRECTI
                 }
             }
         }
-    }
-    catch (const std::exception & e) {
+    } catch (const std::exception & e) {
         return FResult(ERR_ERROR, std::string("log file error: ").append(e.what()));
-    }
-    catch (const boost::exception & e) {
+    } catch (const boost::exception & e) {
         return FResult(ERR_ERROR, "log file error: " + diagnostic_information(e));
-    }
-    catch (...) {
+    } catch (...) {
         return FResult(ERR_ERROR, "unknowned log file error");
     }
     
