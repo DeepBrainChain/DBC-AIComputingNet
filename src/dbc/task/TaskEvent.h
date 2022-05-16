@@ -6,21 +6,21 @@
 enum class TaskEventType {
     TET_Unknown,
 
-    TET_CreateTask,         //´´½¨Task
-    TET_StartTask,          //Æô¶¯Task
-    TET_ShutdownTask,       //¹Ø±ÕTask
-    TET_PowerOffTask,       //Ç¿ÖÆ¶Ïµç
-    TET_ReStartTask,        //ÖØÆôTask (reboot domain)
-    TET_ForceRebootTask,    //Ç¿ÖÆÖØÆôTask (destroy domain && start domain)
+    TET_CreateTask,         //åˆ›å»ºTask
+    TET_StartTask,          //å¯åŠ¨Task
+    TET_ShutdownTask,       //å…³é—­Task
+    TET_PowerOffTask,       //å¼ºåˆ¶æ–­ç”µ
+    TET_ReStartTask,        //é‡å¯Task (reboot domain)
+    TET_ForceRebootTask,    //å¼ºåˆ¶é‡å¯Task (destroy domain && start domain)
     TET_ResetTask,          //Reset Task
-    TET_DeleteTask,         //É¾³ıTask
-    TET_ModifyTask,         //ĞŞ¸Ätask
+    TET_DeleteTask,         //åˆ é™¤Task
+    TET_ModifyTask,         //ä¿®æ”¹task
 
-    TET_ResizeDisk,         //´ÅÅÌÀ©Èİ
-    TET_AddDisk,            //Ìí¼Ó´ÅÅÌ
-    TET_DeleteDisk,         //É¾³ı´ÅÅÌ
+    TET_ResizeDisk,         //ç£ç›˜æ‰©å®¹
+    TET_AddDisk,            //æ·»åŠ ç£ç›˜
+    TET_DeleteDisk,         //åˆ é™¤ç£ç›˜
 
-    TET_CreateSnapshot      //´´½¨¿ìÕÕ
+    TET_CreateSnapshot      //åˆ›å»ºå¿«ç…§
 };
 
 struct TaskEvent {
@@ -106,9 +106,9 @@ struct ResizeDiskEvent : public TaskEvent {
         task_id = _task_id;
     }
 
-    std::string disk_name;      //´ÅÅÌÃû³Æ
-    int64_t size_k = 0;         //À©Èİ´óĞ¡£¨KB£©
-    std::string source_file;    //ÎÄ¼ş¾ø¶ÔÂ·¾¶
+    std::string disk_name;      //ç£ç›˜åç§°
+    int64_t size_k = 0;         //æ‰©å®¹å¤§å°ï¼ˆKBï¼‰
+    std::string source_file;    //æ–‡ä»¶ç»å¯¹è·¯å¾„
 };
 
 struct AddDiskEvent : public TaskEvent {
@@ -117,8 +117,8 @@ struct AddDiskEvent : public TaskEvent {
         task_id = _task_id;
     }
 
-    int64_t size_k = 0;     //ĞÂ¼Ó´ÅÅÌ´óĞ¡£¨KB£©
-    std::string mount_dir;  //¹ÒÔØÄ¿Â¼
+    int64_t size_k = 0;     //æ–°åŠ ç£ç›˜å¤§å°ï¼ˆKBï¼‰
+    std::string mount_dir;  //æŒ‚è½½ç›®å½•
 };
 
 struct DeleteDiskEvent : public TaskEvent {
@@ -127,7 +127,7 @@ struct DeleteDiskEvent : public TaskEvent {
         task_id = _task_id;
     }
 
-    std::string disk_name;  //´ÅÅÌÃû³Æ
+    std::string disk_name;  //ç£ç›˜åç§°
 };
 
 /*********** snapshot ***********/
@@ -138,13 +138,13 @@ struct CreateAndUploadSnapshotEvent : public TaskEvent {
         task_id = _task_id;
     }
 
-    std::string snapshot_name;  //¿ìÕÕÃû³Æ
+    std::string snapshot_name;  //å¿«ç…§åç§°
     std::string root_backfile;  //root backfile
-    std::string source_file;    //Òª×ö¿ìÕÕµÄ´ÅÅÌ¾ø¶ÔÂ·¾¶
-    std::string snapshot_file;  //¿ìÕÕÎÄ¼ş
-    int64_t create_time = 0;    //´´½¨Ê±¼ä
-    ImageServer image_server;   //ÉÏ´«µÄ¾µÏñÖĞĞÄ
-    std::string desc;            //ÃèÊö
+    std::string source_file;    //è¦åšå¿«ç…§çš„ç£ç›˜ç»å¯¹è·¯å¾„
+    std::string snapshot_file;  //å¿«ç…§æ–‡ä»¶
+    int64_t create_time = 0;    //åˆ›å»ºæ—¶é—´
+    ImageServer image_server;   //ä¸Šä¼ çš„é•œåƒä¸­å¿ƒ
+    std::string desc;            //æè¿°
 };
 
 #endif

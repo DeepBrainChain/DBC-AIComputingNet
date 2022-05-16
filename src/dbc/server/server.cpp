@@ -1,4 +1,4 @@
-﻿#include "server.h"
+#include "server.h"
 #include <fcntl.h>
 #include <openssl/conf.h>
 #include <openssl/rand.h>

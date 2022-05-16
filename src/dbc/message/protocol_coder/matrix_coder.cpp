@@ -94,6 +94,9 @@ void matrix_coder::init_decode_invoker() {
     BIND_DECODE_INVOKER(node_session_id_req);
     BIND_DECODE_INVOKER(node_session_id_rsp);
 
+	BIND_DECODE_INVOKER(node_free_memory_req);
+	BIND_DECODE_INVOKER(node_free_memory_rsp);
+
     BIND_DECODE_INVOKER(node_list_snapshot_req);
     BIND_DECODE_INVOKER(node_list_snapshot_rsp);
 
@@ -209,6 +212,9 @@ void matrix_coder::init_encode_invoker() {
 
     BIND_ENCODE_INVOKER(node_session_id_req);
     BIND_ENCODE_INVOKER(node_session_id_rsp);
+
+    BIND_ENCODE_INVOKER(node_free_memory_req);
+    BIND_ENCODE_INVOKER(node_free_memory_rsp);
 
     BIND_ENCODE_INVOKER(node_list_snapshot_req);
     BIND_ENCODE_INVOKER(node_list_snapshot_rsp);

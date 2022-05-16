@@ -367,6 +367,17 @@ public:
 
     void on_node_query_node_info_timer(const std::shared_ptr<core_timer> &timer);
 
+	// free memory
+	void rest_free_memory(const std::shared_ptr<network::http_request>& httpReq, const std::string& path);
+
+	std::shared_ptr<network::message> create_node_free_memory_req_msg(const std::string& head_session_id,
+		const req_body& body);
+
+	void on_node_free_memory_rsp(const std::shared_ptr<network::http_request_context>& hreq_context,
+		const std::shared_ptr<network::message>& rsp_msg);
+
+	void on_node_free_memory_timer(const std::shared_ptr<core_timer>& timer);
+
     // session_id
     void rest_node_session_id(const std::shared_ptr<network::http_request> &httpReq, const std::string &path);
 

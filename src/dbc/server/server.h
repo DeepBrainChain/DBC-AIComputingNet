@@ -1,4 +1,4 @@
-﻿#ifndef DBC_SERVER_H
+#ifndef DBC_SERVER_H
 #define DBC_SERVER_H
 
 #include "util/utils.h"

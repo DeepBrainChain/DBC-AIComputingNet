@@ -1,4 +1,4 @@
-﻿#ifndef DBC_TOPIC_MANAGER_H
+#ifndef DBC_TOPIC_MANAGER_H
 #define DBC_TOPIC_MANAGER_H
 
 #include "util/utils.h"

@@ -162,6 +162,10 @@ protected:
 
     void node_session_id(const network::base_header& header, const std::shared_ptr<dbc::node_session_id_req_data>& data, const AuthoriseResult& result);
 
+	void on_node_free_memory_req(const std::shared_ptr<network::message>& msg);
+
+	void node_free_memory(const network::base_header& header, const std::shared_ptr<dbc::node_free_memory_req_data>& data, const AuthoriseResult& result);
+
     void on_training_task_timer(const std::shared_ptr<core_timer>& timer);
 
     void on_prune_task_timer(const std::shared_ptr<core_timer>& timer);

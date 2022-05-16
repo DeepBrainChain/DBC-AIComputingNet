@@ -176,7 +176,8 @@ void node_request_service::init_invoker() {
     reg_msg_handle(NODE_QUERY_NODE_INFO_REQ, CALLBACK_1(node_request_service::on_node_query_node_info_req, this));
     reg_msg_handle(SERVICE_BROADCAST_REQ, CALLBACK_1(node_request_service::on_net_service_broadcast_req, this));
     reg_msg_handle(NODE_SESSION_ID_REQ, CALLBACK_1(node_request_service::on_node_session_id_req, this));
-    
+	reg_msg_handle(NODE_FREE_MEMORY_REQ, CALLBACK_1(node_request_service::on_node_free_memory_req, this));
+
     reg_msg_handle(NODE_LIST_MONITOR_SERVER_REQ, CALLBACK_1(node_request_service::on_node_list_monitor_server_req, this));
     reg_msg_handle(NODE_SET_MONITOR_SERVER_REQ, CALLBACK_1(node_request_service::on_node_set_monitor_server_req, this));
     
@@ -4213,6 +4214,96 @@ void node_request_service::node_session_id(const network::base_header &header,
     }
 }
 
+// 释放内存
+void node_request_service::on_node_free_memory_req(const std::shared_ptr<network::message>& msg) {
+	auto node_req_msg = std::dynamic_pointer_cast<dbc::node_free_memory_req>(msg->get_content());
+	if (node_req_msg == nullptr) {
+		return;
+	}
+
+	if (!check_req_header_nonce(node_req_msg->header.nonce)) {
+		return;
+	}
+
+	if (Server::NodeType != NODE_TYPE::ComputeNode) {
+		node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+		network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+		return;
+	}
+
+	if (!check_req_header(msg)) {
+		LOG_ERROR << "request header check failed";
+		node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+		network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+		return;
+	}
+
+	// decrypt
+	std::string pub_key = node_req_msg->header.exten_info["pub_key"];
+	std::string priv_key = ConfManager::instance().GetPrivKey();
+	if (pub_key.empty() || priv_key.empty()) {
+		LOG_ERROR << "pub_key or priv_key is empty";
+		node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+		network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+		return;
+	}
+
+	std::shared_ptr<dbc::node_free_memory_req_data> data = std::make_shared<dbc::node_free_memory_req_data>();
+	try {
+		std::string ori_message;
+		bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
+		if (!succ || ori_message.empty()) {
+			node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+			network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+			return;
+		}
+
+		std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
+		task_buf->write_to_byte_buf(ori_message.c_str(), ori_message.size());
+		network::binary_protocol proto(task_buf.get());
+		data->read(&proto);
+	}
+	catch (std::exception& e) {
+		node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+		network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+		return;
+	}
+
+	std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
+	bool hit_self = hit_node(req_peer_nodes, ConfManager::instance().GetNodeId());
+	if (hit_self) {
+		AuthorityParams params;
+		params.wallet = data->wallet;
+		params.nonce = data->nonce;
+		params.sign = data->sign;
+		params.multisig_wallets = data->multisig_wallets;
+		params.multisig_threshold = data->multisig_threshold;
+		params.multisig_signs = data->multisig_signs;
+		params.session_id = data->session_id;
+		params.session_id_sign = data->session_id_sign;
+		AuthoriseResult result;
+		check_authority(params, result);
+		if (!result.success) {
+			LOG_ERROR << "check authority failed: " << result.errmsg;
+			send_response_error<dbc::node_free_memory_rsp>(NODE_FREE_MEMORY_RSP, node_req_msg->header, E_DEFAULT, "check authority failed: " + result.errmsg);
+			return;
+		}
+
+		node_free_memory(node_req_msg->header, data, result);
+	}
+	else {
+		node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+		network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+	}
+}
+
+void node_request_service::node_free_memory(const network::base_header& header,
+	const std::shared_ptr<dbc::node_free_memory_req_data>& data, const AuthoriseResult& result) {
+    
+    run_shell("echo 3 > /proc/sys/vm/drop_caches");
+    
+    send_response_ok<dbc::node_free_memory_rsp>(NODE_FREE_MEMORY_RSP, header);
+}
 
 void node_request_service::on_training_task_timer(const std::shared_ptr<core_timer>& timer) {
     //TaskMgr::instance().ProcessTask();

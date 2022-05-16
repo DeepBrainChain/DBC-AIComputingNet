@@ -356,7 +356,7 @@ bool p2p_net_service::add_peer_node(const std::shared_ptr<network::message>& msg
 
     auto ptr_tcp_ch = std::dynamic_pointer_cast<network::tcp_socket_channel>(ptr_ch);
     if (ptr_tcp_ch) {
-        // TODO: remote_addr 不对
+        // TODO: remote_addr 涓嶅
         ep = ptr_tcp_ch->get_remote_addr();
     }
     else {
@@ -798,7 +798,7 @@ void p2p_net_service::on_ver_resp(const std::shared_ptr<network::message> &msg) 
         << ", core_ver=" << resp_content->body.core_version
         << ", protocol_ver=" << resp_content->body.protocol_version;
     
-    // TODO: remote_addr 不对
+    // TODO: remote_addr 涓嶅
     auto candidate = get_peer_candidate(tcp_ch->get_remote_addr());
     if (nullptr != candidate) {
         candidate->node_id = resp_content->body.node_id;
