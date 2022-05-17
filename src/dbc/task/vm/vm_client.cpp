@@ -300,10 +300,6 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
 			model_node->SetAttribute("type", "none");
 			vedio_node->LinkEndChild(model_node);
 			dev_node->LinkEndChild(vedio_node);
-
-			tinyxml2::XMLElement* memballoon_node = doc.NewElement("memballoon");
-            memballoon_node->SetAttribute("model", "none");
-			dev_node->LinkEndChild(memballoon_node);
         }
         else {
 			tinyxml2::XMLElement* vedio_node = doc.NewElement("video");
@@ -763,7 +759,10 @@ int32_t VmClient::CreateDomain(const std::shared_ptr<TaskInfo>& taskinfo) {
     std::string bridge_name;
     if (!taskinfo->getNetworkName().empty()) {
         std::shared_ptr<dbc::networkInfo> networkInfo = VxlanManager::instance().GetNetwork(taskinfo->getNetworkName());
-        if (networkInfo) bridge_name = networkInfo->bridgeName;
+        if (networkInfo) {
+            bridge_name = networkInfo->bridgeName;
+            TASK_LOG_INFO(domain_name, "join network: " << taskinfo->getNetworkName());
+        }
     }
 
     // vnc
