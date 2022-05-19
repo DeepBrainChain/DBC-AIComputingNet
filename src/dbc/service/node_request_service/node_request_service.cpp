@@ -4051,17 +4051,15 @@ void node_request_service::query_node_info(const network::base_header& header,
     ss << ",\"free\":" << "\"" << size2GB(tmp_meminfo.free) << "\"";
     ss << ",\"used_usage\":" << "\"" << f2s(tmp_meminfo.usage * 100) << "%" << "\"";
     ss << "}";
-    
-    /*
+     
     disk_info tmp_diskinfo;
 	SystemInfo::instance().GetDiskInfo("/data", tmp_diskinfo);
-    
     ss << ",\"disk_system\":" << "{";
     ss << "\"type\":" << "\"" << (tmp_diskinfo.disk_type == DISK_SSD ? "SSD" : "HDD") << "\"";
     ss << ",\"size\":" << "\"" << g_disk_system_size << "G\"";
     ss << "}";
-    */
-    ss << ",\"disks\":" << "[";
+ 
+    ss << ",\"disk_data\":" << "[";
     auto mpdisks = SystemInfo::instance().GetDiskInfos();
     int disk_count = 0;
     for (auto iter_disk : mpdisks) {
