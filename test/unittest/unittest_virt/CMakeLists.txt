@@ -29,3 +29,9 @@ add_executable(virt_nwfilter_test virt_nwfilter.cpp vir_helper.cpp)
 target_link_libraries(virt_nwfilter_test
 ${Boost_LIBRARIES}
         -pthread -ldl -lz -ltinyxml2 -lvirt -lvirt-qemu -luuid)
+
+# virt_connect_test
+add_executable(virt_connect_test virt_connect.cpp vir_helper.cpp)
+target_link_libraries(virt_connect_test
+${Boost_LIBRARIES}
+        -pthread -ldl -lz -ltinyxml2 -lvirt -lvirt-qemu -luuid)

@@ -7,6 +7,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <tinyxml2.h>
+#include <sys/syscall.h>
 
 // #define __DEBUG__ 1
 
@@ -89,6 +90,9 @@ static const char* arrayBlockJobType[] = {"VIR_DOMAIN_BLOCK_JOB_TYPE_UNKNOWN", "
 // block job status
 static const char* arrayBlockJobStatus[] = {"VIR_DOMAIN_BLOCK_JOB_COMPLETED", "VIR_DOMAIN_BLOCK_JOB_FAILED", "VIR_DOMAIN_BLOCK_JOB_CANCELED",
   "VIR_DOMAIN_BLOCK_JOB_READY", "VIR_DOMAIN_BLOCK_JOB_LAST"};
+// connect close reason
+static const char* arrayConnectCloseReason[] = {"VIR_CONNECT_CLOSE_REASON_ERROR", "VIR_CONNECT_CLOSE_REASON_EOF",
+  "VIR_CONNECT_CLOSE_REASON_KEEPALIVE", "VIR_CONNECT_CLOSE_REASON_CLIENT", "VIR_CONNECT_CLOSE_REASON_LAST"};
 
 int domain_event_lifecycle_cb(virConnectPtr conn, virDomainPtr dom, int event, int detail, void *opaque) {
   DebugPrintf("event lifecycle cb called, event=%d, detail=%d\n", event, detail);
@@ -133,6 +137,22 @@ void domain_event_block_job_cb(virConnectPtr conn, virDomainPtr dom, const char 
   } else {
     DebugPrintf("unknowned block job state\n");
   }
+}
+
+void connect_close_cb(virConnectPtr conn, int reason, void *opaque) {
+  DebugPrintf("connect close cb called, conn=%p, reason=%d, opaque=%p\n", conn, reason, opaque);
+  if (reason >= 0 && reason <= virConnectCloseReason::VIR_CONNECT_CLOSE_REASON_CLIENT) {
+    DebugPrintf("connect close cb called, reason=: %s\n", arrayConnectCloseReason[reason]);
+  } else {
+    DebugPrintf("unknowned connect close reason\n");
+  }
+  DebugPrintf("connect is alive: %d\n", virConnectIsAlive(conn));
+  DebugPrintf("connect is encrypted: %d\n", virConnectIsEncrypted(conn));
+  DebugPrintf("connect is secure: %d\n", virConnectIsSecure(conn));
+  pid_t pid = syscall(SYS_gettid);
+  DebugPrintf("connect close cb process id %d, thread id %d\n", getpid(), pid);
+  virHelper* vir_helper = (virHelper*)opaque;
+  vir_helper->connectCloseCb();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -884,30 +904,55 @@ int virDomainImpl::getBlockJobInfo(const char *disk, virDomainBlockJobInfoPtr in
 virHelper::virHelper(bool enableEvent)
   : conn_(nullptr)
   , enable_event_(enableEvent)
-  , dom_event_lifecycle_callback_id_(-1)
-  , dom_event_agent_callback_id_(-1)
-  , dom_event_block_job_callback_id_(-1)
   , thread_quit_(1)
   , thread_event_loop_(nullptr) {
+  pid_t pid = syscall(SYS_gettid);
+  DebugPrintf("main process id %d, thread id %d\n", getpid(), pid);
   if (enableEvent) {
     int ret = virEventRegisterDefaultImpl();
     if (ret < 0) {
       DebugPrintf("virEventRegisterDefaultImpl failed\n");
     }
+    dom_events_.push_back(DOMAIN_EVENT(VIR_DOMAIN_EVENT_ID_LIFECYCLE, domain_event_lifecycle_cb));
+    dom_events_.push_back(DOMAIN_EVENT(VIR_DOMAIN_EVENT_ID_AGENT_LIFECYCLE, domain_event_agent_cb));
+    dom_events_.push_back(DOMAIN_EVENT(VIR_DOMAIN_EVENT_ID_BLOCK_JOB_2, domain_event_block_job_cb));
   }
 }
 
 virHelper::~virHelper() {
+  cleanConnect();
+  stopEventLoop();
+}
+
+std::shared_ptr<virConnect> virHelper::getConnect() {
+  return conn_;
+}
+
+void virHelper::connectCloseCb() {
+  thread_quit_ = 1;
+  conn_.reset();
+}
+
+void virHelper::cleanConnect() {
+  if (conn_ && enable_event_) {
+    for (const auto& event : dom_events_) {
+      if (event.id > 0)
+        virConnectDomainEventDeregisterAny(conn_.get(), event.id);
+    }
+    DebugPrintf("virConnectDomainEventDeregisterAny\n");
+    virConnectUnregisterCloseCallback(conn_.get(), connect_close_cb);
+    DebugPrintf("virConnectUnregisterCloseCallback\n");
+  }
+  conn_.reset();
+}
+
+void virHelper::stopEventLoop() {
   thread_quit_ = 1;
   if (thread_event_loop_) {
     if (thread_event_loop_->joinable())
       thread_event_loop_->join();
     delete thread_event_loop_;
-  }
-  if (conn_ && enable_event_) {
-    virConnectDomainEventDeregisterAny(conn_.get(), dom_event_lifecycle_callback_id_);
-    virConnectDomainEventDeregisterAny(conn_.get(), dom_event_agent_callback_id_);
-    virConnectDomainEventDeregisterAny(conn_.get(), dom_event_block_job_callback_id_);
+    thread_event_loop_ = nullptr;
   }
 }
 
@@ -925,20 +970,39 @@ int virHelper::getConnectLibVersion(unsigned long *libVer) {
   return virConnectGetLibVersion(conn_.get(), libVer);
 }
 
+int virHelper::isConnectAlive() {
+  if (!conn_) return -1;
+  return virConnectIsAlive(conn_.get());
+}
+
+int virHelper::isConnectEncrypted() {
+  if (!conn_) return -1;
+  return virConnectIsEncrypted(conn_.get());
+}
+
+int virHelper::isConnectSecure() {
+  if (!conn_) return -1;
+  return virConnectIsSecure(conn_.get());
+}
+
 bool virHelper::openConnect(const char *name) {
-  // if (conn_) return true;
+  if (conn_) cleanConnect();
+  stopEventLoop();
   virConnectPtr connectPtr = virConnectOpen(name);
   if (connectPtr == nullptr) {
       return false;
   }
   conn_.reset(connectPtr, virConnectDeleter());
   if (connectPtr && enable_event_) {
-    dom_event_lifecycle_callback_id_ = virConnectDomainEventRegisterAny(connectPtr, NULL,
-      virDomainEventID::VIR_DOMAIN_EVENT_ID_LIFECYCLE, VIR_DOMAIN_EVENT_CALLBACK(domain_event_lifecycle_cb), NULL, NULL);
-    dom_event_agent_callback_id_ = virConnectDomainEventRegisterAny(connectPtr, NULL,
-      virDomainEventID::VIR_DOMAIN_EVENT_ID_AGENT_LIFECYCLE, VIR_DOMAIN_EVENT_CALLBACK(domain_event_agent_cb), NULL, NULL);
-    dom_event_block_job_callback_id_ = virConnectDomainEventRegisterAny(connectPtr, NULL,
-      virDomainEventID::VIR_DOMAIN_EVENT_ID_BLOCK_JOB_2, VIR_DOMAIN_EVENT_CALLBACK(domain_event_block_job_cb), NULL, NULL);
+    if (virConnectRegisterCloseCallback(connectPtr, connect_close_cb, this, NULL) < 0) {
+      DebugPrintf("virConnectRegisterCloseCallback failed\n");
+    }
+    for (auto& event : dom_events_) {
+      event.id = virConnectDomainEventRegisterAny(connectPtr, NULL, event.event, event.cb, NULL, NULL);
+      if (event.id < 0)
+        DebugPrintf("Failed to register event '%s'\n", event.name);
+    }
+    virConnectSetKeepAlive(connectPtr, 5, 0);
     thread_quit_ = 0;
     thread_event_loop_ = new std::thread(&virHelper::DefaultThreadFunc, this);
   }
@@ -1111,6 +1175,8 @@ cleanup:
 
 void virHelper::DefaultThreadFunc() {
   DebugPrintf("vir event loop thread begin\n");
+  pid_t pid = syscall(SYS_gettid);
+  DebugPrintf("event loop process id %d, thread id %d\n", getpid(), pid);
   while (thread_quit_ == 0) {
     if (virEventRunDefaultImpl() < 0) {
       std::shared_ptr<virError> err = getLastError();

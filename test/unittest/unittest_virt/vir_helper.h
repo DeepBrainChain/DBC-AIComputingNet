@@ -53,6 +53,16 @@ std::ostream& operator<<(std::ostream& out, const domainSnapshotInfo& obj);
 
 int getDomainSnapshotInfo(virDomainSnapshotPtr snapshot, domainSnapshotInfo &info);
 
+struct domainEventData {
+  int event;
+  int id;
+  virConnectDomainEventGenericCallback cb;
+  const char *name;
+};
+
+#define DOMAIN_EVENT(event, callback) \
+  {event, -1, VIR_DOMAIN_EVENT_CALLBACK(callback), #event}
+
 std::shared_ptr<virError> getLastError();
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -469,6 +479,12 @@ public:
   explicit virHelper(bool enableEvent = false);
   ~virHelper();
 
+  std::shared_ptr<virConnect> getConnect();
+
+  void connectCloseCb();
+  void cleanConnect();
+  void stopEventLoop();
+
   // host
   /**
    * @brief Provides version information. libVer is the version of the library and will always be set unless an error occurs,
@@ -510,6 +526,10 @@ public:
    *     -<em>0</em> succeed
    */
   int getConnectLibVersion(unsigned long *libVer);
+
+  int isConnectAlive();
+  int isConnectEncrypted();
+  int isConnectSecure();
 
   bool openConnect(const char *name);
   bool openConnectReadOnly(const char *name);
@@ -602,9 +622,7 @@ protected:
 protected:
   std::shared_ptr<virConnect> conn_;
   bool enable_event_;
-  int dom_event_lifecycle_callback_id_;
-  int dom_event_agent_callback_id_;
-  int dom_event_block_job_callback_id_;
+  std::vector<domainEventData> dom_events_;
   int thread_quit_;
   std::thread *thread_event_loop_;
 };
