@@ -17,11 +17,12 @@
 #include "service/peer_request_service/p2p_lan_service.h"
 
 FResult TaskManager::init() {
-    if (!VmClient::instance().init()) {
-        return FResult(ERR_ERROR, "connect libvirt tcp service failed");
+    FResult fret = VmClient::instance().init();
+    if (fret.errcode != ERR_SUCCESS) {
+        return fret;
     }
 
-    FResult fret = TaskInfoMgr::instance().init();
+    fret = TaskInfoMgr::instance().init();
     if (fret.errcode != ERR_SUCCESS) {
         return FResult(ERR_ERROR, "taskinfo manager init failed");
     }
@@ -2152,12 +2153,20 @@ void TaskManager::process_task_thread_func() {
         std::shared_ptr<TaskEvent> ev;
         {
             std::unique_lock<std::mutex> lock(m_process_mtx);
-            m_process_cond.wait(lock, [this] {
+            m_process_cond.wait_for(lock, std::chrono::seconds(60), [this] {
                 return !m_running || !m_events.empty();
             });
 
             if (!m_running)
                 break;
+
+            if (!VmClient::instance().IsConnectAlive()) {
+                VmClient::instance().OpenConnect();
+                continue;
+            }
+
+            if (m_events.empty())
+                continue;
 
             ev = m_events.front();
             m_events.pop();
@@ -2250,6 +2259,7 @@ void TaskManager::process_create_task(const std::shared_ptr<TaskEvent>& ev) {
             }
 
             TASK_LOG_ERROR(ev->task_id, "get domain local ip failed");
+            TASK_LOG_ERROR(ev->task_id, "create task failed");
             return;
         }
 
@@ -2261,6 +2271,7 @@ void TaskManager::process_create_task(const std::shared_ptr<TaskEvent>& ev) {
                 taskinfo->setTaskStatus(TaskStatus::TS_CreateTaskError);
             }
             TASK_LOG_ERROR(ev->task_id, "create task iptable failed");
+            TASK_LOG_ERROR(ev->task_id, "create task failed");
             return;
         }
 

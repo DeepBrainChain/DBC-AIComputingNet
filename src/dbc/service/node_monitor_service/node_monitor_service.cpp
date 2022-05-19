@@ -214,6 +214,7 @@ void node_monitor_service::on_monitor_data_sender_task_timer(const std::shared_p
         for (const auto& task_id : ids) {
             if (task_id.find("vm_check_") != std::string::npos) continue;
             auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
+            if (!taskinfo) continue;
             if (rentlist.first == m_cur_renter_wallet) {
                 if (taskinfo && taskinfo->getTaskStatus() == TaskStatus::TS_Task_Running) {
                     auto gpus = TaskGpuMgr::instance().getTaskGpus(task_id);
@@ -221,7 +222,9 @@ void node_monitor_service::on_monitor_data_sender_task_timer(const std::shared_p
                     hmData.vmRunning++;
                 }
             }
-            if (!taskinfo || taskinfo->getTaskStatus() == TaskStatus::TS_Task_Creating) continue;
+            if (taskinfo->getTaskStatus() == TaskStatus::TS_Task_Creating ||
+                taskinfo->getTaskStatus() == TaskStatus::TS_CreateTaskError)
+                continue;
 
             // get monitor data of vm
             dbcMonitor::domMonitorData dmData;

@@ -41,9 +41,20 @@ public:
 
     virtual ~VmClient();
 
-    bool init();
+    FResult init();
 
     void exit();
+
+    // connect
+    FResult OpenConnect();
+
+    void CleanConnect();
+
+    // check libvirt connect is alive
+    bool IsConnectAlive();
+
+    // libvirt connect close callback
+    void ConnectCloseCb();
 
     // domain
 	bool IsExistDomain(const std::string& domain_name);
@@ -112,8 +123,19 @@ public:
 
     int32_t UndefineNWFilter(const std::string& nwfilter_name);
 
+protected:
+    void DefaultEventThreadFunc();
+
+    void StartEventLoop();
+
+    void StopEventLoop();
+
 private:
     virConnectPtr m_connPtr = nullptr;
+
+    int m_event_loop_run = 0;
+
+    std::thread * m_thread_event_loop = nullptr;
 };
 
 #endif // !DBC_VM_CLIENT_H

@@ -27,9 +27,22 @@
 #include <linux/ethtool.h>
 
 static const std::string qemu_tcp_url = "qemu+tcp://localhost:16509/system";
+static const char* arrayConnectCloseReason[] = {"VIR_CONNECT_CLOSE_REASON_ERROR", "VIR_CONNECT_CLOSE_REASON_EOF",
+  "VIR_CONNECT_CLOSE_REASON_KEEPALIVE", "VIR_CONNECT_CLOSE_REASON_CLIENT", "VIR_CONNECT_CLOSE_REASON_LAST"};
 
 #define ETHTOOL_GDRVINFO 0x00000003
 #define SIOCETHTOOL 0x8946
+
+// libvirt connect close callback
+void connect_close_cb(virConnectPtr conn, int reason, void *opaque) {
+    std::string reason_msg = "unknowned reason";
+    if (reason >= 0 && reason <= virConnectCloseReason::VIR_CONNECT_CLOSE_REASON_CLIENT) {
+        reason_msg = arrayConnectCloseReason[reason];
+    }
+    LOG_INFO << "connect close cb called, reason: " << reason << ", detail: " << reason_msg;
+    VmClient* vm_client = (VmClient*)opaque;
+    vm_client->ConnectCloseCb();
+}
 
 static int send_ioctl(int fd, struct ifreq* ifr, void* cmd)
 {
@@ -677,17 +690,62 @@ VmClient::~VmClient() {
 
 }
 
-bool VmClient::init() {
-    if (m_connPtr == nullptr) {
-        m_connPtr = virConnectOpen(qemu_tcp_url.c_str());
+FResult VmClient::init() {
+    if (virEventRegisterDefaultImpl() < 0) {
+        return FResult(ERR_ERROR, "register libvirt event impl failed");
     }
 
-    return m_connPtr != nullptr;
+    return OpenConnect();
 }
 
 void VmClient::exit() {
-    if (m_connPtr != nullptr) {
+    CleanConnect();
+    StopEventLoop();
+}
+
+FResult VmClient::OpenConnect() {
+    if (m_connPtr) CleanConnect();
+    StopEventLoop();
+
+    m_connPtr = virConnectOpen(qemu_tcp_url.c_str());
+    if (m_connPtr == nullptr) {
+        return FResult(ERR_ERROR, "connect libvirt tcp service failed");
+    }
+
+    if (virConnectRegisterCloseCallback(m_connPtr, connect_close_cb, this, NULL) < 0) {
+        return FResult(ERR_ERROR, "register libvirt connect_close_callback failed");
+    }
+
+    if (virConnectSetKeepAlive(m_connPtr, 20, 1) < 0) {
+        return FResult(ERR_ERROR, "set libvirt keepalive failed");
+    }
+
+    StartEventLoop();
+
+    LOG_INFO << "open connect with libvirt successfully";
+
+    return FResultOk;
+}
+
+void VmClient::CleanConnect() {
+    if (m_connPtr) {
+        virConnectUnregisterCloseCallback(m_connPtr, connect_close_cb);
         virConnectClose(m_connPtr);
+        m_connPtr = nullptr;
+    }
+}
+
+bool VmClient::IsConnectAlive() {
+    return !!m_connPtr;
+    if (!m_connPtr) return false;
+    return virConnectIsAlive(m_connPtr) == 1;
+}
+
+void VmClient::ConnectCloseCb() {
+    m_event_loop_run = 0;
+    if (m_connPtr) {
+        virConnectClose(m_connPtr);
+        m_connPtr = nullptr;
     }
 }
 
@@ -2267,3 +2325,30 @@ FResult VmClient::ListDomainInterface(const std::string& domain_name, std::vecto
 	return ret;
 }
 
+void VmClient::DefaultEventThreadFunc() {
+    LOG_INFO << "vir event loop thread begin";
+    while (m_event_loop_run == 1) {
+        if (virEventRunDefaultImpl() < 0) {
+            // virErrorPtr err = virGetLastError();
+            // LOG_INFO << "virEventRunDefaultImpl failed: " << err ? err->message : "";
+        }
+    }
+    LOG_INFO << "vir event loop thread end";
+}
+
+void VmClient::StartEventLoop() {
+    if (!m_thread_event_loop) {
+        m_event_loop_run = 1;
+        m_thread_event_loop = new std::thread(&VmClient::DefaultEventThreadFunc, this);
+    }
+}
+
+void VmClient::StopEventLoop() {
+    m_event_loop_run = 0;
+    if (m_thread_event_loop) {
+        if (m_thread_event_loop->joinable())
+            m_thread_event_loop->join();
+        delete m_thread_event_loop;
+        m_thread_event_loop = nullptr;
+    }
+}
