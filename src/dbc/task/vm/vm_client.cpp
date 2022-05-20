@@ -33,6 +33,12 @@ static const char* arrayConnectCloseReason[] = {"VIR_CONNECT_CLOSE_REASON_ERROR"
 #define ETHTOOL_GDRVINFO 0x00000003
 #define SIOCETHTOOL 0x8946
 
+struct virDomainDeleter {
+    inline void operator()(virDomainPtr domain) {
+        virDomainFree(domain);
+    }
+};
+
 // libvirt connect close callback
 void connect_close_cb(virConnectPtr conn, int reason, void *opaque) {
     std::string reason_msg = "unknowned reason";
@@ -701,6 +707,7 @@ FResult VmClient::init() {
 void VmClient::exit() {
     CleanConnect();
     StopEventLoop();
+    LOG_INFO << "VmClient exited";
 }
 
 FResult VmClient::OpenConnect() {
@@ -736,7 +743,7 @@ void VmClient::CleanConnect() {
 }
 
 bool VmClient::IsConnectAlive() {
-    return !!m_connPtr;
+    // return !!m_connPtr;
     if (!m_connPtr) return false;
     return virConnectIsAlive(m_connPtr) == 1;
 }
@@ -744,7 +751,8 @@ bool VmClient::IsConnectAlive() {
 void VmClient::ConnectCloseCb() {
     m_event_loop_run = 0;
     if (m_connPtr) {
-        virConnectClose(m_connPtr);
+        // virConnectClose 在某些情况下可能会把 event loop 线程卡死无法结束
+        // virConnectClose(m_connPtr);
         m_connPtr = nullptr;
     }
 }
@@ -1599,24 +1607,25 @@ FResult VmClient::GetDomainLog(const std::string &domain_name, QUERY_LOG_DIRECTI
 }
 
 std::string VmClient::GetDomainLocalIP(const std::string &domain_name) {
-    if (m_connPtr == nullptr) {
-        TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
-        return "";
-    }
-
     std::string vm_local_ip;
-    virDomainPtr domainPtr = nullptr;
 
-    do {
-        domainPtr = virDomainLookupByName(m_connPtr, domain_name.c_str());
-        if (nullptr == domainPtr) {
-            TASK_LOG_ERROR(domain_name, "lookup domain:" << domain_name << " is nullptr");
-            break;
-        }
+    int32_t try_count = 0;
+    while (vm_local_ip.empty() && try_count < 1000) {
+        LOG_INFO << "transform_port try_count: " << (try_count + 1);
 
-        int32_t try_count = 0;
-        while (vm_local_ip.empty() && try_count < 1000) {
-            LOG_INFO << "transform_port try_count: " << (try_count + 1);
+        do {        
+            if (m_connPtr == nullptr) {
+                TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
+                break;
+            }
+
+            virDomainPtr domainPtr = virDomainLookupByName(m_connPtr, domain_name.c_str());
+            if (nullptr == domainPtr) {
+                TASK_LOG_ERROR(domain_name, "lookup domain:" << domain_name << " is nullptr");
+                break;
+            }
+            std::shared_ptr<virDomain> temp(domainPtr, virDomainDeleter());
+
             if ((try_count + 1) % 300 == 0) { // Approximately 15 minutes
                 LOG_INFO << "retry destroy and start domain " << domain_name;
                 if (virDomainDestroy(domainPtr) < 0) {
@@ -1650,14 +1659,10 @@ std::string VmClient::GetDomainLocalIP(const std::string &domain_name) {
 
                 if (!vm_local_ip.empty()) break;
             }
+        } while(0);
 
-            try_count += 1;
-            sleep(3);
-        }
-    } while(0);
-
-    if (nullptr != domainPtr) {
-        virDomainFree(domainPtr);
+        try_count += 1;
+        sleep(3);
     }
 
     return vm_local_ip;
@@ -1714,49 +1719,47 @@ int32_t VmClient::GetDomainInterfaceAddress(const std::string& domain_name, std:
 }
 
 FResult VmClient::SetDomainUserPassword(const std::string &domain_name, const std::string &username, const std::string &pwd, int max_retry_count) {
-    if (m_connPtr == nullptr) {
-        TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
-        return FResult(ERR_ERROR, "libvirt disconnect");
-    }
-
     int ret = ERR_ERROR;
     std::string errmsg;
-    virDomainPtr domain_ptr = nullptr;
-    do {
-        domain_ptr = virDomainLookupByName(m_connPtr, domain_name.c_str());
-        if (domain_ptr == nullptr) {
-            errmsg = "task not existed";
-            TASK_LOG_ERROR(domain_name, "lookup domain:" << domain_name << " is nullptr");
-            break;
-        }
+    int try_count = 0;
+    int succ = -1;
+    // max: 5min
+    while (succ != 0 && try_count < max_retry_count) {
+        LOG_INFO << "set_user_password try_count: " << (try_count + 1);
+        do {
+            if (m_connPtr == nullptr) {
+                TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
+                errmsg = "libvirt disconnect";
+                break;
+            }
 
-        int try_count = 0;
-        int succ = -1;
-        // max: 5min
-        while (succ != 0 && try_count < max_retry_count) {
+            virDomainPtr domain_ptr = virDomainLookupByName(m_connPtr, domain_name.c_str());
+            if (domain_ptr == nullptr) {
+                errmsg = "task not existed";
+                TASK_LOG_ERROR(domain_name, "lookup domain:" << domain_name << " is nullptr");
+                break;
+            }
+            std::shared_ptr<virDomain> temp(domain_ptr, virDomainDeleter());
+
             LOG_INFO << domain_name << " set_vm_password try_count: " << (try_count + 1);
             succ = virDomainSetUserPassword(domain_ptr, username.c_str(), pwd.c_str(), 0);
             if (succ != 0) {
                 virErrorPtr error = virGetLastError();
                 errmsg = error ? error->message : "unknown error";
                 LOG_ERROR << domain_name << " virDomainSetUserPassword error: " << errmsg;
-                sleep(3);
             }
+        } while(0);
 
-            try_count++;
-        }
+        try_count++;
+        sleep(3);
+    }
 
-        if (succ == 0) {
-            ret = ERR_SUCCESS;
-            TASK_LOG_INFO(domain_name, "set vm user password successful, user:" << username << ", pwd:" << pwd);
-        } else {
-            TASK_LOG_ERROR(domain_name, "set vm user password failed, user:" << username
-                    << ", pwd:" << pwd << ", error:" << errmsg);
-        }
-    } while(0);
-
-    if (domain_ptr != nullptr) {
-        virDomainFree(domain_ptr);
+    if (succ == 0) {
+        ret = ERR_SUCCESS;
+        TASK_LOG_INFO(domain_name, "set vm user password successful, user:" << username << ", pwd:" << pwd);
+    } else {
+        TASK_LOG_ERROR(domain_name, "set vm user password failed, user:" << username
+                << ", pwd:" << pwd << ", error:" << errmsg);
     }
 
     return FResult(ret, errmsg);

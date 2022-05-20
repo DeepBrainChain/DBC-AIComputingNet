@@ -103,6 +103,10 @@ void node_monitor_service::init_timer() {
         // 3min
         add_timer(UPDATE_CUR_RENTER_WALLET_TIMER, 180 * 1000, 180 * 1000, ULLONG_MAX, "",
             CALLBACK_1(node_monitor_service::on_update_cur_renter_wallet_timer, this));
+
+        // 1min
+        add_timer(LIBVIRT_AUTO_RECONNECT_TIMER, 60 * 1000, 60 * 1000, ULLONG_MAX, "",
+            CALLBACK_1(node_monitor_service::on_libvirt_auto_reconnect_timer, this));
     }
 }
 
@@ -320,6 +324,17 @@ void node_monitor_service::on_update_cur_renter_wallet_timer(const std::shared_p
         }
     }
     m_cur_renter_wallet = cur_renter_wallet;
+}
+
+void node_monitor_service::on_libvirt_auto_reconnect_timer(const std::shared_ptr<core_timer>& timer) {
+    if (!VmClient::instance().IsConnectAlive()) {
+        LOG_INFO << "Detected disconnected to libvirt";
+        FResult fret = VmClient::instance().OpenConnect();
+        if (fret.errcode == ERR_SUCCESS)
+            LOG_INFO << "reconnect successful";
+        else
+            LOG_ERROR << "reconnect failed, will automatically retry later";
+    }
 }
 
 void node_monitor_service::send_monitor_data(const dbcMonitor::domMonitorData& dmData, const monitor_server& server) const {

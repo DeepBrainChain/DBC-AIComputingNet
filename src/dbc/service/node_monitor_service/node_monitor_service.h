@@ -12,6 +12,7 @@
 
 #define MONITOR_DATA_SENDER_TASK_TIMER                                   "monitor_data_sender_task"
 #define UPDATE_CUR_RENTER_WALLET_TIMER                                   "update_cur_renter_wallet"
+#define LIBVIRT_AUTO_RECONNECT_TIMER                                     "libvirt_auto_reconnect"
 
 struct monitor_server {
     std::string host;
@@ -47,6 +48,8 @@ protected:
     void on_monitor_data_sender_task_timer(const std::shared_ptr<core_timer>& timer);
 
     void on_update_cur_renter_wallet_timer(const std::shared_ptr<core_timer>& timer);
+
+    void on_libvirt_auto_reconnect_timer(const std::shared_ptr<core_timer>& timer);
 
     void send_monitor_data(const dbcMonitor::domMonitorData& dmData, const monitor_server& server) const;
 

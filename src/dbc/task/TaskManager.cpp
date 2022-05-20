@@ -102,6 +102,7 @@ void TaskManager::exit() {
     if (m_udp_fd != -1) {
         close(m_udp_fd);
     }
+    LOG_INFO << "TaskManager exited";
 }
 
 void TaskManager::broadcast_message(const std::string& msg) {
@@ -2153,20 +2154,12 @@ void TaskManager::process_task_thread_func() {
         std::shared_ptr<TaskEvent> ev;
         {
             std::unique_lock<std::mutex> lock(m_process_mtx);
-            m_process_cond.wait_for(lock, std::chrono::seconds(60), [this] {
+            m_process_cond.wait(lock, [this] {
                 return !m_running || !m_events.empty();
             });
 
             if (!m_running)
                 break;
-
-            if (!VmClient::instance().IsConnectAlive()) {
-                VmClient::instance().OpenConnect();
-                continue;
-            }
-
-            if (m_events.empty())
-                continue;
 
             ev = m_events.front();
             m_events.pop();
