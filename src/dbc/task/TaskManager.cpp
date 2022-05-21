@@ -793,7 +793,10 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
 			disk_info _disk_info;
 			SystemInfo::instance().GetDiskInfo("/data", _disk_info);
 
-            disk_size_k = (_disk_info.available - g_disk_system_size * 1024L * 1024L);
+			int64_t disk_free = std::min(_disk_info.total - g_disk_system_size * 1024L * 1024L, _disk_info.available);
+			disk_free = std::max(0L, disk_free);
+
+            disk_size_k = disk_free;
         }
 
         // "data_file_name"
