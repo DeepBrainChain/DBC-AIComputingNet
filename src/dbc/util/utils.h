@@ -152,4 +152,8 @@ std::string encrypt_data(unsigned char* data, int32_t len, const std::string& pu
 
 bool decrypt_data(const std::string& data, const std::string& pub_key, const std::string& priv_key, std::string& ori_message);
 
+bool isLinuxOS(const std::string& os);
+
+bool isWindowsOS(const std::string& os);
+
 #endif //DBCPROJ_UTILS_H

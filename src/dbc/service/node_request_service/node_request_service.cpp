@@ -148,6 +148,7 @@ void node_request_service::init_invoker() {
     reg_msg_handle(NODE_RESTART_TASK_REQ, CALLBACK_1(node_request_service::on_node_restart_task_req, this));
     reg_msg_handle(NODE_SHUTDOWN_TASK_REQ, CALLBACK_1(node_request_service::on_node_shutdown_task_req, this));
 	reg_msg_handle(NODE_POWEROFF_TASK_REQ, CALLBACK_1(node_request_service::on_node_poweroff_task_req, this));
+	reg_msg_handle(NODE_STOP_TASK_REQ, CALLBACK_1(node_request_service::on_node_stop_task_req, this));
     reg_msg_handle(NODE_RESET_TASK_REQ, CALLBACK_1(node_request_service::on_node_reset_task_req, this));
     reg_msg_handle(NODE_DELETE_TASK_REQ, CALLBACK_1(node_request_service::on_node_delete_task_req, this));
     reg_msg_handle(NODE_TASK_LOGS_REQ, CALLBACK_1(node_request_service::on_node_task_logs_req, this));
@@ -701,7 +702,7 @@ void node_request_service::task_list(const network::base_header& header,
             ss_tasks << ", \"os\":" << "\"" << taskinfo->getOperationSystem() << "\"";
             ss_tasks << ", \"ssh_ip\":" << "\"" <<
                      (taskinfo->getPublicIP().empty() ? SystemInfo::instance().GetPublicip() : taskinfo->getPublicIP()) << "\"";
-            bool is_windows = taskinfo->getOperationSystem().find("windows") != std::string::npos;
+            bool is_windows = isWindowsOS(taskinfo->getOperationSystem());
             std::string login_username = taskinfo->getLoginUsername();
             if (!is_windows) {
                 ss_tasks << ", \"ssh_port\":" << "\"" << taskinfo->getSSHPort() << "\"";
@@ -1183,7 +1184,7 @@ void node_request_service::task_shutdown(const network::base_header& header,
     }
 }
 
-// destroy task
+// poweroff task
 void node_request_service::on_node_poweroff_task_req(const std::shared_ptr<network::message>& msg) {
 	auto node_req_msg = std::dynamic_pointer_cast<dbc::node_poweroff_task_req>(msg->get_content());
 	if (node_req_msg == nullptr) {
@@ -1283,6 +1284,105 @@ void node_request_service::task_poweroff(const network::base_header& header,
 	}
 }
 
+// stop task
+void node_request_service::on_node_stop_task_req(const std::shared_ptr<network::message>& msg) {
+	auto node_req_msg = std::dynamic_pointer_cast<dbc::node_stop_task_req>(msg->get_content());
+	if (node_req_msg == nullptr) {
+		return;
+	}
+
+	if (!check_req_header_nonce(node_req_msg->header.nonce)) {
+		return;
+	}
+
+	if (Server::NodeType != NODE_TYPE::ComputeNode) {
+		node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+		network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+		return;
+	}
+
+	if (!check_req_header(msg)) {
+		LOG_ERROR << "request header check failed";
+		node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+		network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+		return;
+	}
+
+	// decrypt
+	std::string pub_key = node_req_msg->header.exten_info["pub_key"];
+	std::string priv_key = ConfManager::instance().GetPrivKey();
+	if (pub_key.empty() || priv_key.empty()) {
+		LOG_ERROR << "pub_key or priv_key is empty";
+		node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+		network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+		return;
+	}
+
+	std::shared_ptr<dbc::node_stop_task_req_data> data = std::make_shared<dbc::node_stop_task_req_data>();
+	try {
+		std::string ori_message;
+		bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
+		if (!succ || ori_message.empty()) {
+			node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+			network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+			return;
+		}
+
+		std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
+		task_buf->write_to_byte_buf(ori_message.c_str(), ori_message.size());
+		network::binary_protocol proto(task_buf.get());
+		data->read(&proto);
+	}
+	catch (std::exception& e) {
+		node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+		network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+		return;
+	}
+
+	std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
+	bool hit_self = hit_node(req_peer_nodes, ConfManager::instance().GetNodeId());
+	if (hit_self) {
+		AuthorityParams params;
+		params.wallet = data->wallet;
+		params.nonce = data->nonce;
+		params.sign = data->sign;
+		params.multisig_wallets = data->multisig_wallets;
+		params.multisig_threshold = data->multisig_threshold;
+		params.multisig_signs = data->multisig_signs;
+		params.session_id = data->session_id;
+		params.session_id_sign = data->session_id_sign;
+		AuthoriseResult result;
+		check_authority(params, result);
+		if (!result.success) {
+			LOG_ERROR << "check authority failed: " << result.errmsg;
+			send_response_error<dbc::node_stop_task_rsp>(NODE_STOP_TASK_RSP, node_req_msg->header, E_DEFAULT, "check authority failed: " + result.errmsg);
+			return;
+		}
+
+		task_stop(node_req_msg->header, data, result);
+	}
+	else {
+		node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+		network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+	}
+}
+
+void node_request_service::task_stop(const network::base_header& header,
+	const std::shared_ptr<dbc::node_stop_task_req_data>& data, const AuthoriseResult& result) {
+	int ret_code = ERR_SUCCESS;
+	std::string ret_msg = "ok";
+
+	auto fresult = TaskMgr::instance().poweroffTask(result.rent_wallet, data->task_id);
+	ret_code = fresult.errcode;
+	ret_msg = fresult.errmsg;
+
+	if (ret_code == ERR_SUCCESS) {
+		send_response_ok<dbc::node_stop_task_rsp>(NODE_STOP_TASK_RSP, header);
+	}
+	else {
+		send_response_error<dbc::node_stop_task_rsp>(NODE_STOP_TASK_RSP, header, ret_code, ret_msg);
+	}
+}
 
 // 重启task
 void node_request_service::on_node_restart_task_req(const std::shared_ptr<network::message>& msg) {
@@ -4069,7 +4169,15 @@ void node_request_service::query_node_info(const network::base_header& header,
         ss << "\"path\":" << "\"" << iter_disk.first << "\"";
 		ss << ",\"type\":" << "\"" << (iter_disk.second.disk_type == DISK_SSD ? "SSD" : "HDD") << "\"";
 		ss << ",\"size\":" << "\"" << size2GB(iter_disk.second.total) << "\"";
-		ss << ",\"free\":" << "\"" << size2GB(iter_disk.second.available) << "\"";
+        int64_t disk_free = 0;
+        if (iter_disk.first == "/data") {
+            disk_free = std::min(iter_disk.second.total - g_disk_system_size * 1024L * 1024L, iter_disk.second.available);
+            disk_free = std::max(0L, disk_free);
+        }
+        else {
+            disk_free = iter_disk.second.available;
+        }
+		ss << ",\"free\":" << "\"" << size2GB(disk_free) << "\"";
 		ss << ",\"used_usage\":" << "\"" << f2s(iter_disk.second.usage * 100) << "%" << "\"";
         ss << "}";
 

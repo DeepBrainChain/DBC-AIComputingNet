@@ -49,6 +49,7 @@ ERRCODE rest_api_service::init() {
             {      NODE_START_TASK_RSP, std::bind(&rest_api_service::on_node_start_task_rsp, this, std::placeholders::_1, std::placeholders::_2) },
             {   NODE_SHUTDOWN_TASK_RSP, std::bind(&rest_api_service::on_node_shutdown_task_rsp, this, std::placeholders::_1, std::placeholders::_2) },
 			{   NODE_POWEROFF_TASK_RSP, std::bind(&rest_api_service::on_node_poweroff_task_rsp, this, std::placeholders::_1, std::placeholders::_2) },
+			{       NODE_STOP_TASK_RSP, std::bind(&rest_api_service::on_node_stop_task_rsp, this, std::placeholders::_1, std::placeholders::_2) },
             {    NODE_RESTART_TASK_RSP, std::bind(&rest_api_service::on_node_restart_task_rsp, this, std::placeholders::_1, std::placeholders::_2) },
             {      NODE_RESET_TASK_RSP, std::bind(&rest_api_service::on_node_reset_task_rsp, this, std::placeholders::_1, std::placeholders::_2) },
             {     NODE_DELETE_TASK_RSP, std::bind(&rest_api_service::on_node_delete_task_rsp, this, std::placeholders::_1, std::placeholders::_2) },
@@ -102,6 +103,7 @@ void rest_api_service::init_invoker() {
     reg_msg_handle(NODE_START_TASK_RSP, CALLBACK_1(rest_api_service::on_call_rsp_handler, this));
     reg_msg_handle(NODE_SHUTDOWN_TASK_RSP, CALLBACK_1(rest_api_service::on_call_rsp_handler, this));
 	reg_msg_handle(NODE_POWEROFF_TASK_RSP, CALLBACK_1(rest_api_service::on_call_rsp_handler, this));
+	reg_msg_handle(NODE_STOP_TASK_RSP, CALLBACK_1(rest_api_service::on_call_rsp_handler, this));
     reg_msg_handle(NODE_RESTART_TASK_RSP, CALLBACK_1(rest_api_service::on_call_rsp_handler, this));
     reg_msg_handle(NODE_RESET_TASK_RSP, CALLBACK_1(rest_api_service::on_call_rsp_handler, this));
     reg_msg_handle(NODE_DELETE_TASK_RSP, CALLBACK_1(rest_api_service::on_call_rsp_handler, this));
@@ -530,7 +532,9 @@ void rest_api_service::rest_task(const std::shared_ptr<network::http_request>& h
             rest_shutdown_task(httpReq, path);
         } else if (second_param == "poweroff") {
 			rest_poweroff_task(httpReq, path);
-		} else if (second_param == "reset") {
+        } else if (second_param == "stop") {
+            rest_stop_task(httpReq, path);
+        } else if (second_param == "reset") {
             rest_reset_task(httpReq, path);
         } else if (second_param == "delete") {
             rest_delete_task(httpReq, path);
@@ -1735,6 +1739,250 @@ void rest_api_service::on_node_poweroff_task_rsp(const std::shared_ptr<network::
 }
 
 void rest_api_service::on_node_poweroff_task_timer(const std::shared_ptr<core_timer>& timer) {
+	if (nullptr == timer) {
+		LOG_ERROR << "timer is nullptr";
+		return;
+	}
+
+	const std::string& session_id = timer->get_session_id();
+	std::shared_ptr<service_session> session = get_session(session_id);
+	if (nullptr == session) {
+		LOG_ERROR << "session is nullptr";
+		return;
+	}
+
+	variables_map& vm = session->get_context().get_args();
+	if (0 == vm.count(HTTP_REQUEST_KEY)) {
+		LOG_ERROR << "session's context has no HTTP_REQUEST_KEY";
+		session->clear();
+		this->remove_session(session_id);
+		return;
+	}
+
+	auto hreq_context = vm[HTTP_REQUEST_KEY].as<std::shared_ptr<network::http_request_context>>();
+	if (nullptr != hreq_context) {
+		hreq_context->m_hreq->reply_comm_rest_err(HTTP_INTERNAL, -1, "stop task timeout");
+	}
+
+	session->clear();
+	this->remove_session(session_id);
+}
+
+// stop task
+void rest_api_service::rest_stop_task(const std::shared_ptr<network::http_request>& httpReq, const std::string& path) {
+	if (httpReq->get_request_method() != network::http_request::POST) {
+		LOG_ERROR << "http request is not post";
+		httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST, "only support POST request");
+		return;
+	}
+
+	std::vector<std::string> path_list;
+	util::split_path(path, path_list);
+	if (path_list.size() != 2) {
+		LOG_ERROR << "path_list's size != 2";
+		httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uri, please use /tasks/stop/<task_id>");
+		return;
+	}
+
+	req_body body;
+
+	body.task_id = path_list[1];
+	if (body.task_id.empty()) {
+		LOG_ERROR << "task_id is empty";
+		httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "task_id is empty");
+		return;
+	}
+
+	std::string s_body = httpReq->read_body();
+	if (s_body.empty()) {
+		LOG_ERROR << "http request body is empty";
+		httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "http request body is empty");
+		return;
+	}
+
+	rapidjson::Document doc;
+	rapidjson::ParseResult ok = doc.Parse(s_body.c_str());
+	if (!ok) {
+		std::stringstream ss;
+		ss << "json parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
+		LOG_ERROR << ss.str();
+		httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, ss.str());
+		return;
+	}
+
+	if (!doc.IsObject()) {
+		LOG_ERROR << "invalid json";
+		httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid json");
+		return;
+	}
+
+	std::string strerror;
+	if (!parse_req_params(doc, body, strerror)) {
+		LOG_ERROR << "parse req params failed: " << strerror;
+		httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, strerror);
+		return;
+	}
+
+	if (!has_peer_nodeid(body)) {
+		LOG_ERROR << "peer_nodeid is empty";
+		httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "peer_nodeid is empty");
+		return;
+	}
+
+	if (body.session_id.empty() || body.session_id_sign.empty()) {
+		if (!check_wallet_sign(body) && !check_multisig_wallets(body)) {
+			LOG_ERROR << "wallet_sign and multisig_wallets all invalid";
+			httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "wallet_sign and multisig_wallets all invalid");
+			return;
+		}
+	}
+
+	// node request
+	std::string head_session_id = util::create_session_id();
+
+	auto node_req_msg = create_node_stop_task_req_msg(head_session_id, body);
+	if (nullptr == node_req_msg) {
+		httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create node request failed");
+		return;
+	}
+
+	// timer
+	uint32_t timer_id = add_timer(NODE_STOP_TASK_TIMER, MAX_WAIT_HTTP_RESPONSE_TIME, MAX_WAIT_HTTP_RESPONSE_TIME, 1, head_session_id,
+		CALLBACK_1(rest_api_service::on_node_stop_task_timer, this));
+	if (INVALID_TIMER_ID == timer_id) {
+		httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "add timer failed");
+		return;
+	}
+
+	// session
+	if (ERR_SUCCESS != create_request_session(timer_id, httpReq, node_req_msg, head_session_id, body.peer_nodes_list[0])) {
+		remove_timer(timer_id);
+		httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "create request session failed");
+		return;
+	}
+
+	// broadcast message
+	if (network::connection_manager::instance().broadcast_message(node_req_msg) != ERR_SUCCESS) {
+		httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_RESPONSE_ERROR, "broadcast request failed");
+		return;
+	}
+}
+
+std::shared_ptr<network::message> rest_api_service::create_node_stop_task_req_msg(const std::string& head_session_id,
+	const req_body& body) {
+	// 创建 node_ 请求
+	std::shared_ptr<dbc::node_stop_task_req> req_content = std::make_shared<dbc::node_stop_task_req>();
+	// header
+	req_content->header.__set_magic(ConfManager::instance().GetNetFlag());
+	req_content->header.__set_msg_name(NODE_STOP_TASK_REQ);
+	req_content->header.__set_nonce(util::create_nonce());
+	req_content->header.__set_session_id(head_session_id);
+	std::map<std::string, std::string> exten_info;
+	exten_info["pub_key"] = body.pub_key;
+	req_content->header.__set_exten_info(exten_info);
+	std::vector<std::string> path;
+	path.push_back(ConfManager::instance().GetNodeId());
+	req_content->header.__set_path(path);
+
+	// body
+	dbc::node_stop_task_req_data req_data;
+	req_data.__set_task_id(body.task_id);
+	req_data.__set_peer_nodes_list(body.peer_nodes_list);
+	req_data.__set_additional(body.additional);
+	req_data.__set_wallet(body.wallet);
+	req_data.__set_nonce(body.nonce);
+	req_data.__set_sign(body.sign);
+	req_data.__set_multisig_wallets(body.multisig_accounts.wallets);
+	req_data.__set_multisig_threshold(body.multisig_accounts.threshold);
+	std::vector<dbc::multisig_sign_item> vecMultisigSignItem;
+	for (auto& it : body.multisig_accounts.signs) {
+		dbc::multisig_sign_item item;
+		item.wallet = it.wallet;
+		item.nonce = it.nonce;
+		item.sign = it.sign;
+		vecMultisigSignItem.push_back(item);
+	}
+	req_data.__set_multisig_signs(vecMultisigSignItem);
+	req_data.__set_session_id(body.session_id);
+	req_data.__set_session_id_sign(body.session_id_sign);
+
+	// encrypt
+	std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
+	network::binary_protocol proto(out_buf.get());
+	req_data.write(&proto);
+
+	auto service_info = ServiceInfoManager::instance().find(body.peer_nodes_list[0]);
+	if (service_info != nullptr) {
+		std::string pub_key = service_info->kvs.count("pub_key") ? service_info->kvs["pub_key"] : "";
+		std::string priv_key = ConfManager::instance().GetPrivKey();
+
+		if (!pub_key.empty() && !priv_key.empty()) {
+			std::string s_data = encrypt_data((unsigned char*)out_buf->get_read_ptr(), out_buf->get_valid_read_len(), pub_key, priv_key);
+			req_content->body.__set_data(s_data);
+		}
+		else {
+			LOG_ERROR << "pub_key is empty, node_id:" << body.peer_nodes_list[0];
+			return nullptr;
+		}
+	}
+	else {
+		LOG_ERROR << "ServiceInfoManager not found node_id:" << body.peer_nodes_list[0];
+		return nullptr;
+	}
+
+	std::shared_ptr<network::message> req_msg = std::make_shared<network::message>();
+	req_msg->set_name(NODE_STOP_TASK_REQ);
+	req_msg->set_content(req_content);
+
+	return req_msg;
+}
+
+void rest_api_service::on_node_stop_task_rsp(const std::shared_ptr<network::http_request_context>& hreq_context,
+	const std::shared_ptr<network::message>& rsp_msg) {
+	auto node_rsp_msg = std::dynamic_pointer_cast<dbc::node_stop_task_rsp>(rsp_msg->content);
+	if (!node_rsp_msg) {
+		LOG_ERROR << "node_rsp_msg is nullptr";
+		return;
+	}
+
+	const std::shared_ptr<network::http_request>& httpReq = hreq_context->m_hreq;
+
+	// decrypt
+	std::string pub_key = node_rsp_msg->header.exten_info["pub_key"];
+	std::string priv_key = ConfManager::instance().GetPrivKey();
+	if (pub_key.empty() || priv_key.empty()) {
+		httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "pub_key or priv_key is empty");
+		LOG_ERROR << "pub_key or priv_key is empty";
+		return;
+	}
+
+	std::string ori_message;
+	try {
+		bool succ = decrypt_data(node_rsp_msg->body.data, pub_key, priv_key, ori_message);
+		if (!succ || ori_message.empty()) {
+			httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "rsq decrypt error1");
+			LOG_ERROR << "rsq decrypt error1";
+			return;
+		}
+	}
+	catch (std::exception& e) {
+		httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "req decrypt error2");
+		LOG_ERROR << "req decrypt error2";
+		return;
+	}
+
+	rapidjson::Document doc;
+	rapidjson::ParseResult ok = doc.Parse(ori_message.c_str());
+	if (!ok) {
+		httpReq->reply_comm_rest_err(HTTP_INTERNAL, -1, "response parse error");
+		LOG_ERROR << "response parse error: " << rapidjson::GetParseError_En(ok.Code()) << "(" << ok.Offset() << ")";
+		return;
+	}
+
+	httpReq->reply_comm_rest_succ2(ori_message);
+}
+
+void rest_api_service::on_node_stop_task_timer(const std::shared_ptr<core_timer>& timer) {
 	if (nullptr == timer) {
 		LOG_ERROR << "timer is nullptr";
 		return;

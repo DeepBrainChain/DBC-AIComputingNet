@@ -143,6 +143,17 @@ public:
 
 	void on_node_poweroff_task_timer(const std::shared_ptr<core_timer>& timer);
 
+	// stop task
+	void rest_stop_task(const std::shared_ptr<network::http_request>& httpReq, const std::string& path);
+
+	std::shared_ptr<network::message> create_node_stop_task_req_msg(const std::string& head_session_id,
+		const req_body& body);
+
+	void on_node_stop_task_rsp(const std::shared_ptr<network::http_request_context>& hreq_context,
+		const std::shared_ptr<network::message>& rsp_msg);
+
+	void on_node_stop_task_timer(const std::shared_ptr<core_timer>& timer);
+
     // restart task
     void rest_restart_task(const std::shared_ptr<network::http_request> &httpReq, const std::string &path);
 

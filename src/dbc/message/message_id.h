@@ -75,6 +75,11 @@
 #define NODE_POWEROFF_TASK_RSP      "node_poweroff_task_rsp"
 #define NODE_POWEROFF_TASK_TIMER    "node_poweroff_task_timer"
 
+// stop task
+#define NODE_STOP_TASK_REQ      "node_stop_task_req"
+#define NODE_STOP_TASK_RSP      "node_stop_task_rsp"
+#define NODE_STOP_TASK_TIMER    "node_stop_task_timer"
+
 // restart task
 #define NODE_RESTART_TASK_REQ     "node_restart_task_req"
 #define NODE_RESTART_TASK_RSP     "node_restart_task_rsp"

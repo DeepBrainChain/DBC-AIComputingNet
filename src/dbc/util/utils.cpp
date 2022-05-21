@@ -279,3 +279,23 @@ bool decrypt_data(const std::string& data, const std::string& pub_key, const std
 
     return ret == 0;
 }
+
+bool isLinuxOS(const std::string& os) {
+	if (os.find("linux") != std::string::npos ||
+		os.find("ubuntu") != std::string::npos) {
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
+bool isWindowsOS(const std::string& os) {
+	if (os.find("windows") != std::string::npos ||
+		os.find("win") != std::string::npos) {
+		return true;
+	}
+	else {
+		return false;
+	}
+}

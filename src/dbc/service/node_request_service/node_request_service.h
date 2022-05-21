@@ -70,6 +70,10 @@ protected:
 
 	void task_poweroff(const network::base_header& header, const std::shared_ptr<dbc::node_poweroff_task_req_data>& data, const AuthoriseResult& result);
 
+	void on_node_stop_task_req(const std::shared_ptr<network::message>& msg);
+
+	void task_stop(const network::base_header& header, const std::shared_ptr<dbc::node_stop_task_req_data>& data, const AuthoriseResult& result);
+
     void on_node_reset_task_req(const std::shared_ptr<network::message>& msg);
 
     void task_reset(const network::base_header& header, const std::shared_ptr<dbc::node_reset_task_req_data>& data, const AuthoriseResult& result);

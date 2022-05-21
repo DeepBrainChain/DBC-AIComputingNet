@@ -712,7 +712,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     JSON_PARSE_STRING(doc, "ssh_port", s_ssh_port);
     // check
     n_ssh_port = (uint16_t) atoi(s_ssh_port.c_str());
-    if (operation_system.find("linux") != std::string::npos) {
+    if (isLinuxOS(operation_system)) {
         if (s_ssh_port.empty() || !util::is_digits(s_ssh_port)) {
             if (public_ip.empty()) {
                 return FResult(ERR_ERROR, "ssh_port is invalid");
@@ -729,7 +729,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     JSON_PARSE_STRING(doc, "rdp_port", s_rdp_port);
     // check
     n_rdp_port = (uint16_t) atoi(s_rdp_port.c_str());
-    if (operation_system.find("windows") != std::string::npos) {
+    if (isWindowsOS(operation_system)) {
         if (s_rdp_port.empty() || !util::is_digits(s_rdp_port)) {
             if (public_ip.empty()) {
                 return FResult(ERR_ERROR, "rdp_port is invalid");
@@ -1009,7 +1009,9 @@ bool TaskManager::allocate_disk(int64_t disk_size) {
 	disk_info _disk_info;
 	SystemInfo::instance().GetDiskInfo("/data", _disk_info);
 
-    return disk_size > 0 && disk_size <= (_disk_info.available - g_disk_system_size * 1024L * 1024L);
+	int64_t disk_free = std::min(_disk_info.total - g_disk_system_size * 1024L * 1024L, _disk_info.available);
+
+    return disk_size > 0 && disk_size <= disk_free;
 }
 
 bool TaskManager::check_iptables_port_occupied(uint16_t port, const std::string& task_id) {
@@ -1154,12 +1156,11 @@ FResult TaskManager::check_operation_system(const std::string& os) {
     if (os.empty())
         return FResult(ERR_ERROR, "operation_system is emtpy");
 
-    if (os.find("linux") != std::string::npos
-        || os.find("windows") != std::string::npos) {
+    if (isLinuxOS(os) || isWindowsOS(os)) {
         return FResultOk;
     }
     else {
-        return FResult(ERR_ERROR, "unsupported operation system: " + os + " (usage: 'linux' or 'windows')");
+        return FResult(ERR_ERROR, "unsupported operation system: " + os);
     }
 }
 
@@ -2268,8 +2269,7 @@ void TaskManager::process_create_task(const std::shared_ptr<TaskEvent>& ev) {
             return;
         }
 
-		std::string login_username =
-			taskinfo->getOperationSystem().find("windows") == std::string::npos ?
+		std::string login_username = isLinuxOS(taskinfo->getOperationSystem()) ?
 			g_vm_ubuntu_login_username : g_vm_windows_login_username;
 		FResult fret = VmClient::instance().SetDomainUserPassword(ev->task_id,
 			login_username, taskinfo->getLoginPassword());

@@ -841,7 +841,7 @@ int32_t VmClient::CreateDomain(const std::shared_ptr<TaskInfo>& taskinfo) {
         taskinfo->getVncPort(), taskinfo->getVncPassword(),
         taskinfo->getMulticast(), bridge_name,
         taskinfo->getBiosMode(),
-        taskinfo->getOperationSystem().find("windows") != std::string::npos);
+        isWindowsOS(taskinfo->getOperationSystem()));
 
     virDomainPtr domainPtr = nullptr;
     int32_t errorNum = ERR_SUCCESS;
