@@ -922,9 +922,25 @@ std::shared_ptr<network::message> rest_api_service::create_node_create_task_req_
     req_content->header.__set_path(path);
 
     // body
+    std::string newadditional = body.additional;
+	auto service_info1 = ServiceInfoManager::instance().find(body.peer_nodes_list[0]);
+	if (service_info1 != nullptr) {
+		if (service_info1->kvs.count("version") > 0) {
+			std::string strversion = service_info1->kvs["version"];
+			if (strversion > "0.3.9.7") {
+                util::replace(newadditional, "\"ubuntu\"", "\"linux\"");
+                util::replace(newadditional, "\"win\"", "\"windows\"");
+            }
+            else {
+				util::replace(newadditional, "\"linux\"", "\"ubuntu\"");
+				util::replace(newadditional, "\"windows\"", "\"win\"");
+            }
+		}
+	}
+
     dbc::node_create_task_req_data req_data;
     req_data.__set_peer_nodes_list(body.peer_nodes_list);
-    req_data.__set_additional(body.additional);
+    req_data.__set_additional(newadditional);
     req_data.__set_wallet(body.wallet);
     req_data.__set_nonce(body.nonce);
     req_data.__set_sign(body.sign);
@@ -953,6 +969,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_create_task_req_
         std::string priv_key = ConfManager::instance().GetPrivKey();
 
         if (!pub_key.empty() && !priv_key.empty()) {
+
             std::string s_data = encrypt_data((unsigned char*) out_buf->get_read_ptr(), out_buf->get_valid_read_len(), pub_key, priv_key);
             req_content->body.__set_data(s_data);
         } else {
