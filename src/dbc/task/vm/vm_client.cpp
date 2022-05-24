@@ -1196,7 +1196,7 @@ FResult VmClient::RedefineDomain(const std::shared_ptr<TaskInfo>& taskinfo) {
 	// new mem
 	int64_t memoryTotal = taskinfo->getMemSize(); // KB
 
-	char* pContent = virDomainGetXMLDesc(domainPtr, VIR_DOMAIN_XML_SECURE);
+	char* pContent = virDomainGetXMLDesc(domainPtr, VIR_DOMAIN_XML_SECURE | VIR_DOMAIN_XML_INACTIVE);
     if (pContent != nullptr) {
         tinyxml2::XMLDocument doc;
         tinyxml2::XMLError err = doc.Parse(pContent);

@@ -1409,10 +1409,14 @@ FResult TaskManager::modifyTask(const std::string& wallet,
 		return FResult(ERR_ERROR, "task not exist");
 	}
 
-    virDomainState vm_status = VmClient::instance().GetDomainStatus(task_id);
-    if (vm_status != VIR_DOMAIN_SHUTOFF) {
-        return FResult(ERR_ERROR, "task is running, please close it first");
-    }
+    // virDomainState vm_status = VmClient::instance().GetDomainStatus(task_id);
+    // if (vm_status != VIR_DOMAIN_SHUTOFF) {
+    //     return FResult(ERR_ERROR, "task is running, please close it first");
+    // }
+
+    bool need_reset_iptables = false;
+    bool need_reboot_vm = false;
+    bool need_redefine_vm = false;
 
     rapidjson::Document doc;
     doc.Parse(data->additional.c_str());
@@ -1426,6 +1430,7 @@ FResult TaskManager::modifyTask(const std::string& wallet,
     if (fret.errcode != ERR_SUCCESS) {
         return fret;
     } else if (new_public_ip != taskinfoPtr->getPublicIP()) {
+        need_reset_iptables = true;
         TASK_LOG_INFO(task_id, "modify task old public ip: " << taskinfoPtr->getPublicIP()
                                << ", new public ip: " << new_public_ip);
         taskinfoPtr->setPublicIP(new_public_ip);
@@ -1451,16 +1456,19 @@ FResult TaskManager::modifyTask(const std::string& wallet,
         }
 
         old_ssh_port = taskinfoPtr->getSSHPort();
-        taskinfoPtr->setSSHPort(new_ssh_port);
-        TaskInfoMgr::instance().update(taskinfoPtr);
+        if (new_ssh_port != old_ssh_port) {
+            need_reset_iptables = true;
+            taskinfoPtr->setSSHPort(new_ssh_port);
+            TaskInfoMgr::instance().update(taskinfoPtr);
 
-        auto taskIptablePtr = TaskIptableManager::instance().getIptableInfo(task_id);
-        if (taskIptablePtr != nullptr) {
-            taskIptablePtr->setSSHPort(new_ssh_port);
-            TaskIptableManager::instance().update(taskIptablePtr);
+            auto taskIptablePtr = TaskIptableManager::instance().getIptableInfo(task_id);
+            if (taskIptablePtr != nullptr) {
+                taskIptablePtr->setSSHPort(new_ssh_port);
+                TaskIptableManager::instance().update(taskIptablePtr);
+            }
+            TASK_LOG_INFO(task_id, "modify task old ssh port: " << old_ssh_port
+                                << ", new ssh port: " << new_ssh_port);
         }
-        TASK_LOG_INFO(task_id, "modify task old ssh port: " << old_ssh_port
-                               << ", new ssh port: " << new_ssh_port);
     }
 
     uint16_t new_rdp_port;
@@ -1475,16 +1483,19 @@ FResult TaskManager::modifyTask(const std::string& wallet,
             return FResult(ERR_ERROR, "new_rdp_port " + s_new_rdp_port + " has been used!");
         }
 
-        TASK_LOG_INFO(task_id, "modify task old rdp port: " << taskinfoPtr->getRDPPort()
-                               << ", new rdp port: " << new_rdp_port);
+        if (new_rdp_port != taskinfoPtr->getRDPPort()) {
+            need_reset_iptables = true;
+            TASK_LOG_INFO(task_id, "modify task old rdp port: " << taskinfoPtr->getRDPPort()
+                                << ", new rdp port: " << new_rdp_port);
 
-        taskinfoPtr->setRDPPort(new_rdp_port);
-        TaskInfoMgr::instance().update(taskinfoPtr);
+            taskinfoPtr->setRDPPort(new_rdp_port);
+            TaskInfoMgr::instance().update(taskinfoPtr);
 
-        auto taskIptablePtr = TaskIptableManager::instance().getIptableInfo(task_id);
-        if (taskIptablePtr != nullptr) {
-            taskIptablePtr->setRDPPort(new_rdp_port);
-            TaskIptableManager::instance().update(taskIptablePtr);
+            auto taskIptablePtr = TaskIptableManager::instance().getIptableInfo(task_id);
+            if (taskIptablePtr != nullptr) {
+                taskIptablePtr->setRDPPort(new_rdp_port);
+                TaskIptableManager::instance().update(taskIptablePtr);
+            }
         }
     }
 
@@ -1501,7 +1512,8 @@ FResult TaskManager::modifyTask(const std::string& wallet,
                 new_custom_port.push_back(v_custom_port[i].GetString());
             }
 
-            if (!new_custom_port.empty()) {
+            if (new_custom_port != taskinfoPtr->getCustomPort()) {
+                need_reset_iptables = true;
                 taskinfoPtr->setCustomPort(new_custom_port);
                 TaskInfoMgr::instance().update(taskinfoPtr);
 
@@ -1510,15 +1522,15 @@ FResult TaskManager::modifyTask(const std::string& wallet,
                     taskIptablePtr->setCustomPort(new_custom_port);
                     TaskIptableManager::instance().update(taskIptablePtr);
                 }
+                TASK_LOG_INFO(task_id, "modify task custom port");
             }
-            TASK_LOG_INFO(task_id, "modify task custom port");
         }
     }
 
-	auto taskIptablePtr = TaskIptableManager::instance().getIptableInfo(task_id);
-    if (taskIptablePtr != nullptr) {
-        shell_remove_iptable_from_system(task_id, taskIptablePtr->getHostIP(), old_ssh_port, 
-            taskIptablePtr->getTaskLocalIP(), taskIptablePtr->getPublicIP());
+    if (need_reset_iptables) {
+        remove_iptable_from_system(task_id);
+        add_iptable_to_system(task_id);
+        TASK_LOG_INFO(task_id, "reset iptables successful");
     }
 
     std::vector<std::string> new_nwfiter;
@@ -1533,7 +1545,7 @@ FResult TaskManager::modifyTask(const std::string& wallet,
                 }
             }
 
-            if (!new_nwfiter.empty()) {
+            if (new_nwfiter != taskinfoPtr->getNwfilter()) {
                 TASK_LOG_INFO(task_id, "modify task network filter");
                 taskinfoPtr->setNwfilter(new_nwfiter);
                 TaskInfoManager::instance().update(taskinfoPtr);
@@ -1554,9 +1566,13 @@ FResult TaskManager::modifyTask(const std::string& wallet,
             return FResult(ERR_ERROR, "new_vnc_port " + s_new_vnc_port + " is invalid! (usage: 5900 =< port <= 6000)");
         }
 
-        TASK_LOG_INFO(task_id, "modify task old vnc port: " << taskinfoPtr->getVncPort()
-                               << ", new vnc port" << new_vnc_port);
-        taskinfoPtr->setVncPort(new_vnc_port);
+        if (new_vnc_port != taskinfoPtr->getVncPort()) {
+            need_reboot_vm = true;
+            need_redefine_vm = true;
+            TASK_LOG_INFO(task_id, "modify task old vnc port: " << taskinfoPtr->getVncPort()
+                                << ", new vnc port: " << new_vnc_port);
+            taskinfoPtr->setVncPort(new_vnc_port);
+        }
 	}
 
     std::string new_gpu_count;
@@ -1577,6 +1593,8 @@ FResult TaskManager::modifyTask(const std::string& wallet,
 
 			TaskGpuMgr::instance().setTaskGpus(task_id, mp_gpus);
             TASK_LOG_INFO(task_id, "modify task new gpu count: " << new_gpu_count);
+            need_reboot_vm = true;
+            need_redefine_vm = true;
 		}
 		else {
 			return FResult(ERR_ERROR, "allocate gpu failed");
@@ -1589,10 +1607,19 @@ FResult TaskManager::modifyTask(const std::string& wallet,
         int32_t new_cpu_cores = atoi(s_new_cpu_cores);
 		int32_t cpu_sockets = 1, cpu_cores = 1, cpu_threads = 2;
 		if (allocate_cpu(new_cpu_cores, cpu_sockets, cpu_cores, cpu_threads)) {
-            taskinfoPtr->setCpuSockets(cpu_sockets);
-            taskinfoPtr->setCpuCoresPerSocket(cpu_cores);
-            taskinfoPtr->setCpuThreadsPerCore(cpu_threads);
-            TASK_LOG_INFO(task_id, "modify task new cpu cores: " << s_new_cpu_cores);
+            if (cpu_sockets != taskinfoPtr->getCpuSockets() ||
+                cpu_cores != taskinfoPtr->getCpuCoresPerSocket() ||
+                cpu_threads != taskinfoPtr->getCpuThreadsPerCore()) {
+                need_reboot_vm = true;
+                need_redefine_vm = true;
+                taskinfoPtr->setCpuSockets(cpu_sockets);
+                taskinfoPtr->setCpuCoresPerSocket(cpu_cores);
+                taskinfoPtr->setCpuThreadsPerCore(cpu_threads);
+                TASK_LOG_INFO(task_id, "modify task new cpu cores: " << s_new_cpu_cores
+                                        << ", sockets: " << cpu_sockets
+                                        << ", cores per socket: " << cpu_cores
+                                        << ", threads per core: " << cpu_threads);
+            }
 		}
 		else {
 			return FResult(ERR_ERROR, "allocate cpu failed");
@@ -1604,15 +1631,25 @@ FResult TaskManager::modifyTask(const std::string& wallet,
     if (!new_mem_size.empty()) {
         int64_t ksize = atoi(new_mem_size.c_str()) * 1024L * 1024L;
         if (allocate_mem(ksize)) {
-            taskinfoPtr->setMemSize(ksize);
-            TASK_LOG_INFO(task_id, "modify task new mem size: " << new_mem_size);
+            if (ksize != taskinfoPtr->getMemSize()) {
+                need_reboot_vm = true;
+                need_redefine_vm = true;
+                TASK_LOG_INFO(task_id, "modify task old mem size: " << taskinfoPtr->getMemSize()
+                                        << ", new mem size: " << new_mem_size);
+                taskinfoPtr->setMemSize(ksize);
+            }
         }
         else {
             run_shell("echo 3 > /proc/sys/vm/drop_caches");
 
             if (allocate_mem(ksize)) {
-                taskinfoPtr->setMemSize(ksize);
-                TASK_LOG_INFO(task_id, "modify task new mem size: " << new_mem_size);
+                if (ksize != taskinfoPtr->getMemSize()) {
+                    need_reboot_vm = true;
+                    need_redefine_vm = true;
+                    TASK_LOG_INFO(task_id, "modify task old mem size: " << taskinfoPtr->getMemSize()
+                                            << ", new mem size: " << new_mem_size);
+                    taskinfoPtr->setMemSize(ksize);
+                }
             } else {
                 return FResult(ERR_ERROR, "allocate memory failed");
             }
@@ -1620,13 +1657,17 @@ FResult TaskManager::modifyTask(const std::string& wallet,
     }
 
     // being to redefine domain
-	fret = VmClient::instance().RedefineDomain(taskinfoPtr);
-	if (fret.errcode != ERR_SUCCESS) {
-        TASK_LOG_ERROR(task_id, "modify task error: " << fret.errmsg);
-		return fret;
-	}
+    if (need_redefine_vm)  {
+        fret = VmClient::instance().RedefineDomain(taskinfoPtr);
+        if (fret.errcode != ERR_SUCCESS) {
+            TASK_LOG_ERROR(task_id, "modify task error: " << fret.errmsg);
+            return fret;
+        }
+        TASK_LOG_INFO(task_id, "redefine task sucessful");
+    }
 
     TASK_LOG_INFO(task_id, "modify task successful");
+    if (need_reboot_vm) return FResult(ERR_SUCCESS, "some changes will take effect on the next boot");
     return FResultOk;
 }
 

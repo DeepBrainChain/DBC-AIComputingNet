@@ -1909,15 +1909,7 @@ void node_request_service::task_modify(const network::base_header& header,
 	std::string ret_msg = "ok";
 
 	auto fresult = TaskMgr::instance().modifyTask(result.rent_wallet, data);
-	ret_code = fresult.errcode;
-	ret_msg = fresult.errmsg;
-
-	if (ret_code == ERR_SUCCESS) {
-		send_response_ok<dbc::node_modify_task_rsp>(NODE_MODIFY_TASK_RSP, header);
-	}
-	else {
-		send_response_error<dbc::node_modify_task_rsp>(NODE_MODIFY_TASK_RSP, header, ret_code, ret_msg);
-	}
+    send_response_error<dbc::node_modify_task_rsp>(NODE_MODIFY_TASK_RSP, header, fresult.errcode, fresult.errmsg);
 }
 
 // 设置task密码
