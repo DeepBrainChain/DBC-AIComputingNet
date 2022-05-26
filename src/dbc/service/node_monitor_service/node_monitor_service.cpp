@@ -233,7 +233,7 @@ void node_monitor_service::on_monitor_data_sender_task_timer(const std::shared_p
             // get monitor data of vm
             dbcMonitor::domMonitorData dmData;
             dmData.domainName = task_id;
-            dmData.delay = 10;
+            dmData.delay = 30;
             dmData.version = dbcversion();
             if (!VmClient::instance().GetDomainMonitorData(task_id, dmData)) {
                 TASK_LOG_ERROR(task_id, "get domain monitor data error");
@@ -282,7 +282,7 @@ void node_monitor_service::on_monitor_data_sender_task_timer(const std::shared_p
     }
 
     hmData.nodeId = ConfManager::instance().GetNodeId();
-    hmData.delay = 10;
+    hmData.delay = 30;
     hmData.gpuCount = SystemInfo::instance().GetGpuInfo().size();
     hmData.cpuUsage = SystemInfo::instance().GetCpuUsage() * 100;
     hmData.memTotal = SystemInfo::instance().GetMemInfo().total;

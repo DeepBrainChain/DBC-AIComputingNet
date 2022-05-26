@@ -628,7 +628,8 @@ namespace check_kvm {
             ("windows", "windows virtual machine")
             ("uefi", "uefi loader")
             ("max_gpus", boost::program_options::value<int32_t>(), "max gpu count")
-            ("multicast", boost::program_options::value<std::string>(), "multicast address");
+            ("multicast", boost::program_options::value<std::string>(), "multicast address")
+            ("gpu_bus_ids", boost::program_options::value<std::string>(), "the tuple bus:device.function gpu PCI identifier");
 
             try {
                 boost::program_options::variables_map vm;
@@ -704,6 +705,28 @@ namespace check_kvm {
                             std::cout << "address is not a multicast address" << std::endl;
                             return;
                         }
+                    }
+                }
+                if (vm.count("gpu_bus_ids")) {
+                    std::string gpu_bus_ids = vm["gpu_bus_ids"].as<std::string>();
+                    std::vector<std::string> busIds = SplitStr(gpu_bus_ids, ',');
+                    gpu_bus_ids.clear();
+                    int real_gpu_count = 0;
+                    for (const auto& busId : busIds) {
+                        cmd = "lspci | grep NVIDIA | grep '" + busId + "'";
+                        if (run_shell(cmd.c_str()).empty()) {
+                            std::cout << "invalid gpu PCI identifier: " << busId << std::endl;
+                            return;
+                        }
+                        if (real_gpu_count > 0) gpu_bus_ids += "|";
+                        gpu_bus_ids += busId;
+                        ++real_gpu_count;
+                    }
+                    if (gpu_bus_ids.empty()) {
+                        std::cout << "invalid gpu_bus_ids" << std::endl;
+                        return;
+                    } else {
+                        vga_gpu = gpu_bus_ids;
                     }
                 }
             }

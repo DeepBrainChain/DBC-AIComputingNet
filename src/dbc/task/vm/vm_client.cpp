@@ -1969,7 +1969,8 @@ bool VmClient::GetDomainMonitorData(const std::string& domain_name, dbcMonitor::
         }
 
         // gpu info
-        if (isActive) {
+        auto gpus = TaskGpuMgr::instance().getTaskGpus(domain_name);
+        if (isActive && gpus.size() > 0) {
             char *result = virDomainQemuAgentCommand(domain_ptr, "{\"execute\":\"guest-get-gpus\"}", VIR_DOMAIN_QEMU_AGENT_COMMAND_DEFAULT, 0);
             if (result) {
                 rapidjson::Document doc;
