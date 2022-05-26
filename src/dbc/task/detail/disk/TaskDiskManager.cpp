@@ -1,4 +1,4 @@
-﻿#include "TaskDiskManager.h"
+#include "TaskDiskManager.h"
 #include "task/vm/vm_client.h"
 #include "task/detail/info/TaskInfoManager.h"
 #include "util/system_info.h"

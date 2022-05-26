@@ -1,4 +1,4 @@
-﻿#ifndef DBC_WALLET_SESSIONID_H
+#ifndef DBC_WALLET_SESSIONID_H
 #define DBC_WALLET_SESSIONID_H
 
 #include "util/utils.h"

@@ -1,4 +1,4 @@
-﻿#ifndef DBC_WALLETRENTTASK_MANAGER_H
+#ifndef DBC_WALLETRENTTASK_MANAGER_H
 #define DBC_WALLETRENTTASK_MANAGER_H
 
 #include "util/utils.h"

@@ -1,4 +1,4 @@
-﻿#include "TaskInfoManager.h"
+#include "TaskInfoManager.h"
 #include "log/log.h"
 #include "task/vm/vm_client.h"
 #include "tinyxml2.h"

@@ -1,4 +1,4 @@
-﻿#ifndef DBC_WALLET_RENT_TASK_H
+#ifndef DBC_WALLET_RENT_TASK_H
 #define DBC_WALLET_RENT_TASK_H
 
 #include "util/utils.h"

@@ -1,4 +1,4 @@
-﻿#ifndef DBC_TASK_GPU_MANAGER_h
+#ifndef DBC_TASK_GPU_MANAGER_h
 #define DBC_TASK_GPU_MANAGER_H
 
 #include "util/utils.h"

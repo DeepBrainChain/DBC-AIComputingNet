@@ -1,4 +1,4 @@
-﻿#ifndef DBC_TASK_DISK_MANAGER_H
+#ifndef DBC_TASK_DISK_MANAGER_H
 #define DBC_TASK_DISK_MANAGER_H
 
 #include "util/utils.h"

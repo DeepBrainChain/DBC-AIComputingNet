@@ -1,4 +1,4 @@
-﻿#ifndef DBC_DISK_INFO_H
+#ifndef DBC_DISK_INFO_H
 #define DBC_DISK_INFO_H
 
 #include "util/utils.h"

@@ -1,4 +1,4 @@
-﻿#include "WalletRentTaskManager.h"
+#include "WalletRentTaskManager.h"
 #include "log/log.h"
 
 FResult WalletRentTaskManager::init() {

@@ -1,4 +1,4 @@
-﻿#include "TaskGpuManager.h"
+#include "TaskGpuManager.h"
 #include "tinyxml2.h"
 #include "task/vm/vm_client.h"
 #include "log/log.h"

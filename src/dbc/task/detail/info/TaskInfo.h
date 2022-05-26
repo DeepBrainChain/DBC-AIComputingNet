@@ -1,4 +1,4 @@
-﻿#ifndef DBC_TASK_INFO_H
+#ifndef DBC_TASK_INFO_H
 #define DBC_TASK_INFO_H
 
 #include "util/utils.h"
