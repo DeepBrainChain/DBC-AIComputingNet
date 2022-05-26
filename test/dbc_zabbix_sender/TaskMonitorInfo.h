@@ -92,19 +92,41 @@ struct networkInfo {
     void write2ZabbixJson(rapidjson::Writer<rapidjson::StringBuffer> &write, const std::string &host, std::string index) const;
 };
 
+struct gpuInfo {
+    std::string name;               // the product name of this device.
+    std::string busId;              // The tuple domain:bus:device.function PCI identifier (NULL terminator)
+    unsigned long long memTotal;    // Total physical device memory (in bytes)
+    unsigned long long memFree;     // Unallocated device memory (in bytes)
+    unsigned long long memUsed;     // Sum of Reserved and Allocated device memory (in bytes).
+    unsigned int gpuUtilization;    // Percent of time over the past sample period during which one or more kernels was executing on the GPU
+    unsigned int memUtilization;    // Percent of time over the past sample period during which global (device) memory was being read or written
+    unsigned int powerUsage;        // the power usage information in milliwatts
+    unsigned int powerCap;          // the power management limit in milliwatts
+    unsigned int temperature;       // the current temperature readings for the device, in degrees C.
+    struct timespec realTime;
+
+    void calculatorUsage(const gpuInfo &last);
+    void write2Json(rapidjson::Writer<rapidjson::StringBuffer> &write) const;
+    void write2ZabbixJson(rapidjson::Writer<rapidjson::StringBuffer> &write, const std::string &host, std::string index) const;
+};
+
 struct domMonitorData{
-    std::string domain_name;                        // 虚拟机的名称
+    std::string domainName;                         // 虚拟机的名称
     unsigned int delay;                             // 间隔时间，例如每10秒收集一次
     domainInfo domInfo;                             // 虚拟机的基本信息
     // cpuStats cpuStats;                           // CPU数据
     memoryStats memStats;                           // 内存数据
     std::map<std::string, diskInfo> diskStats;      // 磁盘数据
     std::map<std::string, networkInfo> netStats;    // 网络数据
+    std::string graphicsDriverVersion;              // the version of the system's graphics driver
+    std::string nvmlVersion;                        // the version of the NVML library
+    std::string cudaVersion;                        // the version of the CUDA driver
+    std::map<std::string, gpuInfo> gpuStats;        // GPU数据
     std::string version;                            // 版本号
 
     void calculatorUsageAndSpeed(const domMonitorData &last);
     std::string toJsonString() const;
-    std::string toZabbixString(const std::string &hostname) const;
+    std::string toZabbixString() const;
 };
 }
 

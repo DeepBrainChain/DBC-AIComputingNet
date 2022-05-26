@@ -2,10 +2,15 @@
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 
-#include "virImpl.h"
+#include "rapidjson/rapidjson.h"
+#include "rapidjson/document.h"
+
+#include "vir_helper.h"
 #include "TaskMonitorInfo.h"
 #include "zabbixSender.h"
-#include "common/version.h"
+#include "common/common.h"
+
+using namespace vir_helper;
 
 static const char* qemu_url = "qemu+tcp://localhost:16509/system";
 // enum virDomainState
@@ -15,7 +20,7 @@ static const char* default_zabbix_host = "116.169.53.132";
 static const char* default_zabbix_port = "10051";
 
 std::ostream& operator <<(std::ostream& out, const dbcMonitor::domMonitorData& obj) {
-    out << "domain_name: " << obj.domain_name << std::endl;
+    out << "domain_name: " << obj.domainName << std::endl;
     out << "delay: " << obj.delay << std::endl;
     out << "domain_state: " << obj.domInfo.state << std::endl;
     out << "cpuTime: " << obj.domInfo.cpuTime << std::endl;
@@ -55,18 +60,18 @@ void getDomainMemoryInfo(domMonitorData& data, std::shared_ptr<virDomainImpl> do
 }
 
 void getDomainDiskInfo(domMonitorData& data, std::shared_ptr<virDomainImpl> domain) {
-    std::map<std::string, std::string> disks;
+    std::vector<domainDiskInfo> disks;
     if (domain->getDomainDisks(disks) > -1) {
         for (const auto& disk : disks) {
             struct diskInfo dsInfo;
-            dsInfo.name = disk.first;
+            dsInfo.name = disk.target_dev;
             virDomainBlockInfo info;
-            domain->getDomainBlockInfo(disk.first.c_str(), &info, 0);
+            domain->getDomainBlockInfo(disk.target_dev.c_str(), &info, 0);
             virDomainBlockStatsStruct stats;
             dsInfo.capacity = info.capacity;
             dsInfo.allocation = info.allocation;
             dsInfo.physical = info.physical;
-            domain->getDomainBlockStats(disk.first.c_str(), &stats, sizeof(stats));
+            domain->getDomainBlockStats(disk.target_dev.c_str(), &stats, sizeof(stats));
             clock_gettime(CLOCK_REALTIME, &dsInfo.realTime);
             dsInfo.rd_req = stats.rd_req;
             dsInfo.rd_bytes = stats.rd_bytes;
@@ -75,13 +80,13 @@ void getDomainDiskInfo(domMonitorData& data, std::shared_ptr<virDomainImpl> doma
             dsInfo.errs = stats.errs;
             dsInfo.rd_speed = 0.0;
             dsInfo.wr_speed = 0.0;
-            data.diskStats[disk.first] = dsInfo;
+            data.diskStats[disk.target_dev] = dsInfo;
         }
     }
 }
 
 void getDomainNetworkInfo(domMonitorData& data, std::shared_ptr<virDomainImpl> domain) {
-    std::vector<test::virDomainInterface> difaces;
+    std::vector<domainInterface> difaces;
     if (domain->getDomainInterfaceAddress(difaces) > 0) {
         for (const auto& diface: difaces) {
             networkInfo netInfo;
@@ -101,6 +106,67 @@ void getDomainNetworkInfo(domMonitorData& data, std::shared_ptr<virDomainImpl> d
             netInfo.tx_speed = 0.0;
             data.netStats[diface.name] = netInfo;
         }
+    }
+}
+
+void getDomainGpuInfo(domMonitorData& data, std::shared_ptr<virDomainImpl> domain) {
+    std::string result = domain->QemuAgentCommand("{\"execute\":\"guest-get-gpus\"}", VIR_DOMAIN_QEMU_AGENT_COMMAND_DEFAULT, 0);
+    if (!result.empty()) {
+        rapidjson::Document doc;
+        doc.Parse(result.c_str());
+        if (!doc.IsObject()) {
+            std::cout << " parse guest agent result data error" << std::endl;
+        } else {
+            if (doc.HasMember("return") && doc["return"].IsObject()) {
+                const rapidjson::Value& obj_ret = doc["return"];
+                if (obj_ret.HasMember("driver-version") && obj_ret["driver-version"].IsString()) {
+                    data.graphicsDriverVersion = obj_ret["driver-version"].GetString();
+                }
+                if (obj_ret.HasMember("cuda-version") && obj_ret["cuda-version"].IsString()) {
+                    data.cudaVersion = obj_ret["cuda-version"].GetString();
+                }
+                if (obj_ret.HasMember("nvml-version") && obj_ret["nvml-version"].IsString()) {
+                    data.nvmlVersion = obj_ret["nvml-version"].GetString();
+                }
+                if (obj_ret.HasMember("gpus") && obj_ret["gpus"].IsArray()) {
+                    const rapidjson::Value& obj_gpus = obj_ret["gpus"];
+                    for (size_t i = 0; i < obj_gpus.Size(); i++) {
+                        const rapidjson::Value& obj_gpu = obj_gpus[i];
+                        if (!obj_gpu.IsObject()) continue;
+                        dbcMonitor::gpuInfo gpuInfo;
+                        clock_gettime(CLOCK_REALTIME, &gpuInfo.realTime);
+                        gpuInfo.memTotal = gpuInfo.memFree = gpuInfo.memUsed = 0;
+                        gpuInfo.gpuUtilization = gpuInfo.memUtilization = 0;
+                        gpuInfo.powerUsage = gpuInfo.powerCap = gpuInfo.temperature = 0;
+                        if (obj_gpu.HasMember("name") && obj_gpu["name"].IsString())
+                            gpuInfo.name = obj_gpu["name"].GetString();
+                        if (obj_gpu.HasMember("bus-id") && obj_gpu["bus-id"].IsString())
+                            gpuInfo.busId = obj_gpu["bus-id"].GetString();
+                        if (obj_gpu.HasMember("mem-total") && obj_gpu["mem-total"].IsUint64())
+                            gpuInfo.memTotal = obj_gpu["mem-total"].GetUint64();
+                        if (obj_gpu.HasMember("mem-free") && obj_gpu["mem-free"].IsUint64())
+                            gpuInfo.memFree = obj_gpu["mem-free"].GetUint64();
+                        if (obj_gpu.HasMember("mem-used") && obj_gpu["mem-used"].IsUint64())
+                            gpuInfo.memUsed = obj_gpu["mem-used"].GetUint64();
+                        if (obj_gpu.HasMember("gpu-utilization") && obj_gpu["gpu-utilization"].IsUint())
+                            gpuInfo.gpuUtilization = obj_gpu["gpu-utilization"].GetUint();
+                        if (obj_gpu.HasMember("mem-utilization") && obj_gpu["mem-utilization"].IsUint())
+                            gpuInfo.memUtilization = obj_gpu["mem-utilization"].GetUint();
+                        if (obj_gpu.HasMember("pwr-usage") && obj_gpu["pwr-usage"].IsUint())
+                            gpuInfo.powerUsage = obj_gpu["pwr-usage"].GetUint();
+                        if (obj_gpu.HasMember("pwr-cap") && obj_gpu["pwr-cap"].IsUint())
+                            gpuInfo.powerCap = obj_gpu["pwr-cap"].GetUint();
+                        if (obj_gpu.HasMember("temperature") && obj_gpu["temperature"].IsUint())
+                            gpuInfo.temperature = obj_gpu["temperature"].GetUint();
+                        data.gpuStats[gpuInfo.busId] = gpuInfo;
+                    }
+                }
+            } else {
+                std::cout << " guest agent result has no return node" << std::endl;
+            }
+        }
+    } else {
+        std::cout << "qemu guest command guest-get-gpus return empty" << std::endl;
     }
 }
 }
@@ -146,20 +212,20 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
-    virTool virt;
-    if (!virt.openConnect(qemu_url)) {
+    virHelper virt_helper;
+    if (!virt_helper.openConnect(qemu_url)) {
         std::cout << "open libvirt connect failed" << std::endl;
         return -1;
     }
 
-    std::shared_ptr<virDomainImpl> domain = virt.openDomain(domain_name.c_str());
+    std::shared_ptr<virDomainImpl> domain = virt_helper.openDomainByName(domain_name.c_str());
     if (!domain) {
         std::cout << "open domain: " << domain_name << " failed" << std::endl;
         return -1;
     }
 
     dbcMonitor::domMonitorData dmData;
-    dmData.domain_name = domain_name;
+    dmData.domainName = domain_name;
     dmData.delay = 5;
     dmData.version = dbcversion();
 
@@ -168,6 +234,7 @@ int main(int argc, char* argv[]) {
     dbcMonitor::getDomainMemoryInfo(dmData, domain);
     dbcMonitor::getDomainDiskInfo(dmData, domain);
     dbcMonitor::getDomainNetworkInfo(dmData, domain);
+    dbcMonitor::getDomainGpuInfo(dmData, domain);
 
     // calculator
 
@@ -175,7 +242,7 @@ int main(int argc, char* argv[]) {
     // std::cout << dmData.toZabbixString(domain_name) << std::endl;
     zabbixSender zs(zabbix_host, zabbix_port);
     if (zs.is_server_want_monitor_data(domain_name)) {
-        if (!zs.sendJsonData(dmData.toZabbixString(domain_name))) {
+        if (!zs.sendJsonData(dmData.toZabbixString())) {
             std::cout << "send monitor data of task(" << domain_name << ") to server(" << zabbix_host << ") error" << std::endl;
         } else {
             std::cout << "send monitor data of task(" << domain_name << ") to server(" << zabbix_host << ") success" << std::endl;

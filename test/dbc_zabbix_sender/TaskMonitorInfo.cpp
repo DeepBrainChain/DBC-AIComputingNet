@@ -217,6 +217,52 @@ void networkInfo::write2ZabbixJson(rapidjson::Writer<rapidjson::StringBuffer> &w
     writeZabbixJsonItem<float>(write, host, "net." + index + ".tx_speed", tx_speed, realTime);
 }
 
+void gpuInfo::calculatorUsage(const gpuInfo &last) {
+    // do nothing
+}
+
+void gpuInfo::write2Json(rapidjson::Writer<rapidjson::StringBuffer> &write) const {
+    write.StartObject();
+    write.Key("gpu_name");
+    write.String(name.c_str());
+    write.Key("busId");
+    write.String(busId.c_str());
+    write.Key("memTotal");
+    write.Uint64(memTotal);
+    write.Key("memFree");
+    write.Uint64(memFree);
+    write.Key("memUsed");
+    write.Uint64(memUsed);
+    write.Key("gpuUtilization");
+    write.Uint(gpuUtilization);
+    write.Key("memUtilization");
+    write.Uint(memUtilization);
+    write.Key("powerUsage");
+    write.Uint(powerUsage);
+    write.Key("powerCap");
+    write.Uint(powerCap);
+    write.Key("temperature");
+    write.Uint(temperature);
+    write.Key("clock");
+    write.Int64(realTime.tv_sec);
+    write.Key("ns");
+    write.Int(realTime.tv_nsec);
+    write.EndObject();
+}
+
+void gpuInfo::write2ZabbixJson(rapidjson::Writer<rapidjson::StringBuffer> &write, const std::string &host, std::string index) const {
+    writeZabbixJsonItem<std::string>(write, host, "gpu." + index + ".name", name, realTime);
+    writeZabbixJsonItem<std::string>(write, host, "gpu." + index + ".busId", busId, realTime);
+    writeZabbixJsonItem<unsigned long long>(write, host, "gpu." + index + ".memTotal", memTotal, realTime);
+    writeZabbixJsonItem<unsigned long long>(write, host, "gpu." + index + ".memFree", memFree, realTime);
+    writeZabbixJsonItem<unsigned long long>(write, host, "gpu." + index + ".memUsed", memUsed, realTime);
+    writeZabbixJsonItem<unsigned int>(write, host, "gpu." + index + ".gpuUtilization", gpuUtilization, realTime);
+    writeZabbixJsonItem<unsigned int>(write, host, "gpu." + index + ".memUtilization", memUtilization, realTime);
+    writeZabbixJsonItem<unsigned int>(write, host, "gpu." + index + ".powerUsage", powerUsage, realTime);
+    writeZabbixJsonItem<unsigned int>(write, host, "gpu." + index + ".powerCap", powerCap, realTime);
+    writeZabbixJsonItem<unsigned int>(write, host, "gpu." + index + ".temperature", temperature, realTime);
+}
+
 void domMonitorData::calculatorUsageAndSpeed(const domMonitorData &last) {
     domInfo.calculatorUsage(last.domInfo);
     memStats.calculatorUsage(last.memStats);
@@ -230,6 +276,11 @@ void domMonitorData::calculatorUsageAndSpeed(const domMonitorData &last) {
         if (iter != last.netStats.end())
             netStat.second.calculatorSpeed(iter->second);
     }
+    for (auto& gpuStat : gpuStats) {
+        auto iter = last.gpuStats.find(gpuStat.first);
+        if (iter != last.gpuStats.end())
+            gpuStat.second.calculatorUsage(iter->second);
+    }
 }
 
 std::string domMonitorData::toJsonString() const {
@@ -237,8 +288,8 @@ std::string domMonitorData::toJsonString() const {
     rapidjson::Writer<rapidjson::StringBuffer> write(strBuf);
     write.SetMaxDecimalPlaces(2);
     write.StartObject();
-    write.Key("domain_name");
-    write.String(domain_name.c_str());
+    write.Key("domainName");
+    write.String(domainName.c_str());
     write.Key("delay");
     write.Uint(delay);
     domInfo.write2Json(write);
@@ -255,13 +306,25 @@ std::string domMonitorData::toJsonString() const {
         netStat.second.write2Json(write);
     }
     write.EndArray();
+    write.Key("graphicsDriverVersion");
+    write.String(graphicsDriverVersion.c_str());
+    write.Key("nvmlVersion");
+    write.String(nvmlVersion.c_str());
+    write.Key("cudaVersion");
+    write.String(cudaVersion.c_str());
+    write.Key("gpus");
+    write.StartArray();
+    for (const auto& gpuStat : gpuStats) {
+        gpuStat.second.write2Json(write);
+    }
+    write.EndArray();
     write.Key("version");
     write.String(version.c_str());
     write.EndObject();
     return strBuf.GetString();
 }
 
-std::string domMonitorData::toZabbixString(const std::string &hostname) const {
+std::string domMonitorData::toZabbixString() const {
     rapidjson::StringBuffer strBuf;
     rapidjson::Writer<rapidjson::StringBuffer> write(strBuf);
     write.SetMaxDecimalPlaces(2);
@@ -270,19 +333,32 @@ std::string domMonitorData::toZabbixString(const std::string &hostname) const {
     write.String("agent data");
     write.Key("data");
     write.StartArray();
-    domInfo.write2ZabbixJson(write, hostname);
-    memStats.write2ZabbixJson(write, hostname);
+    domInfo.write2ZabbixJson(write, domainName);
+    memStats.write2ZabbixJson(write, domainName);
     int index = 0;
     for (const auto& diskStat : diskStats) {
-        diskStat.second.write2ZabbixJson(write, hostname, std::to_string(index++));
+        diskStat.second.write2ZabbixJson(write, domainName, std::to_string(index++));
     }
     index = 0;
     for (const auto& netStat : netStats) {
-        netStat.second.write2ZabbixJson(write, hostname, std::to_string(index++));
+        netStat.second.write2ZabbixJson(write, domainName, std::to_string(index++));
     }
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
-    writeZabbixJsonItem<std::string>(write, hostname, "dbc.version", version, ts);
+    if (!graphicsDriverVersion.empty())
+        writeZabbixJsonItem<std::string>(write, domainName, "gpu.graphicsDriverVersion", graphicsDriverVersion, ts);
+    if (!nvmlVersion.empty())
+        writeZabbixJsonItem<std::string>(write, domainName, "gpu.nvmlVersion", nvmlVersion, ts);
+    if (!cudaVersion.empty())
+        writeZabbixJsonItem<std::string>(write, domainName, "gpu.cudaVersion", cudaVersion, ts);
+    index = 0;
+    for (const auto& gpuStat : gpuStats) {
+        gpuStat.second.write2ZabbixJson(write, domainName, std::to_string(index++));
+    }
+    writeZabbixJsonItem<std::string>(write, domainName, "dbc.version", version, ts);
+    writeZabbixJsonItem<unsigned int>(write, domainName, "disk.count", diskStats.size(), ts);
+    writeZabbixJsonItem<unsigned int>(write, domainName, "net.count", netStats.size(), ts);
+    writeZabbixJsonItem<unsigned int>(write, domainName, "gpu.count", gpuStats.size(), ts);
     write.EndArray();
     write.Key("clock");
     write.Int64(ts.tv_sec);
