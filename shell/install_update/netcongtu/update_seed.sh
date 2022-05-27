@@ -12,6 +12,23 @@ dir_num=$#
 arr_dir=($*)
 cur_path=$(cd .; pwd)
 
+function close_ufw()
+{
+  is_ufw_enable=$(systemctl is-enabled ufw.service)
+  if [ "$is_ufw_enable"x = "enabled"x ]; then
+    sudo systemctl disable ufw.service --now
+    sudo systemctl restart libvirtd.service
+    echo "disable ufw service"
+  fi
+
+  ufw_status=$(ufw status | awk '{print $2}')
+  if [ "$ufw_status"x = "active"x ]; then
+    sudo ufw disable
+    sudo systemctl restart libvirtd.service
+    echo "disable ufw"
+  fi
+}
+
 workpath=$(cd $(dirname $0) && pwd)
 cd $workpath
 
@@ -158,6 +175,8 @@ for ((i=1;i<=$dir_num;i++)); do
 
   # update
   /bin/bash $install_dir/shell/stop.sh
+
+  close_ufw
 
   # net_ip
   old_net_listen_ip=$(cat $install_dir/conf/core.conf | grep "net_listen_ip=" | awk -F '=' '{print $2}')

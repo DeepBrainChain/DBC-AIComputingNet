@@ -19,6 +19,25 @@ if [ "$(ls -A $install_dir)" ]; then
   exit 0
 fi
 
+function close_ufw()
+{
+  is_ufw_enable=$(systemctl is-enabled ufw.service)
+  if [ "$is_ufw_enable"x = "enabled"x ]; then
+    sudo systemctl disable ufw.service --now
+    sudo systemctl restart libvirtd.service
+    echo "disable ufw service"
+  fi
+
+  ufw_status=$(ufw status | awk '{print $2}')
+  if [ "$ufw_status"x = "active"x ]; then
+    sudo ufw disable
+    sudo systemctl restart libvirtd.service
+    echo "disable ufw"
+  fi
+}
+
+close_ufw
+
 workpath=$(cd $(dirname $0) && pwd)
 cd $workpath
 
