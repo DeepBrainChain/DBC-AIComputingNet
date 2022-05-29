@@ -180,36 +180,45 @@ protected:
 
     void delete_task(const std::string& task_id);
 
+    // 创建task
     FResult parse_create_params(const std::string &additional, USER_ROLE role, CreateTaskParams& params);
 
-    bool allocate_cpu(int32_t& total_cores, int32_t& sockets, int32_t& cores_per_socket, int32_t& threads);
-
-    bool allocate_gpu(int32_t gpu_count, std::map<std::string, std::list<std::string>>& gpus);
-
-    bool allocate_mem(int64_t mem_size);
-
-    bool allocate_disk(int64_t disk_size);
-
-    bool check_iptables_port_occupied(uint16_t port, const std::string& task_id = "");
-
-    FResult check_public_ip(const std::string& public_ip, const std::string& task_id = "");
-
     FResult check_image(const std::string& image_name);
-
-    FResult check_data_image(const std::string& data_image_name);
-
-    FResult check_cpu(int32_t sockets, int32_t cores, int32_t threads);
-
-    FResult check_gpu(const std::map<std::string, std::list<std::string>>& gpus);
-
-    FResult check_disk(const std::map<int32_t, uint64_t>& disks);
 
     FResult check_operation_system(const std::string& os);
 
     FResult check_bios_mode(const std::string& bios_mode);
 
+    FResult check_public_ip(const std::string& public_ip, const std::string& task_id = "");
+
+    FResult check_ssh_port(const std::string& s_port);
+
+    FResult check_rdp_port(const std::string& s_port);
+
+    FResult check_vnc_port(const std::string& s_port);
+
+    FResult check_port_conflict(uint16_t port, const std::string& exclude_task_id = "");
+
     FResult check_multicast(const std::vector<std::string>& multicast);
-    
+
+    bool allocate_cpu(int32_t& total_cores, int32_t& sockets, int32_t& cores_per_socket, int32_t& threads);
+
+    bool allocate_mem(int64_t mem_size_k);
+
+    bool allocate_gpu(int32_t gpu_count, std::map<std::string, std::list<std::string>>& gpus);
+
+    bool allocate_disk(int64_t disk_size_k);
+
+    // 启动task时，检查资源
+    FResult check_cpu(int32_t sockets, int32_t cores, int32_t threads);
+
+    FResult check_mem(int64_t mem_size_k);
+
+    FResult check_gpu(const std::map<std::string, std::shared_ptr<GpuInfo>>& gpus);
+
+    FResult check_resource(const std::shared_ptr<TaskInfo>& taskinfo);
+
+    // thread handle
     void process_task_thread_func();
 
     void process_task(const std::shared_ptr<TaskEvent>& ev);

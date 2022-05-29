@@ -44,38 +44,13 @@ ERRCODE SystemInfo::Init(NODE_TYPE node_type, int32_t reserved_cpu_cores, int32_
 
     init_os_type();
 
-    update_mem_info(m_meminfo);
+    update_mem_info();
 
-    init_cpu_info(m_cpuinfo);
+    update_disk_info();
 
-    init_gpu_info();
+    update_cpu_info();
 
-	// disk
-	do {
-		m_diskinfos.clear();
-
-		if (m_node_type == NODE_TYPE::ComputeNode) {
-			boost::filesystem::path root_dir = "/";
-			boost::filesystem::directory_iterator iterend;
-			for (boost::filesystem::directory_iterator iter(root_dir); iter != iterend; iter++) {
-				if (boost::filesystem::is_directory(iter->path())) {
-					std::string dir = iter->path().string();
-					if (dir.substr(0, 5) == "/data") {
-						disk_info _disk_info;
-						update_disk_info(dir, _disk_info);
-                        
-                        m_diskinfos.insert({ dir, _disk_info });
-					}
-				}
-			}
-		}
-		else {
-			disk_info _disk_info;
-			update_disk_info("/", _disk_info);
-            
-            m_diskinfos.insert({ "/", _disk_info });
-		}
-	} while (0);
+    update_gpu_info();
 
     update_load_average(m_loadaverage);
 
@@ -97,6 +72,10 @@ void SystemInfo::exit() {
     }
     delete m_thread_update;
     m_thread_update = nullptr;
+}
+
+void SystemInfo::GetDiskInfo(const std::string& path, disk_info& info) {
+    update_disk_info(path, info);
 }
 
 void SystemInfo::init_os_type() {
@@ -122,7 +101,9 @@ static int compare_mem_table_structs(const void* a, const void* b) {
 	return strcmp(((const mem_table_struct*)a)->name, ((const mem_table_struct*)b)->name);
 }
 
-void SystemInfo::update_mem_info(mem_info &info) {
+void SystemInfo::update_mem_info() {
+    mem_info info;
+
     unsigned long kb_main_total;
     unsigned long kb_main_free;
     unsigned long kb_main_available;
@@ -197,6 +178,7 @@ void SystemInfo::update_mem_info(mem_info &info) {
     info.free = kb_main_free;
 
     int32_t reserved_mem = m_reserved_memory;
+    // 如果系统内存小于64G,就不预留32G内存了
     if (info.total <= 64 * 1024L * 1024L) {
         reserved_mem = 0;
     }
@@ -226,9 +208,14 @@ void SystemInfo::update_mem_info(mem_info &info) {
 
     unsigned long mem_used = kb_main_total - kb_main_free - (kb_page_cache + kb_slab_reclaimable) - kb_main_buffers;
     info.used = mem_used;
+
+    RwMutex::WriteLock wlock(m_mem_mtx);
+    m_meminfo = info;
 }
 
-void SystemInfo::init_cpu_info(cpu_info &info) {
+void SystemInfo::update_cpu_info() {
+    cpu_info info;
+
     std::set<int32_t> cpus;
     FILE *fp = fopen("/proc/cpuinfo", "r");
     char line[1024] = {0};
@@ -286,10 +273,14 @@ void SystemInfo::init_cpu_info(cpu_info &info) {
     info.physical_cores_per_cpu -= m_reserved_cpu_cores;
     info.logical_cores_per_cpu = info.physical_cores_per_cpu * info.threads_per_cpu;
     info.cores = info.physical_cpus * info.physical_cores_per_cpu * info.threads_per_cpu;
+
+    RwMutex::WriteLock wlock(m_cpu_mtx);
+    m_cpuinfo = info;
 }
 
-// NVIDIA
-void SystemInfo::init_gpu_info() {
+void SystemInfo::update_gpu_info() {
+    std::map<std::string, gpu_info> gpuinfos;
+
     std::string cmd = "lspci -nnv |grep NVIDIA |awk '{print $2\",\"$1}' |tr \"\n\" \"|\"";
     std::string str = run_shell(cmd.c_str());
     if (!str.empty()) {
@@ -309,16 +300,44 @@ void SystemInfo::init_gpu_info() {
 
             if (idx == "0") {
                 cur_id = id;
-                m_gpuinfo[cur_id].id = cur_id;
+                gpuinfos[cur_id].id = cur_id;
             }
 
-            m_gpuinfo[cur_id].devices.push_back(vIDs[1]);
+            gpuinfos[cur_id].devices.push_back(vIDs[1]);
         }
     }
+
+    RwMutex::WriteLock wlock(m_gpu_mtx);
+    m_gpuinfo.swap(gpuinfos);
 }
 
-void SystemInfo::GetDiskInfo(const std::string& path, disk_info& info) {
-    update_disk_info(path, info);
+void SystemInfo::update_disk_info() {
+    std::map<std::string, disk_info> mpinfos;
+
+    if (m_node_type == NODE_TYPE::ComputeNode) {
+        boost::filesystem::path root_dir = "/";
+        boost::filesystem::directory_iterator iterend;
+        for (boost::filesystem::directory_iterator iter(root_dir); iter != iterend; iter++) {
+            if (boost::filesystem::is_directory(iter->path())) {
+                std::string dir = iter->path().string();
+                if (dir.substr(0, 5) == "/data") {
+                    disk_info _disk_info;
+                    update_disk_info(dir, _disk_info);
+
+                    mpinfos.insert({ dir, _disk_info });
+                }
+            }
+        }
+    }
+    else {
+        disk_info _disk_info;
+        update_disk_info("/", _disk_info);
+
+        mpinfos.insert({ "/", _disk_info });
+    }
+
+    RwMutex::WriteLock wlock(m_disk_mtx);
+    m_diskinfos.swap(mpinfos);
 }
 
 void SystemInfo::update_disk_info(const std::string &path, disk_info &info) {
@@ -429,6 +448,12 @@ void SystemInfo::update_thread_func() {
         // default route ip
         if (m_default_route_ip.empty())
             m_default_route_ip = get_default_route_ip();
+        
+        // mem
+        update_mem_info();
+
+        // disk
+        update_disk_info();
 
         // cpu usage
         do {
@@ -438,47 +463,7 @@ void SystemInfo::update_thread_func() {
             RwMutex::WriteLock wlock(m_cpu_mtx);
             m_cpu_usage = cal_occupy(&ocpu[0], &ncpu[0]);
         } while (0);
-
-        // mem
-        do {
-            mem_info _mem_info;
-            update_mem_info(_mem_info);
-            RwMutex::WriteLock wlock(m_mem_mtx);
-            m_meminfo = _mem_info;
-        } while (0);
-
-        // disk
-        do {
-            {
-                RwMutex::WriteLock wlock(m_disk_mtx);
-                m_diskinfos.clear();
-            }
-
-            if (m_node_type == NODE_TYPE::ComputeNode) {
-				boost::filesystem::path root_dir = "/";
-				boost::filesystem::directory_iterator iterend;
-                for (boost::filesystem::directory_iterator iter(root_dir); iter != iterend; iter++) {
-                    if (boost::filesystem::is_directory(iter->path())) {
-                        std::string dir = iter->path().string();
-                        if (dir.substr(0, 5) == "/data") {
-                            disk_info _disk_info;
-                            update_disk_info(dir, _disk_info);
-
-                            RwMutex::WriteLock wlock(m_disk_mtx);
-                            m_diskinfos.insert({ dir, _disk_info });
-                        }
-                    }
-                }
-            }
-            else {
-                disk_info _disk_info;
-                update_disk_info("/", _disk_info);
-
-				RwMutex::WriteLock wlock(m_disk_mtx);
-                m_diskinfos.insert({ "/", _disk_info });
-            }
-        } while (0);
-
+        
         // load average
         do {
             std::vector<float> vecAverage;

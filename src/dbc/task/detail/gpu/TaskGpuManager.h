@@ -3,6 +3,7 @@
 
 #include "util/utils.h"
 #include "GpuInfo.h"
+#include "../info/TaskInfo.h"
 
 class TaskGpuManager : public Singleton<TaskGpuManager> {
 public:
@@ -34,7 +35,11 @@ public:
     
     void del(const std::string& task_id);
 
+    void del(const std::string& task_id, const std::string& gpu_id);
+
     int32_t getTaskGpusCount(const std::string& task_id);
+
+    FResult checkXmlGpu(const std::shared_ptr<TaskInfo>& taskinfo);
 
 private:
     mutable RwMutex m_mtx;

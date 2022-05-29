@@ -11,15 +11,15 @@ enum OS_TYPE {
 
 // memory (KB)
 struct mem_info {
-    uint64_t total = 0L;
-    uint64_t free = 0L;
-    uint64_t used = 0L;
-    uint64_t available = 0L;
-    uint64_t buffers = 0L;
-    uint64_t cached = 0L;
-    uint64_t swap_total = 0L;
-    uint64_t swap_free = 0L;
-    uint64_t shared = 0L;
+    int64_t total = 0L;
+    int64_t free = 0L;
+    int64_t used = 0L;
+    int64_t available = 0L;
+    int64_t buffers = 0L;
+    int64_t cached = 0L;
+    int64_t swap_total = 0L;
+    int64_t swap_free = 0L;
+    int64_t shared = 0L;
     float usage = 0.0f;
 };
 
@@ -70,8 +70,6 @@ public:
 
     ERRCODE Init(NODE_TYPE node_type, int32_t reserved_cpu_cores = 0, int32_t reserved_memory = 0);
 
-    ERRCODE init();
-
     void exit();
 
     std::string GetPublicip() const {
@@ -95,6 +93,11 @@ public:
         return m_meminfo;
     }
 
+    float getMemUsage() const {
+        RwMutex::ReadLock rlock(m_mem_mtx);
+        return m_meminfo.usage;
+    }
+
     const cpu_info &GetCpuInfo() const {
         return m_cpuinfo;
     }
@@ -104,11 +107,12 @@ public:
         return m_cpu_usage;
     }
 
-    const std::map<std::string, gpu_info> &GetGpuInfo() const {
+    const std::map<std::string, gpu_info>& GetGpuInfo() const {
+        RwMutex::ReadLock rlock(m_gpu_mtx);
         return m_gpuinfo;
     }
 
-    std::map<std::string, disk_info> GetDiskInfos() const {
+    const std::map<std::string, disk_info>& GetDiskInfo() const {
         RwMutex::ReadLock rlock(m_disk_mtx);
         return m_diskinfos;
     }
@@ -123,11 +127,13 @@ public:
 protected:
     void init_os_type();
 
-    void update_mem_info(mem_info &info);
+    void update_mem_info();
 
-    void init_cpu_info(cpu_info &info);
+    void update_cpu_info();
 
-    void init_gpu_info();
+    void update_gpu_info();
+
+    void update_disk_info();
 
     void update_disk_info(const std::string &path, disk_info &info);
 
@@ -137,22 +143,27 @@ protected:
 
 private:
     NODE_TYPE m_node_type = NODE_TYPE::ComputeNode;
+    
     // os
     OS_TYPE m_os_type = OS_TYPE::OS_Ubuntu_1804;
     std::string m_os_name;
+    
     // memory
-    mem_info m_meminfo;
     mutable RwMutex m_mem_mtx;
+    mem_info m_meminfo;
+    
     // cpu
+    mutable RwMutex m_cpu_mtx;
     cpu_info m_cpuinfo;
     float m_cpu_usage = 0.0f;
-    mutable RwMutex m_cpu_mtx;
-    // gpu
-    // <id, gpu_info>
+    
+    // gpu: <id, gpu_info>
+    mutable RwMutex m_gpu_mtx;
     std::map<std::string, gpu_info> m_gpuinfo;
+
     // disk: /data /data2 /data3 ...
-    std::map<std::string, disk_info> m_diskinfos;
     mutable RwMutex m_disk_mtx;
+    std::map<std::string, disk_info> m_diskinfos;
 
     // load average
     std::vector<float> m_loadaverage;

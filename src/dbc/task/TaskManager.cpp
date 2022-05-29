@@ -521,6 +521,23 @@ static std::string genpwd() {
     return strpwd;
 }
 
+std::shared_ptr<TaskInfo> TaskManager::findTask(const std::string& wallet, const std::string& task_id) {
+    std::shared_ptr<TaskInfo> taskinfo = nullptr;
+    auto renttask = WalletRentTaskMgr::instance().getWalletRentTask(wallet);
+    if (renttask != nullptr) {
+        auto ids = renttask->getTaskIds();
+        for (auto& id : ids) {
+            if (id == task_id) {
+                taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
+                break;
+            }
+        }
+    }
+
+    return taskinfo;
+}
+
+// 创建task
 FResult TaskManager::createTask(const std::string& wallet, 
                                 const std::shared_ptr<dbc::node_create_task_req_data>& data,
                                 int64_t rent_end, USER_ROLE role, std::string& task_id) {
@@ -530,23 +547,10 @@ FResult TaskManager::createTask(const std::string& wallet,
         return fret;
     }
     
-    if (create_params.bios_mode != "pxe") {
-        std::vector<std::string> image_files;
-        getNeededBackingImage(create_params.image_name, image_files);
-        if (!image_files.empty()) {
-            std::string str = "image backfile not exist: ";
-            for (size_t i = 0; i < image_files.size(); i++) {
-                if (i > 0)
-                    str += ",";
-                str += image_files[i];
-            }
-
-            return FResult(ERR_ERROR, str);
-        }
-    }
-
     int64_t tnow = time(nullptr);
+    
     task_id = create_params.task_id;
+
     dbclog::instance().add_task_log_backend(task_id);
 
     // add taskinfo
@@ -661,27 +665,19 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
 	int64_t mem_size_k = 0;  // KB
 	int64_t disk_size_k = 0; // KB
     uint16_t n_ssh_port, n_rdp_port, n_vnc_port;
-	
-    // “image_name”
-    JSON_PARSE_STRING(doc, "image_name", image_name); //xxx.qcow2
-	FResult fret = check_image(image_name);
-	if (fret.errcode != ERR_SUCCESS) {
-		return fret;
-	}
 
     // "desc"
     JSON_PARSE_STRING(doc, "desc", desc);
     
     // "operation_system"
     JSON_PARSE_STRING(doc, "operation_system", operation_system);
-	if (!operation_system.empty()) {
-		std::transform(operation_system.begin(), operation_system.end(), operation_system.begin(), ::tolower);
-    }
-    else {
+	if (operation_system.empty()) {
         operation_system = "linux";
     }
+    std::transform(operation_system.begin(), operation_system.end(), operation_system.begin(), ::tolower);
+
 	// check: "linux"、"windows"
-	fret = check_operation_system(operation_system);
+    FResult fret = check_operation_system(operation_system);
 	if (fret.errcode != ERR_SUCCESS) {
 		return fret;
 	}
@@ -691,14 +687,34 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
 	if (bios_mode.empty()) {
 		bios_mode = "legacy";
 	}
-	else {
-		std::transform(bios_mode.begin(), bios_mode.end(), bios_mode.begin(), ::tolower);
-	}
-	// check: "legacy"、“uefi”、"pxe"
+    std::transform(bios_mode.begin(), bios_mode.end(), bios_mode.begin(), ::tolower);
+	// check: (1) linux: "legacy" (2) windows: “uefi” (3) linux or windows: "pxe"
 	fret = check_bios_mode(bios_mode);
 	if (fret.errcode != ERR_SUCCESS) {
 		return fret;
 	}
+
+    // “image_name”  扩展名为.qcow2：xxx.qcow2
+    JSON_PARSE_STRING(doc, "image_name", image_name);
+    fret = check_image(image_name);
+    if (fret.errcode != ERR_SUCCESS) {
+        return fret;
+    }
+
+    if (bios_mode != "pxe") {
+        std::vector<std::string> image_files;
+        getNeededBackingImage(image_name, image_files);
+        if (!image_files.empty()) {
+            std::string str = "image backfile not exist: ";
+            for (size_t i = 0; i < image_files.size(); i++) {
+                if (i > 0)
+                    str += ",";
+                str += image_files[i];
+            }
+
+            return FResult(ERR_ERROR, str);
+        }
+    }
 
     // "public_ip"
     JSON_PARSE_STRING(doc, "public_ip", public_ip);
@@ -711,17 +727,27 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     // "ssh_port“
     JSON_PARSE_STRING(doc, "ssh_port", s_ssh_port);
     // check
-    n_ssh_port = (uint16_t) atoi(s_ssh_port.c_str());
+    n_ssh_port = (uint16_t)atoi(s_ssh_port.c_str());
     if (isLinuxOS(operation_system)) {
-        if (s_ssh_port.empty() || !util::is_digits(s_ssh_port)) {
-            if (public_ip.empty()) {
-                return FResult(ERR_ERROR, "ssh_port is invalid");
-            } else {
+        // 配置了公网ip
+        if (!public_ip.empty()) {
+            fret = check_ssh_port(s_ssh_port);
+            if (fret.errcode != ERR_SUCCESS) {
                 n_ssh_port = 22;
             }
         }
-        if (public_ip.empty() && check_iptables_port_occupied(n_ssh_port)) {
-            return FResult(ERR_ERROR, "ssh_port is occupied");
+        // 未配置公网ip
+        else {
+            fret = check_ssh_port(s_ssh_port);
+            if (fret.errcode != ERR_SUCCESS) {
+                return fret;
+            }
+            else {
+                fret = check_port_conflict(n_ssh_port);
+                if (fret.errcode != ERR_SUCCESS) {
+                    return fret;
+                }
+            }
         }
     }
 
@@ -730,63 +756,99 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     // check
     n_rdp_port = (uint16_t) atoi(s_rdp_port.c_str());
     if (isWindowsOS(operation_system)) {
-        if (s_rdp_port.empty() || !util::is_digits(s_rdp_port)) {
-            if (public_ip.empty()) {
-                return FResult(ERR_ERROR, "rdp_port is invalid");
-            } else {
+        // 配置了公网ip
+        if (!public_ip.empty()) {
+            fret = check_rdp_port(s_ssh_port);
+            if (fret.errcode != ERR_SUCCESS) {
                 n_rdp_port = 3389;
             }
         }
-        if (public_ip.empty() && check_iptables_port_occupied(n_rdp_port)) {
-            return FResult(ERR_ERROR, "rdp_port is occupied");
+        // 未配置公网ip
+        else {
+            fret = check_rdp_port(s_ssh_port);
+            if (fret.errcode != ERR_SUCCESS) {
+                return fret;
+            }
+            else {
+                fret = check_port_conflict(n_ssh_port);
+                if (fret.errcode != ERR_SUCCESS) {
+                    return fret;
+                }
+            }
         }
     }
 
     // "vnc_port"
     JSON_PARSE_STRING(doc, "vnc_port", s_vnc_port);
 	// check: range: [5900, 6000]
-	n_vnc_port = (uint16_t) atoi(s_vnc_port.c_str());
-	if (!util::is_digits(s_vnc_port) || n_vnc_port < 5900 || n_vnc_port > 6000) {
-		return FResult(ERR_ERROR, "vnc_port is invalid (usage: [5900, 6000])");
-	}
-
-    // "gpu_count"
-    JSON_PARSE_STRING(doc, "gpu_count", s_gpu_count);
-	// check
-    gpu_count = atoi(s_gpu_count.c_str());
-	if (!util::is_digits(s_gpu_count) || gpu_count < 0) {
-		return FResult(ERR_ERROR, "gpu_count is invalid (usage: gpu_count >= 0)");
-	}
-	if (role == USER_ROLE::Verifier)
-		gpu_count = SystemInfo::instance().GetGpuInfo().size();
+    n_vnc_port = (uint16_t)atoi(s_vnc_port.c_str());
+    fret = check_vnc_port(s_vnc_port);
+    if (fret.errcode != ERR_SUCCESS) {
+        return fret;
+    }
+    else {
+        fret = check_port_conflict(n_vnc_port);
+        if (fret.errcode != ERR_SUCCESS) {
+            return fret;
+        }
+    }
 
     // "cpu_cores"
     JSON_PARSE_STRING(doc, "cpu_cores", s_cpu_cores);
     // check
     cpu_cores = atoi(s_cpu_cores.c_str());
-	if (!util::is_digits(s_cpu_cores) || cpu_cores <= 0) {
+	if (cpu_cores <= 0) {
 		return FResult(ERR_ERROR, "cpu_cores is invalid");
 	}
 	if (role == USER_ROLE::Verifier)
 		cpu_cores = SystemInfo::instance().GetCpuInfo().cores;
 
+    // 分配资源
+    if (!allocate_cpu(cpu_cores, sockets, cores, threads)) {
+        return FResult(ERR_ERROR, "allocate cpu failed");
+    }
+
 	// "mem_size" (G)
     JSON_PARSE_STRING(doc, "mem_size", s_mem_size);
     // check
     mem_size_k = atoi(s_mem_size.c_str()) * 1024L * 1024L;
-	if (!util::is_digits(s_mem_size) || mem_size_k <= 0) {
+	if (mem_size_k <= 0) {
 		return FResult(ERR_ERROR, "mem_size is invalid");
 	}
 	if (role == USER_ROLE::Verifier)
 		mem_size_k = SystemInfo::instance().GetMemInfo().free;
 
+    // 分配资源
+    if (!allocate_mem(mem_size_k)) {
+        run_shell("echo 3 > /proc/sys/vm/drop_caches");
+
+        if (!allocate_mem(mem_size_k)) {
+            return FResult(ERR_ERROR, "allocate mem failed");
+        }
+    }
+
+    // "gpu_count"
+    JSON_PARSE_STRING(doc, "gpu_count", s_gpu_count);
+    // check
+    gpu_count = atoi(s_gpu_count.c_str());
+    if (gpu_count < 0) {
+        return FResult(ERR_ERROR, "gpu_count is invalid (usage: gpu_count >= 0)");
+    }
+    if (role == USER_ROLE::Verifier)
+        gpu_count = SystemInfo::instance().GetGpuInfo().size();
+
+    // 分配资源
+    if (!allocate_gpu(gpu_count, gpus)) {
+        return FResult(ERR_ERROR, "allocate gpu failed");
+    }
+
+    // "disk_size" (G)
+    JSON_PARSE_STRING(doc, "disk_size", s_disk_size);
     if (bios_mode != "pxe") {
-        // "disk_size" (G)
-        JSON_PARSE_STRING(doc, "disk_size", s_disk_size);
         // check
         disk_size_k = atoi(s_disk_size.c_str()) * 1024L * 1024L;
-        if (!util::is_digits(s_disk_size) || disk_size_k <= 0) {
-            return FResult(ERR_ERROR, "disk_size is invalid");
+        if (disk_size_k <= 0) {
+            return FResult(ERR_ERROR, "disk_size is invalid (usage: disk_size > 0)");
         }
         
         if (role == USER_ROLE::Verifier) {
@@ -799,22 +861,22 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
             disk_size_k = disk_free;
         }
 
+        // 分配资源
+        if (!allocate_disk(disk_size_k)) {
+            return FResult(ERR_ERROR, "allocate disk failed");
+        }
+
         // "data_file_name"
         JSON_PARSE_STRING(doc, "data_file_name", data_file_name);
         // check
         if (!data_file_name.empty()) {
-            boost::filesystem::path data_path("/data/" + data_file_name);
-            boost::system::error_code error_code;
-            if (!boost::filesystem::exists(data_path, error_code) || error_code) {
-                return FResult(ERR_ERROR, "data file does not exist");
-            }
-
-            if (!boost::filesystem::is_regular_file(data_path, error_code) || error_code) {
-                return FResult(ERR_ERROR, "data file is not a regular file");
+            bfs::path data_path("/data/" + data_file_name);
+            if (!boost::filesystem::exists(data_path)) {
+                return FResult(ERR_ERROR, "data_file_name is not exist, path: /data/" + data_file_name);
             }
         }
     }
-   
+
     // "network_name"
     JSON_PARSE_STRING(doc, "network_name", network_name);
 	// check
@@ -895,29 +957,6 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
 
     // password
     login_password = vnc_password = genpwd();
-
-    // check resource
-    if (!allocate_cpu(cpu_cores, sockets, cores, threads)) {
-        return FResult(ERR_ERROR, "allocate cpu failed");
-    }
-
-    if (!allocate_gpu(gpu_count, gpus)) {
-        return FResult(ERR_ERROR, "allocate gpu failed");
-    }
-
-    if (!allocate_mem(mem_size_k)) {
-        run_shell("echo 3 > /proc/sys/vm/drop_caches");
-
-        if (!allocate_mem(mem_size_k)) {
-            return FResult(ERR_ERROR, "allocate mem failed");
-        }
-    }
-
-    if (bios_mode != "pxe") {
-        if (!allocate_disk(disk_size_k)) {
-            return FResult(ERR_ERROR, "allocate disk failed");
-        }
-    }
     
 	// return params
 	params.task_id = task_id;
@@ -942,6 +981,158 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     params.network_name = network_name;
     params.public_ip = public_ip;
     params.nwfilter = nwfilter;
+
+    return FResultOk;
+}
+
+FResult TaskManager::check_image(const std::string &image_name) {
+    if (image_name.empty()) {
+        return FResult(ERR_ERROR, "image_name is empty");
+    } 
+    
+    if (bfs::path(image_name).extension().string() != ".qcow2") {
+        return FResult(ERR_ERROR, "'image_name' extension name is invalid");
+    }
+
+    // 镜像必须都存储在/data目录下
+    bfs::path image_path("/data/" + image_name);
+    if (!bfs::exists(image_path)) {
+        return FResult(ERR_ERROR, "'image_name' is not exist (path:" + image_path.string() + ")");
+    }
+
+    if (ImageManager::instance().isDownloading(image_name) ||
+        ImageManager::instance().isUploading(image_name)) {
+        return FResult(ERR_ERROR, "'image_name':" + image_name + " in downloading or uploading, please try again later");
+    }
+
+    return FResultOk;
+}
+
+FResult TaskManager::check_operation_system(const std::string& os) {
+    if (os.empty()) {
+        return FResult(ERR_ERROR, "operation_system is emtpy");
+    }
+
+    if (isLinuxOS(os) || isWindowsOS(os)) {
+        return FResultOk;
+    }
+    else {
+        return FResult(ERR_ERROR, "unsupported operation system: " + os + " (usage: 'linux' 'windows')");
+    }
+}
+
+FResult TaskManager::check_bios_mode(const std::string& bios_mode) {
+    if (bios_mode.empty()) {
+        return FResult(ERR_ERROR, "bios_mode is emtpy");
+    }
+
+    if (bios_mode == "legacy" || bios_mode == "uefi" || bios_mode == "pxe") {
+        return FResultOk;
+    }
+    else {
+        return FResult(ERR_ERROR, "unsupported bios mode: " + bios_mode + " (usage: 'legacy(default)'、'uefi'、'pxe')");
+    }
+}
+
+FResult TaskManager::check_public_ip(const std::string& public_ip, const std::string& task_id) {
+    if (public_ip.empty()) return FResultOk;
+    ip_validator ip_vdr;
+    variable_value val_ip(public_ip, false);
+    if (!ip_vdr.validate(val_ip))
+        return FResult(ERR_ERROR, "invalid public ip");
+    if (SystemInfo::instance().GetDefaultRouteIp() == public_ip)
+        return FResult(ERR_ERROR, "public ip being used");
+    bool bFind = false;
+    auto taskinfos = TaskInfoMgr::instance().getAllTaskInfos();
+    for (const auto& iter : taskinfos) {
+        if (iter.first == task_id) continue;
+        if (iter.second->getPublicIP() == public_ip) {
+            bFind = true;
+            break;
+        }
+    }
+    if (bFind) return FResult(ERR_ERROR, "public ip being used");
+    return FResultOk;
+}
+
+FResult TaskManager::check_ssh_port(const std::string& s_port) {
+    if (s_port.empty()) {
+        return FResult(ERR_ERROR, "ssh_port is empty");
+    }
+        
+    if (!util::is_digits(s_port)) {
+        return FResult(ERR_ERROR, "ssh_port is not digit");
+    }
+
+    return FResultOk;
+}
+
+FResult TaskManager::check_rdp_port(const std::string& s_port) {
+    if (s_port.empty()) {
+        return FResult(ERR_ERROR, "rdp_port is empty");
+    }
+
+    if (!util::is_digits(s_port)) {
+        return FResult(ERR_ERROR, "rdp_port is not digit");
+    }
+
+    return FResultOk;
+}
+
+FResult TaskManager::check_vnc_port(const std::string& s_port) {
+    if (s_port.empty()) {
+        return FResult(ERR_ERROR, "vnc_port is empty");
+    }
+
+    if (!util::is_digits(s_port)) {
+        return FResult(ERR_ERROR, "vnc_port is not digit");
+    }
+    
+    uint16_t n_port = (uint16_t) atoi(s_port.c_str());
+    if (n_port < 5900 || n_port > 6000) {
+        return FResult(ERR_ERROR, "vnc_port is invalid (usage: [5900, 6000])");
+    }
+
+    return FResultOk;
+}
+
+FResult TaskManager::check_port_conflict(uint16_t port, const std::string& exclude_task_id /* = "" */) {
+    FResult fret = FResultOk;
+    auto taskinfos = TaskInfoMgr::instance().getAllTaskInfos();
+    for (const auto& iter : taskinfos) {
+        if (iter.first == exclude_task_id) continue;
+        
+        if (!iter.second->getPublicIP().empty()) continue;
+
+        if (iter.second->getSSHPort() == port) {
+            fret = FResult(ERR_ERROR, "port conflict, exist ssh_port = " + port);
+            break;
+        }
+        else if (iter.second->getRDPPort() == port) {
+            fret = FResult(ERR_ERROR, "port conflict, exist rdp_port = " + port);
+            break;
+        }
+        else if (iter.second->getVncPort() == port) {
+            fret = FResult(ERR_ERROR, "port conflict, exist vnc_port = " + port);
+            break;
+        }
+    }
+
+    return fret;
+}
+
+FResult TaskManager::check_multicast(const std::vector<std::string>& multicast) {
+    for (const auto& address : multicast) {
+        std::vector<std::string> vecSplit = util::split(address, ":");
+        if (vecSplit.size() != 2) {
+            return FResult(ERR_ERROR, "multicast format: ip:port");
+        }
+
+        boost::asio::ip::tcp::endpoint ep(boost::asio::ip::address_v4::from_string(vecSplit[0]), atoi(vecSplit[1]));
+        if (!ep.address().is_multicast()) {
+            return FResult(ERR_ERROR, "address is not a multicast address");
+        }
+    }
 
     return FResultOk;
 }
@@ -972,13 +1163,18 @@ bool TaskManager::allocate_cpu(int32_t& total_cores, int32_t& sockets, int32_t& 
     if (ret_total_cores == sockets * cores_per_socket * threads) {
         total_cores = ret_total_cores;
         return true;
-    } else {
+    }
+    else {
         return false;
     }
 }
 
+bool TaskManager::allocate_mem(int64_t mem_size_k) {
+    return mem_size_k > 0 && mem_size_k <= SystemInfo::instance().GetMemInfo().free;
+}
+
 bool TaskManager::allocate_gpu(int32_t gpu_count, std::map<std::string, std::list<std::string>>& gpus) {
-    if (gpu_count <= 0) return true;
+    if (gpu_count == 0) return true;
 
     std::map<std::string, gpu_info> can_use_gpu = SystemInfo::instance().GetGpuInfo();
     auto taskinfos = TaskInfoMgr::instance().getAllTaskInfos();
@@ -987,11 +1183,11 @@ bool TaskManager::allocate_gpu(int32_t gpu_count, std::map<std::string, std::lis
         if (st != VIR_DOMAIN_SHUTOFF) {
             auto gpus = TaskGpuMgr::instance().getTaskGpus(iter.first);
             if (!gpus.empty()) {
-                for (auto &iter_gpu : gpus) {
+                for (auto& iter_gpu : gpus) {
                     can_use_gpu.erase(iter_gpu.first);
                 }
-			}
-		}
+            }
+        }
     }
 
     int cur_count = 0;
@@ -1004,215 +1200,16 @@ bool TaskManager::allocate_gpu(int32_t gpu_count, std::map<std::string, std::lis
     return cur_count == gpu_count;
 }
 
-bool TaskManager::allocate_mem(int64_t mem_size) {
-    return mem_size > 0 && mem_size <= SystemInfo::instance().GetMemInfo().free;
-}
-
-bool TaskManager::allocate_disk(int64_t disk_size) {
-	disk_info _disk_info;
-	SystemInfo::instance().GetDiskInfo("/data", _disk_info);
-
-	int64_t disk_free = std::min(_disk_info.total - g_disk_system_size * 1024L * 1024L, _disk_info.available);
-
-    return disk_size > 0 && disk_size <= disk_free;
-}
-
-bool TaskManager::check_iptables_port_occupied(uint16_t port, const std::string& task_id) {
-	bool bFind = false;
-	auto taskinfos = TaskInfoMgr::instance().getAllTaskInfos();
-	for (const auto& iter : taskinfos) {
-        if (iter.first == task_id) continue;
-        if (!iter.second->getPublicIP().empty()) continue;
-		if (iter.second->getSSHPort() == port || iter.second->getRDPPort() == port) {
-			bFind = true;
-			break;
-		}
-	}
-	return bFind;
-}
-
-FResult TaskManager::check_public_ip(const std::string& public_ip, const std::string& task_id) {
-    if (public_ip.empty()) return FResultOk;
-    ip_validator ip_vdr;
-    variable_value val_ip(public_ip, false);
-    if (!ip_vdr.validate(val_ip))
-        return FResult(ERR_ERROR, "invalid public ip");
-    if (SystemInfo::instance().GetDefaultRouteIp() == public_ip)
-        return FResult(ERR_ERROR, "public ip being used");
-    bool bFind = false;
-    auto taskinfos = TaskInfoMgr::instance().getAllTaskInfos();
-    for (const auto& iter : taskinfos) {
-        if (iter.first == task_id) continue;
-		if (iter.second->getPublicIP() == public_ip) {
-			bFind = true;
-			break;
-		}
-	}
-    if (bFind) return FResult(ERR_ERROR, "public ip being used");
-    return FResultOk;
-}
-
-FResult TaskManager::check_image(const std::string &image_name) {
-    if (image_name.empty() || image_name.substr(image_name.size() - 5) != "qcow2") {
-        return FResult(ERR_ERROR, "image_name is empty or image_name is invalid");
-    }
-
-    boost::system::error_code error_code;
-    boost::filesystem::path image_path("/data/" + image_name);
-    if (!boost::filesystem::exists(image_path, error_code) || error_code) {
-        return FResult(ERR_ERROR, "image not exist");
-    }
-
-    if (!boost::filesystem::is_regular_file(image_path, error_code) || error_code) {
-        return FResult(ERR_ERROR, "image is not a regular file");
-    }
-
-    if (ImageManager::instance().isDownloading(image_name) ||
-        ImageManager::instance().isUploading(image_name)) {
-        return FResult(ERR_ERROR, "image:" + image_name + " in downloading or uploading, please try again later");
-    }
-
-    return FResultOk;
-}
-
-FResult TaskManager::check_data_image(const std::string& data_image_name) {
-    if (!data_image_name.empty()) {
-        boost::filesystem::path image_path("/data/" + data_image_name);
-        if (!boost::filesystem::exists(image_path)) {
-            return FResult(ERR_ERROR, "image not exist");
-        }
-
-        if (!boost::filesystem::is_regular_file(image_path)) {
-            return FResult(ERR_ERROR, "image is not a regular file");
-        }
-    }
-    return FResultOk;
-}
-
-FResult TaskManager::check_cpu(int32_t sockets, int32_t cores, int32_t threads) {
-    int32_t cpu_cores = sockets * cores * threads;
-    if (cpu_cores <= 0 || cpu_cores > SystemInfo::instance().GetCpuInfo().cores ||
-        sockets > SystemInfo::instance().GetCpuInfo().physical_cpus ||
-        cores > SystemInfo::instance().GetCpuInfo().physical_cores_per_cpu ||
-        threads > SystemInfo::instance().GetCpuInfo().threads_per_cpu) {
-        return FResult(ERR_ERROR, "cpu config is invalid");
-    }
-
-    return FResultOk;
-}
-
-FResult TaskManager::check_gpu(const std::map<std::string, std::list<std::string>> &gpus) {
-    std::map<std::string, gpu_info> can_use_gpu = SystemInfo::instance().GetGpuInfo();
-    auto taskinfos = TaskInfoMgr::instance().getAllTaskInfos();
-    for (auto& iter : taskinfos) {
-        virDomainState st = VmClient::instance().GetDomainStatus(iter.first);
-        if (st != VIR_DOMAIN_SHUTOFF) {
-            auto gpus = TaskGpuMgr::instance().getTaskGpus(iter.first);
-            if (!gpus.empty()) {
-                for (auto &it1: gpus) {
-                    can_use_gpu.erase(it1.first);
-                }
-            }
-        }
-    }
-
-    FResult fret = FResultOk;
-    for (auto& it : gpus) {
-        auto it_gpu = can_use_gpu.find(it.first);
-        if (it_gpu == can_use_gpu.end()) {
-            fret = FResult(ERR_ERROR, "gpu " + it.first + " is already in use");
-            break;
-        }
-
-        for (auto& it_device : it.second) {
-            std::list<std::string>& can_use_devices = it_gpu->second.devices;
-            auto found = std::find(can_use_devices.begin(), can_use_devices.end(), it_device);
-            if (found == can_use_devices.end()) {
-                fret = FResult(ERR_ERROR, "gpu device " + it_device + " not found in system");
-                break;
-            }
-        }
-
-        if (fret.errcode != ERR_SUCCESS) break;
-    }
-
-    return fret;
-}
-
-FResult TaskManager::check_disk(const std::map<int32_t, uint64_t> &disks) {
+bool TaskManager::allocate_disk(int64_t disk_size_k) {
     disk_info _disk_info;
     SystemInfo::instance().GetDiskInfo("/data", _disk_info);
+    // /data 的剩余大小要减掉系统盘大小
+    int64_t disk_free = std::min(_disk_info.total - g_disk_system_size * 1024L * 1024L, _disk_info.available);
 
-    uint64_t disk_available = _disk_info.available - g_disk_system_size * 1024L * 1024L;
-    uint64_t need_size = 0;
-    for (auto& it : disks) {
-        need_size += it.second;
-    }
-
-    if (need_size > disk_available)
-        return FResult(ERR_ERROR, "no enough disk, can available size: " + std::to_string(disk_available));
-    else
-        return FResultOk;
+    return disk_size_k > 0 && disk_size_k <= disk_free;
 }
 
-FResult TaskManager::check_operation_system(const std::string& os) {
-    if (os.empty())
-        return FResult(ERR_ERROR, "operation_system is emtpy");
-
-    if (isLinuxOS(os) || isWindowsOS(os)) {
-        return FResultOk;
-    }
-    else {
-        return FResult(ERR_ERROR, "unsupported operation system: " + os);
-    }
-}
-
-FResult TaskManager::check_bios_mode(const std::string& bios_mode) {
-    if (bios_mode.empty())
-        return FResult(ERR_ERROR, "operation_system is emtpy");
-
-    if (bios_mode == "legacy"
-        || bios_mode == "uefi"
-        || bios_mode == "pxe") {
-        return FResultOk;
-    }
-    else {
-        return FResult(ERR_ERROR, "invalid bios mode: " + bios_mode + " (usage: 'legacy'、'uefi'、'pxe')");
-    }
-}
-
-FResult TaskManager::check_multicast(const std::vector<std::string>& multicast) {
-    for (const auto& address : multicast) {
-        std::vector<std::string> vecSplit = util::split(address, ":");
-        if (vecSplit.size() != 2) {
-            return FResult(ERR_ERROR, "multicast format: ip:port");
-        }
-
-        boost::asio::ip::tcp::endpoint ep(boost::asio::ip::address_v4::from_string(vecSplit[0]), atoi(vecSplit[1]));
-        if (!ep.address().is_multicast()) {
-            return FResult(ERR_ERROR, "address is not a multicast address");
-        }
-    }
-
-    return FResultOk;
-}
-
-std::shared_ptr<TaskInfo> TaskManager::findTask(const std::string& wallet, const std::string &task_id) {
-    std::shared_ptr<TaskInfo> taskinfo = nullptr;
-    auto renttask = WalletRentTaskMgr::instance().getWalletRentTask(wallet);
-    if (renttask != nullptr) {
-        auto ids = renttask->getTaskIds();
-        for (auto &id : ids) {
-            if (id == task_id) {
-                taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
-                break;
-            }
-        }
-    }
-
-    return taskinfo;
-}
-
+// 启动task
 FResult TaskManager::startTask(const std::string& wallet, const std::string &task_id) {
     auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
     if (taskinfo == nullptr) {
@@ -1224,26 +1221,10 @@ FResult TaskManager::startTask(const std::string& wallet, const std::string &tas
     }
     
 	// check resource
-    int cpu_cores = taskinfo->getTotalCores();
-    int sockets, cores, threads;
-	if (!allocate_cpu(cpu_cores, sockets, cores, threads)) {
-		return FResult(ERR_ERROR, "allocate cpu failed");
-	}
-
-    int gpu_count = TaskGpuMgr::instance().getTaskGpusCount(task_id);
-    std::map<std::string, std::list<std::string>> gpus;
-	if (!allocate_gpu(gpu_count, gpus)) {
-		return FResult(ERR_ERROR, "allocate gpu failed");
-	}
-
-    int64_t mem_size_k = taskinfo->getMemSize();
-	if (!allocate_mem(mem_size_k)) {
-		run_shell("echo 3 > /proc/sys/vm/drop_caches");
-
-		if (!allocate_mem(mem_size_k)) {
-			return FResult(ERR_ERROR, "allocate memory failed");
-		}
-	}
+    FResult fret = check_resource(taskinfo);
+    if (fret.errcode != ERR_SUCCESS) {
+        return fret;
+    }
 
     virDomainState vm_status = VmClient::instance().GetDomainStatus(task_id);
     if (vm_status == VIR_DOMAIN_NOSTATE || vm_status == VIR_DOMAIN_SHUTOFF || vm_status == VIR_DOMAIN_PMSUSPENDED) {
@@ -1258,6 +1239,100 @@ FResult TaskManager::startTask(const std::string& wallet, const std::string &tas
     }
 }
 
+FResult TaskManager::check_cpu(int32_t sockets, int32_t cores, int32_t threads) {
+    int32_t cpu_cores = sockets * cores * threads;
+    if (cpu_cores <= 0 || cpu_cores > SystemInfo::instance().GetCpuInfo().cores ||
+        sockets > SystemInfo::instance().GetCpuInfo().physical_cpus ||
+        cores > SystemInfo::instance().GetCpuInfo().physical_cores_per_cpu ||
+        threads > SystemInfo::instance().GetCpuInfo().threads_per_cpu) {
+        return FResult(ERR_ERROR, "check cpu failed");
+    }
+
+    return FResultOk;
+}
+
+FResult TaskManager::check_gpu(const std::map<std::string, std::shared_ptr<GpuInfo>>& gpus) {
+    std::map<std::string, gpu_info> can_use_gpu = SystemInfo::instance().GetGpuInfo();
+    auto taskinfos = TaskInfoMgr::instance().getAllTaskInfos();
+    for (auto& iter : taskinfos) {
+        virDomainState st = VmClient::instance().GetDomainStatus(iter.first);
+        if (st != VIR_DOMAIN_SHUTOFF) {
+            auto _gpus = TaskGpuMgr::instance().getTaskGpus(iter.first);
+            if (!_gpus.empty()) {
+                for (auto& it1 : _gpus) {
+                    can_use_gpu.erase(it1.first);
+                }
+            }
+        }
+    }
+
+    FResult fret = FResultOk;
+    for (auto& it : gpus) {
+        auto it_gpu = can_use_gpu.find(it.first);
+        if (it_gpu == can_use_gpu.end()) {
+            fret = FResult(ERR_ERROR, "gpu " + it.first + " is already in use");
+            break;
+        }
+
+        auto ids = it.second->getDeviceIds();
+        for (auto& it_device : ids) {
+            std::list<std::string>& can_use_devices = it_gpu->second.devices;
+            auto found = std::find(can_use_devices.begin(), can_use_devices.end(), it_device);
+            if (found == can_use_devices.end()) {
+                fret = FResult(ERR_ERROR, "gpu device " + it_device + " not found in system");
+                break;
+            }
+        }
+
+        if (fret.errcode != ERR_SUCCESS) break;
+    }
+
+    return fret;
+}
+
+FResult TaskManager::check_mem(int64_t mem_size_k) {
+    if (mem_size_k > 0 && mem_size_k <= SystemInfo::instance().GetMemInfo().free) {
+        return FResultOk;
+    }
+    else {
+        return FResultError;
+    }
+}
+
+FResult TaskManager::check_resource(const std::shared_ptr<TaskInfo>& taskinfo) {
+    // 检查xml里的所有gpu是否都可用，如果存在不可用的gpu，自动删除
+    TaskGpuMgr::instance().checkXmlGpu(taskinfo);
+
+    // cpu
+    FResult fret = check_cpu(taskinfo->getCpuSockets(), taskinfo->getCpuCoresPerSocket(),
+        taskinfo->getCpuThreadsPerCore());
+    if (fret.errcode != ERR_SUCCESS) {
+        return FResult(ERR_ERROR, "check cpu failed");
+    }
+
+    // gpu
+    auto gpus = TaskGpuMgr::instance().getTaskGpus(taskinfo->getTaskId());
+    fret = check_gpu(gpus);
+    if (fret.errcode != ERR_SUCCESS) {
+        return FResult(ERR_ERROR, "check gpu failed");
+    }
+    
+    // mem
+    int64_t mem_size_k = taskinfo->getMemSize();
+    fret = check_mem(mem_size_k);
+    if (fret.errcode != ERR_SUCCESS) {
+        run_shell("echo 3 > /proc/sys/vm/drop_caches");
+
+        fret = check_mem(mem_size_k);
+        if (fret.errcode != ERR_SUCCESS) {
+            return FResult(ERR_ERROR, "check memory failed");
+        }
+    }
+
+    return FResultOk;
+}
+
+// 关闭task
 FResult TaskManager::shutdownTask(const std::string& wallet, const std::string &task_id) {
     auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
     if (taskinfo == nullptr) {
@@ -1281,6 +1356,7 @@ FResult TaskManager::shutdownTask(const std::string& wallet, const std::string &
     }
 }
 
+// 强制断电
 FResult TaskManager::poweroffTask(const std::string& wallet, const std::string& task_id) {
 	auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
 	if (taskinfo == nullptr) {
@@ -1305,6 +1381,7 @@ FResult TaskManager::poweroffTask(const std::string& wallet, const std::string& 
 	}
 }
 
+// 重启task
 FResult TaskManager::restartTask(const std::string& wallet, const std::string &task_id, bool force_reboot) {
     auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
     if (taskinfo == nullptr) {
@@ -1316,26 +1393,10 @@ FResult TaskManager::restartTask(const std::string& wallet, const std::string &t
     }
 
 	// check resource
-	int cpu_cores = taskinfo->getTotalCores();
-	int sockets, cores, threads;
-	if (!allocate_cpu(cpu_cores, sockets, cores, threads)) {
-		return FResult(ERR_ERROR, "allocate cpu failed");
-	}
-
-	int gpu_count = TaskGpuMgr::instance().getTaskGpusCount(task_id);
-	std::map<std::string, std::list<std::string>> gpus;
-	if (!allocate_gpu(gpu_count, gpus)) {
-		return FResult(ERR_ERROR, "allocate gpu failed");
-	}
-
-	int64_t mem_size_k = taskinfo->getMemSize();
-	if (!allocate_mem(mem_size_k)) {
-		run_shell("echo 3 > /proc/sys/vm/drop_caches");
-
-		if (!allocate_mem(mem_size_k)) {
-			return FResult(ERR_ERROR, "allocate memory failed");
-		}
-	}
+    FResult fret = check_resource(taskinfo);
+    if (fret.errcode != ERR_SUCCESS) {
+        return fret;
+    }
 
     virDomainState vm_status = VmClient::instance().GetDomainStatus(task_id);
     if (vm_status == VIR_DOMAIN_NOSTATE || vm_status == VIR_DOMAIN_SHUTOFF || vm_status == VIR_DOMAIN_RUNNING) {
@@ -1356,6 +1417,7 @@ FResult TaskManager::restartTask(const std::string& wallet, const std::string &t
     }
 }
 
+// 重置task（慎用）
 FResult TaskManager::resetTask(const std::string& wallet, const std::string &task_id) {
     auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
     if (taskinfo == nullptr) {
@@ -1379,6 +1441,7 @@ FResult TaskManager::resetTask(const std::string& wallet, const std::string &tas
     }
 }
 
+// 删除task
 FResult TaskManager::deleteTask(const std::string& wallet, const std::string &task_id) {
     auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
     if (taskinfo == nullptr) {
@@ -1397,6 +1460,7 @@ FResult TaskManager::deleteTask(const std::string& wallet, const std::string &ta
     return FResultOk;
 }
 
+// 修改task
 FResult TaskManager::modifyTask(const std::string& wallet, 
     const std::shared_ptr<dbc::node_modify_task_req_data>& data) {
     std::string task_id = data->task_id;
@@ -1451,7 +1515,9 @@ FResult TaskManager::modifyTask(const std::string& wallet,
         if (new_ssh_port <= 0) {
             return FResult(ERR_ERROR, "new_ssh_port " + s_new_ssh_port + " is invalid! (usage: > 0)");
         }
-        if (taskinfoPtr->getPublicIP().empty() && check_iptables_port_occupied(new_ssh_port, task_id)) {
+
+        fret = check_port_conflict(new_ssh_port, task_id);
+        if (taskinfoPtr->getPublicIP().empty() && fret.errcode != ERR_SUCCESS) {
             return FResult(ERR_ERROR, "new_ssh_port " + s_new_ssh_port + " has been used!");
         }
 
@@ -1479,7 +1545,9 @@ FResult TaskManager::modifyTask(const std::string& wallet,
         if (new_rdp_port <= 0) {
             return FResult(ERR_ERROR, "new_rdp_port " + s_new_rdp_port + " is invalid! (usage: > 0)");
         }
-        if (taskinfoPtr->getPublicIP().empty() && check_iptables_port_occupied(new_rdp_port, task_id)) {
+
+        fret = check_port_conflict(new_rdp_port, task_id);
+        if (taskinfoPtr->getPublicIP().empty() && fret.errcode != ERR_SUCCESS) {
             return FResult(ERR_ERROR, "new_rdp_port " + s_new_rdp_port + " has been used!");
         }
 
@@ -1671,6 +1739,7 @@ FResult TaskManager::modifyTask(const std::string& wallet,
     return FResultOk;
 }
 
+// 设置task的用户名和密码
 FResult TaskManager::passwdTask(const std::string& wallet, const std::shared_ptr<dbc::node_passwd_task_req_data>& data) {
     std::string task_id = data->task_id;
     auto taskinfoPtr = TaskInfoManager::instance().getTaskInfo(task_id);
@@ -1708,6 +1777,7 @@ FResult TaskManager::passwdTask(const std::string& wallet, const std::shared_ptr
     return fret;
 }
 
+// 获取task日志
 FResult TaskManager::getTaskLog(const std::string &task_id, QUERY_LOG_DIRECTION direction, int32_t nlines,
                                 std::string &log_content) {
     auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
@@ -2374,10 +2444,8 @@ bool TaskManager::create_task_iptable(const std::string& task_id, uint16_t ssh_p
 void TaskManager::getNeededBackingImage(const std::string &image_name, std::vector<std::string> &backing_images) {
     std::string cur_image = "/data/" + image_name;
     while (cur_image.find("/data/") != std::string::npos) {
-        boost::system::error_code error_code;
-        if (!boost::filesystem::exists(cur_image, error_code) || error_code) {
-            boost::filesystem::path full_path(cur_image);
-            backing_images.push_back(full_path.filename().string());
+        if (!boost::filesystem::exists(cur_image)) { 
+            backing_images.push_back(cur_image);
             break;
         }
 

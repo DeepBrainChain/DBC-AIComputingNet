@@ -4152,7 +4152,7 @@ void node_request_service::query_node_info(const network::base_header& header,
     ss << "}";
  
     ss << ",\"disk_data\":" << "[";
-    auto mpdisks = SystemInfo::instance().GetDiskInfos();
+    auto mpdisks = SystemInfo::instance().GetDiskInfo();
     int disk_count = 0;
     for (auto iter_disk : mpdisks) {
         if (disk_count > 0) ss << ",";
