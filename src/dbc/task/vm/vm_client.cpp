@@ -1226,9 +1226,10 @@ FResult VmClient::RedefineDomain(const std::shared_ptr<TaskInfo>& taskinfo) {
             ele_topology->SetAttribute("cores", cpuCores);
             ele_topology->SetAttribute("threads", cpuThreads);
 		}
+
         tinyxml2::XMLElement* ele_devices = root->FirstChildElement("devices");
-        // gpu
         if (ele_devices != nullptr) {
+            // gpu
             tinyxml2::XMLElement* ele_hostdev = ele_devices->FirstChildElement("hostdev");
             while (ele_hostdev != nullptr) {
                 ele_devices->DeleteChild(ele_hostdev);
@@ -1267,6 +1268,18 @@ FResult VmClient::RedefineDomain(const std::shared_ptr<TaskInfo>& taskinfo) {
                     ele_devices->LinkEndChild(hostdev_node);
 				}
 			}
+
+            // vnc
+            tinyxml2::XMLElement* ele_graphics = ele_devices->FirstChildElement("graphics");
+            while (ele_graphics) {
+                std::string graphics_type = ele_graphics->Attribute("type");
+                if (graphics_type == "vnc") {
+                    ele_graphics->SetAttribute("port", taskinfo->getVncPort());
+                    ele_graphics->SetAttribute("autoport", taskinfo->getVncPort() == -1 ? "yes" : "no");
+                    break;
+                }
+                ele_graphics = ele_graphics->NextSiblingElement("graphics");
+            }
         }
 
 		tinyxml2::XMLPrinter printer;

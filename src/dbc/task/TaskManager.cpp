@@ -1101,19 +1101,27 @@ FResult TaskManager::check_port_conflict(uint16_t port, const std::string& exclu
     auto taskinfos = TaskInfoMgr::instance().getAllTaskInfos();
     for (const auto& iter : taskinfos) {
         if (iter.first == exclude_task_id) continue;
-        
+
+        // running
+        virDomainState domain_status = VmClient::instance().GetDomainStatus(iter.first);
+        if (domain_status != VIR_DOMAIN_RUNNING
+                && domain_status != VIR_DOMAIN_BLOCKED
+                && domain_status != VIR_DOMAIN_PAUSED)
+            continue;
+
+        // VNC server 占用的是宿主机的端口，虚拟机有公网IP也不能冲突
+        if (iter.second->getVncPort() == port) {
+            fret = FResult(ERR_ERROR, "port conflict, exist vnc_port = " + port);
+            break;
+        }
+
         if (!iter.second->getPublicIP().empty()) continue;
 
         if (iter.second->getSSHPort() == port) {
             fret = FResult(ERR_ERROR, "port conflict, exist ssh_port = " + port);
             break;
-        }
-        else if (iter.second->getRDPPort() == port) {
+        } else if (iter.second->getRDPPort() == port) {
             fret = FResult(ERR_ERROR, "port conflict, exist rdp_port = " + port);
-            break;
-        }
-        else if (iter.second->getVncPort() == port) {
-            fret = FResult(ERR_ERROR, "port conflict, exist vnc_port = " + port);
             break;
         }
     }
@@ -1327,6 +1335,25 @@ FResult TaskManager::check_resource(const std::shared_ptr<TaskInfo>& taskinfo) {
         if (fret.errcode != ERR_SUCCESS) {
             return FResult(ERR_ERROR, "check memory failed");
         }
+    }
+
+    // ssh_port or rdp_port
+    if (isLinuxOS(taskinfo->getOperationSystem())) {
+        fret = check_port_conflict(taskinfo->getSSHPort(), taskinfo->getTaskId());
+        if (fret.errcode != ERR_SUCCESS) {
+            return FResult(ERR_ERROR, "check ssh_port failed");
+        }
+    } else if (isWindowsOS(taskinfo->getOperationSystem())) {
+        fret = check_port_conflict(taskinfo->getRDPPort(), taskinfo->getTaskId());
+        if (fret.errcode != ERR_SUCCESS) {
+            return FResult(ERR_ERROR, "check rdp_port failed");
+        }
+    }
+
+    // vnc_port
+    fret = check_port_conflict(taskinfo->getVncPort(), taskinfo->getTaskId());
+    if (fret.errcode != ERR_SUCCESS) {
+        return FResult(ERR_ERROR, "check vnc_port failed");
     }
 
     return FResultOk;
@@ -1632,6 +1659,11 @@ FResult TaskManager::modifyTask(const std::string& wallet,
         uint16_t new_vnc_port = atoi(s_new_vnc_port.c_str());
         if (new_vnc_port < 5900 || new_vnc_port > 6000) {
             return FResult(ERR_ERROR, "new_vnc_port " + s_new_vnc_port + " is invalid! (usage: 5900 =< port <= 6000)");
+        }
+
+        fret = check_port_conflict(new_vnc_port, task_id);
+        if (fret.errcode != ERR_SUCCESS) {
+            return FResult(ERR_ERROR, "new_vnc_port " + s_new_vnc_port + " has been used!");
         }
 
         if (new_vnc_port != taskinfoPtr->getVncPort()) {
@@ -2780,6 +2812,11 @@ void TaskManager::prune_task_thread_func() {
                     }
                 }
             }
+        }
+
+        // 空闲状态定时清理缓存
+        if (machine_status == MACHINE_STATUS::Online) {
+            run_shell("echo 3 > /proc/sys/vm/drop_caches");
         }
 
         if (cur_rent_end <= 0) {
