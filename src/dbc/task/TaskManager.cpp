@@ -1111,17 +1111,17 @@ FResult TaskManager::check_port_conflict(uint16_t port, const std::string& exclu
 
         // VNC server 占用的是宿主机的端口，虚拟机有公网IP也不能冲突
         if (iter.second->getVncPort() == port) {
-            fret = FResult(ERR_ERROR, "port conflict, exist vnc_port = " + port);
+            fret = FResult(ERR_ERROR, "port conflict, exist vnc_port = " + std::to_string(port));
             break;
         }
 
         if (!iter.second->getPublicIP().empty()) continue;
 
         if (iter.second->getSSHPort() == port) {
-            fret = FResult(ERR_ERROR, "port conflict, exist ssh_port = " + port);
+            fret = FResult(ERR_ERROR, "port conflict, exist ssh_port = " + std::to_string(port));
             break;
         } else if (iter.second->getRDPPort() == port) {
-            fret = FResult(ERR_ERROR, "port conflict, exist rdp_port = " + port);
+            fret = FResult(ERR_ERROR, "port conflict, exist rdp_port = " + std::to_string(port));
             break;
         }
     }
@@ -2415,6 +2415,8 @@ void TaskManager::process_create_task(const std::shared_ptr<TaskEvent>& ev) {
             return;
         }
 
+        add_iptable_to_system(ev->task_id);
+
 		std::string login_username = isLinuxOS(taskinfo->getOperationSystem()) ?
 			g_vm_ubuntu_login_username : g_vm_windows_login_username;
 		FResult fret = VmClient::instance().SetDomainUserPassword(ev->task_id,
@@ -2446,7 +2448,7 @@ bool TaskManager::create_task_iptable(const std::string& task_id, uint16_t ssh_p
 	    const std::string& task_local_ip, const std::string& public_ip) {
 	std::string host_ip = SystemInfo::instance().GetDefaultRouteIp();
 	if (!host_ip.empty() && !task_local_ip.empty()) {
-		shell_add_iptable_to_system(task_id, host_ip, ssh_port, rdp_port, custom_port, task_local_ip, public_ip);
+		// shell_add_iptable_to_system(task_id, host_ip, ssh_port, rdp_port, custom_port, task_local_ip, public_ip);
 
 		std::shared_ptr<IptableInfo> iptable = std::make_shared<IptableInfo>();
 		iptable->setTaskId(task_id);
@@ -2500,6 +2502,34 @@ void TaskManager::process_start_task(const std::shared_ptr<TaskEvent>& ev) {
         }
         TASK_LOG_ERROR(ev->task_id, "start task failed");
     } else {
+        // 创建失败导致没有写iptables，修改虚拟机后启动成功了可以抢救一下。
+        if (taskinfo->getBiosMode() != "pxe" &&
+                TaskIptableMgr::instance().getIptableInfo(ev->task_id) == nullptr) {
+            std::string local_ip = VmClient::instance().GetDomainLocalIP(ev->task_id);
+            if (local_ip.empty()) {
+                VmClient::instance().DestroyDomain(ev->task_id);
+
+                if (taskinfo->getTaskStatus() == TaskStatus::TS_Task_Starting) {
+                    taskinfo->setTaskStatus(TaskStatus::TS_StartTaskError);
+                }
+
+                TASK_LOG_ERROR(ev->task_id, "get domain local ip failed");
+                TASK_LOG_ERROR(ev->task_id, "start task failed");
+                return;
+            }
+
+            if (!create_task_iptable(ev->task_id, taskinfo->getSSHPort(), taskinfo->getRDPPort(),
+                taskinfo->getCustomPort(), local_ip, taskinfo->getPublicIP())) {
+                VmClient::instance().DestroyDomain(ev->task_id);
+
+                if (taskinfo->getTaskStatus() == TaskStatus::TS_Task_Starting) {
+                    taskinfo->setTaskStatus(TaskStatus::TS_StartTaskError);
+                }
+                TASK_LOG_ERROR(ev->task_id, "create task iptable failed");
+                TASK_LOG_ERROR(ev->task_id, "start task failed");
+                return;
+            }
+        }
         if (taskinfo->getTaskStatus() == TaskStatus::TS_Task_Starting) {
             taskinfo->setTaskStatus(TaskStatus::TS_Task_Running);
         }
