@@ -490,6 +490,21 @@ void TaskManager::delete_task(const std::string &task_id) {
     TASK_LOG_INFO(task_id, "delete task successful");
 }
 
+void TaskManager::clear_task_public_ip(const std::string& task_id) {
+    auto taskinfoPtr = TaskInfoManager::instance().getTaskInfo(task_id);
+    if (taskinfoPtr && !taskinfoPtr->getPublicIP().empty()) {
+        TASK_LOG_INFO(task_id, "Recycle the public IP address: " << taskinfoPtr->getPublicIP());
+        taskinfoPtr->setPublicIP("");
+        TaskInfoManager::instance().update(taskinfoPtr);
+    }
+
+    auto taskIptablePtr = TaskIptableManager::instance().getIptableInfo(task_id);
+    if (taskIptablePtr != nullptr && !taskIptablePtr->getPublicIP().empty()) {
+        taskIptablePtr->setPublicIP("");
+        TaskIptableManager::instance().update(taskIptablePtr);
+    }
+}
+
 static std::string genpwd() {
     char chr[] = { 'A', 'B', 'C', 'D', 'E', 'F', 'G',
                    'H', 'I', 'J', 'K', 'L', 'M', 'N',
@@ -1354,6 +1369,12 @@ FResult TaskManager::check_resource(const std::shared_ptr<TaskInfo>& taskinfo) {
     fret = check_port_conflict(taskinfo->getVncPort(), taskinfo->getTaskId());
     if (fret.errcode != ERR_SUCCESS) {
         return FResult(ERR_ERROR, "check vnc_port failed");
+    }
+
+    // public_ip
+    fret = check_public_ip(taskinfo->getPublicIP(), taskinfo->getTaskId());
+    if (fret.errcode != ERR_SUCCESS) {
+        return FResult(ERR_ERROR, fret.errmsg);
     }
 
     return FResultOk;
@@ -2815,10 +2836,13 @@ void TaskManager::prune_task_thread_func() {
                 if (it.first != cur_renter) {
                     std::vector<std::string> ids = it.second->getTaskIds();
                     for (auto &task_id: ids) {
-                        TASK_LOG_INFO(task_id, "stop task and machine status: " << (int32_t) machine_status 
-                            << ", cur_renter:" << cur_renter << ", cur_rent_end:" << cur_rent_end
-                            << ", cur_wallet:" << it.first);
-                        close_task(task_id);
+                        if (VIR_DOMAIN_SHUTOFF != VmClient::instance().GetDomainStatus(task_id)) {
+                            TASK_LOG_INFO(task_id, "stop task and machine status: " << (int32_t) machine_status 
+                                << ", cur_renter:" << cur_renter << ", cur_rent_end:" << cur_rent_end
+                                << ", cur_wallet:" << it.first);
+                            close_task(task_id);
+                        }
+                        clear_task_public_ip(task_id);
                     }
 
                     // 1小时出120个块

@@ -180,6 +180,8 @@ protected:
 
     void delete_task(const std::string& task_id);
 
+    void clear_task_public_ip(const std::string& task_id);
+
     // 创建task
     FResult parse_create_params(const std::string &additional, USER_ROLE role, CreateTaskParams& params);
 
