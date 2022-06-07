@@ -773,19 +773,19 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     if (isWindowsOS(operation_system)) {
         // 配置了公网ip
         if (!public_ip.empty()) {
-            fret = check_rdp_port(s_ssh_port);
+            fret = check_rdp_port(s_rdp_port);
             if (fret.errcode != ERR_SUCCESS) {
                 n_rdp_port = 3389;
             }
         }
         // 未配置公网ip
         else {
-            fret = check_rdp_port(s_ssh_port);
+            fret = check_rdp_port(s_rdp_port);
             if (fret.errcode != ERR_SUCCESS) {
                 return fret;
             }
             else {
-                fret = check_port_conflict(n_ssh_port);
+                fret = check_port_conflict(n_rdp_port);
                 if (fret.errcode != ERR_SUCCESS) {
                     return fret;
                 }
