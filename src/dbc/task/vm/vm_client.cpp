@@ -586,6 +586,16 @@ static std::string createNWFilterXml(const std::string& nwfilter_name, const std
         // std::vector<std::string> v_nwfilter_protocol = util::split(nwfilter_item, ",");
         // if (v_nwfilter_protocol.size() != 5) return -1;
         if (v_nwfilter_protocol[0] != "in" && v_nwfilter_protocol[0] != "out" && v_nwfilter_protocol[0] != "inout") return -1;
+        // check ipCidr
+        std::vector<std::string> vec_ipCidr = util::split(v_nwfilter_protocol[3], "/");
+        if (vec_ipCidr.empty()) return -1;
+        std::string ip_addr = vec_ipCidr[0];
+        {
+            ip_validator ip_vdr;
+            variable_value val_ip(ip_addr, false);
+            if (!ip_vdr.validate(val_ip)) return -1;
+            if (ip_addr == "0.0.0.0") ip_addr.clear();
+        }
         // rdp ftp icmp ssh http https 最终还是在xml中配置tcp或者udp端口
         if (v_nwfilter_protocol[4] != "accept" && v_nwfilter_protocol[4] != "drop") return -1;
         tinyxml2::XMLElement *rule = doc.NewElement("rule");
@@ -593,50 +603,49 @@ static std::string createNWFilterXml(const std::string& nwfilter_name, const std
         rule->SetAttribute("direction", v_nwfilter_protocol[0].c_str());
         // 优先级可以不写，libvirt默认500
         rule->SetAttribute("priority", "500");
+        tinyxml2::XMLElement *protocol_node = nullptr;
         if (v_nwfilter_protocol[1] == "all") {
-            tinyxml2::XMLElement *all = doc.NewElement("all");
-            rule->LinkEndChild(all);
+            protocol_node = doc.NewElement("all");
         } else if (v_nwfilter_protocol[1] == "tcp" || v_nwfilter_protocol[1] == "udp") {
             std::vector<std::string> v_tcp_range = util::split(v_nwfilter_protocol[2], "-");
             if (v_tcp_range.empty()) return -1;
-            tinyxml2::XMLElement *tcp = doc.NewElement(v_nwfilter_protocol[1].c_str());
-            tcp->SetAttribute("dstportstart", v_tcp_range[0].c_str());
+            protocol_node = doc.NewElement(v_nwfilter_protocol[1].c_str());
+            protocol_node->SetAttribute("dstportstart", v_tcp_range[0].c_str());
             if (v_tcp_range.size() == 2)
-                tcp->SetAttribute("dstportend", v_tcp_range[1].c_str());
-            rule->LinkEndChild(tcp);
+                protocol_node->SetAttribute("dstportend", v_tcp_range[1].c_str());
         } else if (v_nwfilter_protocol[1] == "ssh") {
-            tinyxml2::XMLElement *tcp = doc.NewElement("tcp");
-            tcp->SetAttribute("dstportstart", "22");
-            rule->LinkEndChild(tcp);
+            protocol_node = doc.NewElement("tcp");
+            protocol_node->SetAttribute("dstportstart", "22");
         } else if (v_nwfilter_protocol[1] == "rdp") {
-            tinyxml2::XMLElement *tcp = doc.NewElement("tcp");
-            tcp->SetAttribute("dstportstart", "3389");
-            rule->LinkEndChild(tcp);
+            protocol_node = doc.NewElement("tcp");
+            protocol_node->SetAttribute("dstportstart", "3389");
         } else if (v_nwfilter_protocol[1] == "http") {
-            tinyxml2::XMLElement *tcp = doc.NewElement("tcp");
-            tcp->SetAttribute("dstportstart", "80");
-            rule->LinkEndChild(tcp);
+            protocol_node = doc.NewElement("tcp");
+            protocol_node->SetAttribute("dstportstart", "80");
         } else if (v_nwfilter_protocol[1] == "https") {
-            tinyxml2::XMLElement *tcp = doc.NewElement("tcp");
-            tcp->SetAttribute("dstportstart", "443");
-            rule->LinkEndChild(tcp);
+            protocol_node = doc.NewElement("tcp");
+            protocol_node->SetAttribute("dstportstart", "443");
         } else if (v_nwfilter_protocol[1] == "icmp") {
-            tinyxml2::XMLElement *icmp = doc.NewElement("icmp");
-            rule->LinkEndChild(icmp);
+            protocol_node = doc.NewElement("icmp");
         } else if (v_nwfilter_protocol[1] == "ftp") {
-            tinyxml2::XMLElement *ftp = doc.NewElement("ftp");
-            ftp->SetAttribute("dstportstart", "20");
-            ftp->SetAttribute("dstportend", "21");
-            rule->LinkEndChild(ftp);
+            protocol_node = doc.NewElement("ftp");
+            protocol_node->SetAttribute("dstportstart", "20");
+            protocol_node->SetAttribute("dstportend", "21");
         } else if (v_nwfilter_protocol[1] == "dns(udp)") {
-            tinyxml2::XMLElement *dns = doc.NewElement("udp");
-            dns->SetAttribute("dstportstart", "53");
-            rule->LinkEndChild(dns);
+            protocol_node = doc.NewElement("udp");
+            protocol_node->SetAttribute("dstportstart", "53");
         } else if (v_nwfilter_protocol[1] == "dns(tcp)") {
-            tinyxml2::XMLElement *dns = doc.NewElement("tcp");
-            dns->SetAttribute("dstportstart", "53");
-            rule->LinkEndChild(dns);
+            protocol_node = doc.NewElement("tcp");
+            protocol_node->SetAttribute("dstportstart", "53");
         }
+        if (!ip_addr.empty()) {
+            if (v_nwfilter_protocol[0] == "out")
+                protocol_node->SetAttribute("dstipaddr", ip_addr.c_str());
+            else
+                protocol_node->SetAttribute("srcipaddr", ip_addr.c_str());
+        }
+        if (protocol_node)
+            rule->LinkEndChild(protocol_node);
         root->LinkEndChild(rule);
         return 0;
     };
