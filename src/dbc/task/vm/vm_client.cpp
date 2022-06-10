@@ -576,6 +576,29 @@ static std::string createNWFilterXml(const std::string& nwfilter_name, const std
     filterref1->SetAttribute("filter", "clean-traffic");
     root->LinkEndChild(filterref1);
 
+    // allow dhcp
+    tinyxml2::XMLElement *dhcp_out = doc.NewElement("rule");
+    dhcp_out->SetAttribute("action", "accept");
+    dhcp_out->SetAttribute("direction", "out");
+    dhcp_out->SetAttribute("priority", "100");
+    tinyxml2::XMLElement *dhcp_udp1 = doc.NewElement("udp");
+    dhcp_udp1->SetAttribute("srcipaddr", "0.0.0.0");
+    dhcp_udp1->SetAttribute("dstipaddr", "255.255.255.255");
+    dhcp_udp1->SetAttribute("srcportstart", "68");
+    dhcp_udp1->SetAttribute("dstportstart", "67");
+    dhcp_out->LinkEndChild(dhcp_udp1);
+    root->LinkEndChild(dhcp_out);
+
+    tinyxml2::XMLElement *dhcp_in = doc.NewElement("rule");
+    dhcp_in->SetAttribute("action", "accept");
+    dhcp_in->SetAttribute("direction", "in");
+    dhcp_in->SetAttribute("priority", "100");
+    tinyxml2::XMLElement *dhcp_udp2 = doc.NewElement("udp");
+    dhcp_udp2->SetAttribute("srcportstart", "67");
+    dhcp_udp2->SetAttribute("dstportstart", "68");
+    dhcp_out->LinkEndChild(dhcp_udp2);
+    root->LinkEndChild(dhcp_in);
+
     // rule
     auto rule_func = [&](const std::vector<std::string> v_nwfilter_protocol) -> int {
         //"nwfilter": [
