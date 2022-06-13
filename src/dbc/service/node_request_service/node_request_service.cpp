@@ -560,8 +560,12 @@ bool node_request_service::found_other_running_domains() {
     TaskMgr::instance().broadcast_message("renting");
 
     bool found = false;
-    for (int i = 0; i < 5; i++) {
-		std::vector<std::string> domains;
+    std::vector<std::string> domains;
+
+    for (int i = 0; i < 10; i++) {
+        found = false;
+        domains.clear();
+
 		VmClient::instance().ListAllRunningDomains(domains);
 		for (size_t i = 0; i < domains.size(); i++) {
 			if (!TaskInfoMgr::instance().isExist(domains[i])) {
@@ -571,9 +575,26 @@ bool node_request_service::found_other_running_domains() {
 		}
 
 		if (found) {
+            TaskMgr::instance().broadcast_message("renting");
 			sleep(2);
         }
         else {
+            break;
+        }
+    }
+
+    if (found) {
+        for (auto& iter : domains) {
+            VmClient::instance().DestroyDomain(iter);
+        }
+    }
+
+    found = false;
+    domains.clear();
+    VmClient::instance().ListAllRunningDomains(domains);
+    for (size_t i = 0; i < domains.size(); i++) {
+        if (!TaskInfoMgr::instance().isExist(domains[i])) {
+            found = true;
             break;
         }
     }
