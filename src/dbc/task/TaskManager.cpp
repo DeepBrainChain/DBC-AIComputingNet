@@ -795,7 +795,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
 
     // "vnc_port"
     JSON_PARSE_STRING(doc, "vnc_port", s_vnc_port);
-	// check: range: [5900, 6000]
+	// check: range: [5900, 65535]
     n_vnc_port = (uint16_t)atoi(s_vnc_port.c_str());
     fret = check_vnc_port(s_vnc_port);
     if (fret.errcode != ERR_SUCCESS) {
@@ -1104,8 +1104,8 @@ FResult TaskManager::check_vnc_port(const std::string& s_port) {
     }
     
     uint16_t n_port = (uint16_t) atoi(s_port.c_str());
-    if (n_port < 5900 || n_port > 6000) {
-        return FResult(ERR_ERROR, "vnc_port is invalid (usage: [5900, 6000])");
+    if (n_port < 5900 || n_port > 65535) {
+        return FResult(ERR_ERROR, "vnc_port is invalid (usage: [5900, 65535])");
     }
 
     return FResultOk;
@@ -1678,8 +1678,8 @@ FResult TaskManager::modifyTask(const std::string& wallet,
 	JSON_PARSE_STRING(doc, "new_vnc_port", s_new_vnc_port);
 	if (!s_new_vnc_port.empty()) {
         uint16_t new_vnc_port = atoi(s_new_vnc_port.c_str());
-        if (new_vnc_port < 5900 || new_vnc_port > 6000) {
-            return FResult(ERR_ERROR, "new_vnc_port " + s_new_vnc_port + " is invalid! (usage: 5900 =< port <= 6000)");
+        if (new_vnc_port < 5900 || new_vnc_port > 65535) {
+            return FResult(ERR_ERROR, "new_vnc_port " + s_new_vnc_port + " is invalid! (usage: 5900 =< port <= 65535)");
         }
 
         fret = check_port_conflict(new_vnc_port, task_id);
