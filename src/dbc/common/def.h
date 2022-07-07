@@ -47,7 +47,8 @@ enum class QUERY_LOG_DIRECTION {
 enum class NODE_TYPE {
     ComputeNode,
     ClientNode,
-    SeedNode
+    SeedNode,
+    BareMetalNode
 };
 
 enum class MACHINE_STATUS {

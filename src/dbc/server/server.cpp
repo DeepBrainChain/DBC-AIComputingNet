@@ -19,6 +19,7 @@
 #include "util/system_info.h"
 #include "task/HttpDBCChainClient.h"
 #include "task/detail/image/ImageManager.h"
+#include "config/BareMetalNodeManager.h"
 
 static std::unique_ptr<ECCVerifyHandle> g_ecc_verify_handle;
 static std::unique_ptr<std::recursive_mutex[]> g_ssl_lock;
@@ -68,6 +69,15 @@ ERRCODE Server::Init(int argc, char *argv[]) {
         return err;
     }
     LOG_INFO << "init EnvManager success";
+
+    // BareMetalNodeManager
+    LOG_INFO << "begin to init BareMetalNodeManager";
+    err = BareMetalNodeManager::instance().Init();
+    if (ERR_SUCCESS != err) {
+        LOG_ERROR << "init BareMetalNodeManager failed";
+        return err;
+    }
+    LOG_INFO << "init BareMetalNodeManager success";
 
     // ConfManager
     LOG_INFO << "begin to init ConfManager";
@@ -230,6 +240,7 @@ ERRCODE Server::ParseCommandLine(int argc, char* argv[]) {
             ("compute", "run as compute node")
 		    ("client", "run as client node")
 		    ("seed", "run as seed node")
+            ("baremetal", "run as bare metal node")
             ("name,n", bpo::value<std::string>(), "node name")
             ("daemon,d", "run as daemon process");
 
@@ -256,6 +267,9 @@ ERRCODE Server::ParseCommandLine(int argc, char* argv[]) {
     }
     else if (options.count("seed")) {
         NodeType = NODE_TYPE::SeedNode;
+    }
+    else if (options.count("baremetal")) {
+        NodeType = NODE_TYPE::BareMetalNode;
     }
 
     if (options.count("name")) {

@@ -6,6 +6,8 @@
 #include "log/log.h"
 #include "tweetnacl/tools.h"
 #include "tweetnacl/tweetnacl.h"
+#include "BareMetalNodeManager.h"
+#include "server/server.h"
 
 static std::string g_internal_dns_seeds[] = {
 
@@ -61,6 +63,22 @@ ERRCODE ConfManager::Init() {
     dbclog::instance().set_filter_level((boost::log::trivial::severity_level) m_log_level);
 
     return ERR_SUCCESS;
+}
+
+std::string ConfManager::GetNodePrivateKey(const std::string& node_id) const {
+    if (node_id.empty() || node_id == m_node_id)
+        return m_node_private_key;
+    if (Server::NodeType == NODE_TYPE::BareMetalNode) {
+        typedef std::map<std::string, std::shared_ptr<dbc::db_bare_metal>> BM_NODES;
+        const BM_NODES bare_metal_nodes =
+            BareMetalNodeManager::instance().getBareMetalNodes();
+        // if (bare_metal_nodes.count(node_id) > 0)
+        //     return bare_metal_nodes[node_id]->node_private_key;
+        BM_NODES::const_iterator iter = bare_metal_nodes.find(node_id);
+        if (iter != bare_metal_nodes.end())
+            return iter->second->node_private_key;
+    }
+    return m_node_private_key;
 }
 
 ERRCODE ConfManager::ParseConf() {

@@ -5,4 +5,5 @@
 .\thrift.exe --gen cpp -out .\cpp db_wallet_sessionid.thrift
 .\thrift.exe --gen cpp -out .\cpp db_wallet_renttask.thrift
 .\thrift.exe --gen cpp -out .\cpp db_task_snapshot.thrift
+.\thrift.exe --gen cpp -out .\cpp db_bare_metal.thrift
 .\thrift.exe --gen cpp -out .\cpp network.thrift

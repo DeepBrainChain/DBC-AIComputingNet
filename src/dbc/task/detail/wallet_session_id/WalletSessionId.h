@@ -3,7 +3,6 @@
 
 #include "util/utils.h"
 #include "db/db_types/db_wallet_sessionid_types.h"
-#include "db/wallet_renttask_db.h"
 
 class WalletSessionId {
 public:

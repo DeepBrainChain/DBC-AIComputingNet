@@ -190,6 +190,26 @@
 #define NODE_DELETE_LAN_RSP      "node_delete_lan_rsp"
 #define NODE_DELETE_LAN_TIMER    "node_delete_lan_timer"
 
+// list bare metal
+#define NODE_LIST_BARE_METAL_REQ      "node_list_bare_metal_req"
+#define NODE_LIST_BARE_METAL_RSP      "node_list_bare_metal_rsp"
+#define NODE_LIST_BARE_METAL_TIMER    "node_list_bare_metal_timer"
+
+// delete bare metal
+#define NODE_ADD_BARE_METAL_REQ      "node_add_bare_metal_req"
+#define NODE_ADD_BARE_METAL_RSP      "node_add_bare_metal_rsp"
+#define NODE_ADD_BARE_METAL_TIMER    "node_add_bare_metal_timer"
+
+// delete bare metal
+#define NODE_DELETE_BARE_METAL_REQ      "node_delete_bare_metal_req"
+#define NODE_DELETE_BARE_METAL_RSP      "node_delete_bare_metal_rsp"
+#define NODE_DELETE_BARE_METAL_TIMER    "node_delete_bare_metal_timer"
+
+// bare metal power
+#define NODE_BARE_METAL_POWER_REQ      "node_bare_metal_power_req"
+#define NODE_BARE_METAL_POWER_RSP      "node_bare_metal_power_rsp"
+#define NODE_BARE_METAL_POWER_TIMER    "node_bare_metal_power_timer"
+
 // service broadcast
 #define SERVICE_BROADCAST_REQ    "service_broadcast_req"
 

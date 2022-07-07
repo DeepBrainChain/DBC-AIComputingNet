@@ -135,6 +135,18 @@ void matrix_coder::init_decode_invoker() {
 
     BIND_DECODE_INVOKER(node_delete_lan_req);
     BIND_DECODE_INVOKER(node_delete_lan_rsp);
+
+    BIND_DECODE_INVOKER(node_list_bare_metal_req);
+    BIND_DECODE_INVOKER(node_list_bare_metal_rsp);
+
+    BIND_DECODE_INVOKER(node_add_bare_metal_req);
+    BIND_DECODE_INVOKER(node_add_bare_metal_rsp);
+
+    BIND_DECODE_INVOKER(node_delete_bare_metal_req);
+    BIND_DECODE_INVOKER(node_delete_bare_metal_rsp);
+
+    BIND_DECODE_INVOKER(node_bare_metal_power_req);
+    BIND_DECODE_INVOKER(node_bare_metal_power_rsp);
 }
 
 void matrix_coder::init_encode_invoker() {
@@ -257,6 +269,18 @@ void matrix_coder::init_encode_invoker() {
     
     BIND_ENCODE_INVOKER(node_delete_lan_req);
     BIND_ENCODE_INVOKER(node_delete_lan_rsp);
+
+    BIND_ENCODE_INVOKER(node_list_bare_metal_req);
+    BIND_ENCODE_INVOKER(node_list_bare_metal_rsp);
+
+    BIND_ENCODE_INVOKER(node_add_bare_metal_req);
+    BIND_ENCODE_INVOKER(node_add_bare_metal_rsp);
+
+    BIND_ENCODE_INVOKER(node_delete_bare_metal_req);
+    BIND_ENCODE_INVOKER(node_delete_bare_metal_rsp);
+
+    BIND_ENCODE_INVOKER(node_bare_metal_power_req);
+    BIND_ENCODE_INVOKER(node_bare_metal_power_rsp);
 }
 
 std::shared_ptr<network::protocol> matrix_coder::get_protocol(int32_t type) {

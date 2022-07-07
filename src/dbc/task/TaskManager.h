@@ -13,7 +13,6 @@
 #include "detail/gpu/TaskGpuManager.h"
 #include "detail/iptable/TaskIptableManager.h"
 #include "detail/wallet_rent_task/WalletRentTaskManager.h"
-#include "detail/wallet_session_id/WalletSessionIDManager.h"
 #include "detail/image/ImageManager.h"
 #include "TaskEvent.h"
 
@@ -118,13 +117,6 @@ public:
     void deleteAllCheckTasks();
 
     void deleteOtherCheckTasks(const std::string& wallet);
-
-    // session_id
-    std::string createSessionId(const std::string& wallet, const std::vector<std::string>& multisig_signers = std::vector<std::string>());
-
-    std::string getSessionId(const std::string& wallet);
-
-    std::string checkSessionId(const std::string& session_id, const std::string& session_id_sign);
 
     // image
 	FResult listImages(const std::shared_ptr<dbc::node_list_images_req_data>& data,

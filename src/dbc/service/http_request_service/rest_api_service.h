@@ -57,6 +57,11 @@ struct req_body {
 
     // vxlan network id
     std::string network_name;
+
+    // bare metal node id
+    std::string node_id;
+    // bare metal power command
+    std::string command;
 };
 
 class rsp_peer_node_info {
@@ -509,6 +514,53 @@ public:
                                 const std::shared_ptr<network::message> &rsp_msg);
 
     void on_node_delete_lan_timer(const std::shared_ptr<core_timer> &timer);
+
+    // bare metal server
+    void rest_bare_metal(const network::HTTP_REQUEST_PTR &httpReq, const std::__cxx11::string &path);
+
+    // list bare metal server
+    void rest_list_bare_metal(const std::shared_ptr<network::http_request> &httpReq, const std::string &path);
+
+    std::shared_ptr<network::message> create_node_list_bare_metal_req_msg(const std::string &head_session_id,
+                                                                           const req_body &body);
+
+    void on_node_list_bare_metal_rsp(const std::shared_ptr<network::http_request_context> &hreq_context,
+                                      const std::shared_ptr<network::message> &rsp_msg);
+
+    void on_node_list_bare_metal_timer(const std::shared_ptr<core_timer> &timer);
+
+    // add bare metal server
+    void rest_add_bare_metal(const std::shared_ptr<network::http_request> &httpReq, const std::string &path);
+
+    std::shared_ptr<network::message> create_node_add_bare_metal_req_msg(const std::string &head_session_id,
+                                                                           const req_body &body);
+
+    void on_node_add_bare_metal_rsp(const std::shared_ptr<network::http_request_context> &hreq_context,
+                                      const std::shared_ptr<network::message> &rsp_msg);
+
+    void on_node_add_bare_metal_timer(const std::shared_ptr<core_timer> &timer);
+
+    // delete bare metal server
+    void rest_delete_bare_metal(const std::shared_ptr<network::http_request> &httpReq, const std::string &path);
+
+    std::shared_ptr<network::message> create_node_delete_bare_metal_req_msg(const std::string &head_session_id,
+                                                                           const req_body &body);
+
+    void on_node_delete_bare_metal_rsp(const std::shared_ptr<network::http_request_context> &hreq_context,
+                                      const std::shared_ptr<network::message> &rsp_msg);
+
+    void on_node_delete_bare_metal_timer(const std::shared_ptr<core_timer> &timer);
+
+    // bare metal power on/off/reset
+    void rest_bare_metal_power(const std::shared_ptr<network::http_request> &httpReq, const std::string &path);
+
+    std::shared_ptr<network::message> create_node_bare_metal_power_req_msg(const std::string &head_session_id,
+                                                                           const req_body &body);
+
+    void on_node_bare_metal_power_rsp(const std::shared_ptr<network::http_request_context> &hreq_context,
+                                      const std::shared_ptr<network::message> &rsp_msg);
+
+    void on_node_bare_metal_power_timer(const std::shared_ptr<core_timer> &timer);
 
 protected:
     void init_timer() override;

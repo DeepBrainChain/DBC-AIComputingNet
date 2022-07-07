@@ -90,42 +90,44 @@ std::string lan_machine_info::to_request_json() const {
 ERRCODE p2p_lan_service::init() {
     service_module::init();
 
-    try {
-        m_io_service_pool = std::make_shared<network::io_service_pool>();
-        ERRCODE err = m_io_service_pool->init(1);
-        if (ERR_SUCCESS != err) {
-            LOG_ERROR << "init multicast io service failed";
-            return err;
+    if (Server::NodeType != NODE_TYPE::BareMetalNode) {
+        try {
+            m_io_service_pool = std::make_shared<network::io_service_pool>();
+            ERRCODE err = m_io_service_pool->init(1);
+            if (ERR_SUCCESS != err) {
+                LOG_ERROR << "init multicast io service failed";
+                return err;
+            }
+
+            m_receiver = std::make_shared<multicast_receiver>(*m_io_service_pool->get_io_service().get(),
+                boost::asio::ip::make_address(ConfManager::instance().GetNetListenIp()),
+                boost::asio::ip::make_address(ConfManager::instance().GetMulticastAddress()),
+                ConfManager::instance().GetMulticastPort());
+            err = m_receiver->start();
+            if (ERR_SUCCESS != err) {
+                LOG_ERROR << "init multicast receiver failed";
+                return err;
+            }
+
+            m_sender = std::make_shared<multicast_sender>(*m_io_service_pool->get_io_service().get(),
+                boost::asio::ip::make_address(ConfManager::instance().GetMulticastAddress()),
+                ConfManager::instance().GetMulticastPort());
+
+            err = m_io_service_pool->start();
+            if (ERR_SUCCESS != err) {
+                LOG_ERROR << "multicast io service run failed";
+                return err;
+            }
+
+            init_local_machine_info();
+
+            send_network_query_request();
         }
-
-        m_receiver = std::make_shared<multicast_receiver>(*m_io_service_pool->get_io_service().get(),
-            boost::asio::ip::make_address(ConfManager::instance().GetNetListenIp()),
-            boost::asio::ip::make_address(ConfManager::instance().GetMulticastAddress()),
-            ConfManager::instance().GetMulticastPort());
-        err = m_receiver->start();
-        if (ERR_SUCCESS != err) {
-            LOG_ERROR << "init multicast receiver failed";
-            return err;
+        catch (std::exception& e)
+        {
+            LOG_ERROR << "init multicast receiver Exception: " << e.what();
+            return -1;
         }
-
-        m_sender = std::make_shared<multicast_sender>(*m_io_service_pool->get_io_service().get(),
-            boost::asio::ip::make_address(ConfManager::instance().GetMulticastAddress()),
-            ConfManager::instance().GetMulticastPort());
-
-        err = m_io_service_pool->start();
-        if (ERR_SUCCESS != err) {
-            LOG_ERROR << "multicast io service run failed";
-            return err;
-        }
-
-        init_local_machine_info();
-
-        send_network_query_request();
-    }
-    catch (std::exception& e)
-    {
-        LOG_ERROR << "init multicast receiver Exception: " << e.what();
-        return -1;
     }
 
     return ERR_SUCCESS;
@@ -133,12 +135,14 @@ ERRCODE p2p_lan_service::init() {
 
 void p2p_lan_service::exit() {
 	service_module::exit();
-    m_receiver->stop();
-    send_machine_exit_request();
-    sleep(2);
-    // m_sender->stop();
-    m_io_service_pool->stop();
-    m_io_service_pool->exit();
+    if (Server::NodeType != NODE_TYPE::BareMetalNode) {
+        m_receiver->stop();
+        send_machine_exit_request();
+        sleep(2);
+        // m_sender->stop();
+        m_io_service_pool->stop();
+        m_io_service_pool->exit();
+    }
 }
 
 const std::map<std::string, lan_machine_info>& p2p_lan_service::get_lan_nodes() const {
@@ -657,15 +661,17 @@ void p2p_lan_service::send_network_leave_request(const std::string& network_name
 }
 
 void p2p_lan_service::init_timer() {
-    // 50 second
-    add_timer(AI_MULTICAST_MACHINE_TIMER, 5 * 1000, 50 * 1000, ULLONG_MAX, "",
-        std::bind(&p2p_lan_service::on_multicast_machine_task_timer, this, std::placeholders::_1));
-    // 2 min
-    add_timer(AI_MULTICAST_NETWORK_TIMER, 90 * 1000, 120 * 1000, ULLONG_MAX, "",
-        std::bind(&p2p_lan_service::on_multicast_network_task_timer, this, std::placeholders::_1));
-    // 2 min latter
-    add_timer(AI_MULTICAST_NETWORK_RESUME_TIMER, 120 * 1000, 1000, 1, "",
-        std::bind(&p2p_lan_service::on_multicast_network_resume_task_timer, this, std::placeholders::_1));
+    if (Server::NodeType != NODE_TYPE::BareMetalNode) {
+        // 50 second
+        add_timer(AI_MULTICAST_MACHINE_TIMER, 5 * 1000, 50 * 1000, ULLONG_MAX, "",
+            std::bind(&p2p_lan_service::on_multicast_machine_task_timer, this, std::placeholders::_1));
+        // 2 min
+        add_timer(AI_MULTICAST_NETWORK_TIMER, 90 * 1000, 120 * 1000, ULLONG_MAX, "",
+            std::bind(&p2p_lan_service::on_multicast_network_task_timer, this, std::placeholders::_1));
+        // 2 min latter
+        add_timer(AI_MULTICAST_NETWORK_RESUME_TIMER, 120 * 1000, 1000, 1, "",
+            std::bind(&p2p_lan_service::on_multicast_network_resume_task_timer, this, std::placeholders::_1));
+    }
 }
 
 void p2p_lan_service::init_invoker() {

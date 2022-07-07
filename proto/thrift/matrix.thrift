@@ -1141,3 +1141,132 @@ struct node_set_monitor_server_rsp {
   1: node_set_monitor_server_rsp_body body
 }
 
+//////////////////////////////////////////////////////////////////////////
+// list bare metal
+// request
+struct node_list_bare_metal_req_data {
+  1: required string node_id,
+  2: required list<string> peer_nodes_list,
+  3: required string additional,
+  4: required string wallet,
+  5: required string nonce,
+  6: required string sign,
+  7: required list<string> multisig_wallets,
+  8: required i32 multisig_threshold,
+  9: required list<multisig_sign_item> multisig_signs,
+  10: required string session_id,
+  11: required string session_id_sign
+}
+
+struct node_list_bare_metal_req_body {
+  1: required string data;
+}
+
+struct node_list_bare_metal_req {
+  1: node_list_bare_metal_req_body body
+}
+// response
+struct node_list_bare_metal_rsp_body {
+  1: required string data;
+}
+
+struct node_list_bare_metal_rsp {
+  1: node_list_bare_metal_rsp_body body
+}
+
+//////////////////////////////////////////////////////////////////////////
+// add bare metal
+// request
+struct node_add_bare_metal_req_data {
+  1: required list<string> peer_nodes_list,
+  2: required string additional,
+  3: required string wallet,
+  4: required string nonce,
+  5: required string sign,
+  6: required list<string> multisig_wallets,
+  7: required i32 multisig_threshold,
+  8: required list<multisig_sign_item> multisig_signs,
+  9: required string session_id,
+  10: required string session_id_sign
+}
+
+struct node_add_bare_metal_req_body {
+  1: required string data;
+}
+
+struct node_add_bare_metal_req {
+  1: node_add_bare_metal_req_body body
+}
+// response
+struct node_add_bare_metal_rsp_body {
+  1: required string data;
+}
+
+struct node_add_bare_metal_rsp {
+  1: node_add_bare_metal_rsp_body body
+}
+
+//////////////////////////////////////////////////////////////////////////
+// delete bare metal
+// request
+struct node_delete_bare_metal_req_data {
+  1: required list<string> peer_nodes_list,
+  2: required string additional,
+  3: required string wallet,
+  4: required string nonce,
+  5: required string sign,
+  6: required list<string> multisig_wallets,
+  7: required i32 multisig_threshold,
+  8: required list<multisig_sign_item> multisig_signs,
+  9: required string session_id,
+  10: required string session_id_sign
+}
+
+struct node_delete_bare_metal_req_body {
+  1: required string data;
+}
+
+struct node_delete_bare_metal_req {
+  1: node_delete_bare_metal_req_body body
+}
+// response
+struct node_delete_bare_metal_rsp_body {
+  1: required string data;
+}
+
+struct node_delete_bare_metal_rsp {
+  1: node_delete_bare_metal_rsp_body body
+}
+
+//////////////////////////////////////////////////////////////////////////
+// bare metal power control
+// request
+struct node_bare_metal_power_req_data {
+  1: required string command,
+  2: required list<string> peer_nodes_list,
+  3: required string additional,
+  4: required string wallet,
+  5: required string nonce,
+  6: required string sign,
+  7: required list<string> multisig_wallets,
+  8: required i32 multisig_threshold,
+  9: required list<multisig_sign_item> multisig_signs,
+  10: required string session_id,
+  11: required string session_id_sign
+}
+
+struct node_bare_metal_power_req_body {
+  1: required string data;
+}
+
+struct node_bare_metal_power_req {
+  1: node_bare_metal_power_req_body body
+}
+// response
+struct node_bare_metal_power_rsp_body {
+  1: required string data;
+}
+
+struct node_bare_metal_power_rsp {
+  1: node_bare_metal_power_rsp_body body
+}

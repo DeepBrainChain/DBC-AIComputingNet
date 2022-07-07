@@ -53,11 +53,6 @@ FResult TaskManager::init() {
 		return FResult(ERR_ERROR, "wallet_renttask manager init failed;");
 	}
 
-    fret = WalletSessionIDMgr::instance().init();
-    if (fret.errcode != ERR_SUCCESS) {
-        return FResult(ERR_ERROR, "wallet_sessionid manager init failed");
-    }
-
     // 重启时恢复running_tasks、初始化task状态
     fret = this->init_tasks_status();
     if (fret.errcode != ERR_SUCCESS) {
@@ -2208,53 +2203,6 @@ void TaskManager::deleteOtherCheckTasks(const std::string& wallet) {
         TASK_LOG_INFO(task_id, "delete check task");
         delete_task(task_id);
     }
-}
-
-std::string TaskManager::createSessionId(const std::string &wallet, const std::vector<std::string>& multisig_signers) {
-    auto wallet_session = WalletSessionIDMgr::instance().geWalletSessionIdByWallet(wallet);
-    if (wallet_session == nullptr) {
-        std::string session_id = util::create_session_id();
-        std::shared_ptr<WalletSessionId> ptr = std::make_shared<WalletSessionId>();
-        ptr->setRentWallet(wallet);
-        ptr->setSessionId(session_id);
-        ptr->setMultisigSigners(multisig_signers);
-        WalletSessionIDMgr::instance().add(ptr);
-        return session_id;
-    } else {
-        return wallet_session->getSessionId();
-    }
-}
-
-std::string TaskManager::getSessionId(const std::string &wallet) {
-    auto it = WalletSessionIDMgr::instance().geWalletSessionIdByWallet(wallet);
-    if (it != nullptr) {
-        return it->getSessionId();
-    } else {
-        return "";
-    }
-}
-
-std::string TaskManager::checkSessionId(const std::string &session_id, const std::string &session_id_sign) {
-    if (session_id.empty() || session_id_sign.empty())
-        return "";
-
-    auto it = WalletSessionIDMgr::instance().getWalletSessionIdBySessionId(session_id);
-    if (it == nullptr) {
-        return "";
-    }
-
-    if (util::verify_sign(session_id_sign, session_id, it->getRentWallet())) {
-        return it->getRentWallet();
-    }
-
-    auto multisig_signers = it->getMultisigSigners();
-    for (auto& it_wallet : multisig_signers) {
-        if (util::verify_sign(session_id_sign, session_id, it_wallet)) {
-            return it->getRentWallet();
-        }
-    }
-
-    return "";
 }
 
 FResult TaskManager::listTaskSnapshot(const std::string& wallet, const std::string& task_id, std::vector<dbc::snapshot_info>& snapshots) {

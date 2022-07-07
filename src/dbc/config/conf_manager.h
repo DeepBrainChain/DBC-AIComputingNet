@@ -68,7 +68,7 @@ public:
 
     std::string GetNodeId() const { return m_node_id; }
 
-    std::string GetNodePrivateKey() const { return m_node_private_key; }
+    std::string GetNodePrivateKey(const std::string& node_id = "") const;
 
     std::string GetPubKey() const { return m_pub_key; }
 

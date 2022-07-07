@@ -371,6 +371,46 @@ namespace dbc {
 
 	class node_set_monitor_server_rsp;
 
+	class node_list_bare_metal_req_data;
+
+	class node_list_bare_metal_req_body;
+
+	class node_list_bare_metal_req;
+
+	class node_list_bare_metal_rsp_body;
+
+	class node_list_bare_metal_rsp;
+
+	class node_add_bare_metal_req_data;
+
+	class node_add_bare_metal_req_body;
+
+	class node_add_bare_metal_req;
+
+	class node_add_bare_metal_rsp_body;
+
+	class node_add_bare_metal_rsp;
+
+	class node_delete_bare_metal_req_data;
+
+	class node_delete_bare_metal_req_body;
+
+	class node_delete_bare_metal_req;
+
+	class node_delete_bare_metal_rsp_body;
+
+	class node_delete_bare_metal_rsp;
+
+	class node_bare_metal_power_req_data;
+
+	class node_bare_metal_power_req_body;
+
+	class node_bare_metal_power_req;
+
+	class node_bare_metal_power_rsp_body;
+
+	class node_bare_metal_power_rsp;
+
 
 	class empty : public virtual ::apache::thrift::TBase {
 	public:
@@ -8940,6 +8980,964 @@ namespace dbc {
 	void swap(node_set_monitor_server_rsp& a, node_set_monitor_server_rsp& b);
 
 	std::ostream& operator<<(std::ostream& out, const node_set_monitor_server_rsp& obj);
+
+
+	class node_list_bare_metal_req_data : public virtual ::apache::thrift::TBase {
+	public:
+
+		node_list_bare_metal_req_data(const node_list_bare_metal_req_data&);
+		node_list_bare_metal_req_data& operator=(const node_list_bare_metal_req_data&);
+		node_list_bare_metal_req_data() : node_id(), additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign() {
+		}
+
+		virtual ~node_list_bare_metal_req_data() throw();
+		std::string node_id;
+		std::vector<std::string>  peer_nodes_list;
+		std::string additional;
+		std::string wallet;
+		std::string nonce;
+		std::string sign;
+		std::vector<std::string>  multisig_wallets;
+		int32_t multisig_threshold;
+		std::vector<multisig_sign_item>  multisig_signs;
+		std::string session_id;
+		std::string session_id_sign;
+
+		void __set_node_id(const std::string& val);
+
+		void __set_peer_nodes_list(const std::vector<std::string> & val);
+
+		void __set_additional(const std::string& val);
+
+		void __set_wallet(const std::string& val);
+
+		void __set_nonce(const std::string& val);
+
+		void __set_sign(const std::string& val);
+
+		void __set_multisig_wallets(const std::vector<std::string> & val);
+
+		void __set_multisig_threshold(const int32_t val);
+
+		void __set_multisig_signs(const std::vector<multisig_sign_item> & val);
+
+		void __set_session_id(const std::string& val);
+
+		void __set_session_id_sign(const std::string& val);
+
+		bool operator == (const node_list_bare_metal_req_data & rhs) const
+		{
+			if (!(node_id == rhs.node_id))
+				return false;
+			if (!(peer_nodes_list == rhs.peer_nodes_list))
+				return false;
+			if (!(additional == rhs.additional))
+				return false;
+			if (!(wallet == rhs.wallet))
+				return false;
+			if (!(nonce == rhs.nonce))
+				return false;
+			if (!(sign == rhs.sign))
+				return false;
+			if (!(multisig_wallets == rhs.multisig_wallets))
+				return false;
+			if (!(multisig_threshold == rhs.multisig_threshold))
+				return false;
+			if (!(multisig_signs == rhs.multisig_signs))
+				return false;
+			if (!(session_id == rhs.session_id))
+				return false;
+			if (!(session_id_sign == rhs.session_id_sign))
+				return false;
+			return true;
+		}
+		bool operator != (const node_list_bare_metal_req_data &rhs) const {
+			return !(*this == rhs);
+		}
+
+		bool operator < (const node_list_bare_metal_req_data & ) const;
+
+		uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+		uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+		virtual void printTo(std::ostream& out) const;
+	};
+
+	void swap(node_list_bare_metal_req_data &a, node_list_bare_metal_req_data &b);
+
+	std::ostream& operator<<(std::ostream& out, const node_list_bare_metal_req_data& obj);
+
+
+	class node_list_bare_metal_req_body : public virtual ::apache::thrift::TBase {
+	public:
+
+		node_list_bare_metal_req_body(const node_list_bare_metal_req_body&);
+		node_list_bare_metal_req_body& operator=(const node_list_bare_metal_req_body&);
+		node_list_bare_metal_req_body() : data() {
+		}
+
+		virtual ~node_list_bare_metal_req_body() throw();
+		std::string data;
+
+		void __set_data(const std::string& val);
+
+		bool operator == (const node_list_bare_metal_req_body & rhs) const
+		{
+			if (!(data == rhs.data))
+				return false;
+			return true;
+		}
+		bool operator != (const node_list_bare_metal_req_body &rhs) const {
+			return !(*this == rhs);
+		}
+
+		bool operator < (const node_list_bare_metal_req_body & ) const;
+
+		uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+		uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+		virtual void printTo(std::ostream& out) const;
+	};
+
+	void swap(node_list_bare_metal_req_body &a, node_list_bare_metal_req_body &b);
+
+	std::ostream& operator<<(std::ostream& out, const node_list_bare_metal_req_body& obj);
+
+	typedef struct _node_list_bare_metal_req__isset {
+		_node_list_bare_metal_req__isset() : body(false) {}
+		bool body :1;
+	} _node_list_bare_metal_req__isset;
+
+	class node_list_bare_metal_req : public virtual ::apache::thrift::TMsgBase {
+	public:
+
+		node_list_bare_metal_req(const node_list_bare_metal_req&);
+		node_list_bare_metal_req& operator=(const node_list_bare_metal_req&);
+		node_list_bare_metal_req() {
+		}
+
+		virtual ~node_list_bare_metal_req() throw();
+		node_list_bare_metal_req_body body;
+
+		_node_list_bare_metal_req__isset __isset;
+
+		void __set_body(const node_list_bare_metal_req_body& val);
+
+		bool operator == (const node_list_bare_metal_req & rhs) const
+		{
+			if (!(body == rhs.body))
+				return false;
+			return true;
+		}
+		bool operator != (const node_list_bare_metal_req &rhs) const {
+			return !(*this == rhs);
+		}
+
+		bool operator < (const node_list_bare_metal_req & ) const;
+
+		uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+		uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+		virtual void printTo(std::ostream& out) const;
+	};
+
+	void swap(node_list_bare_metal_req &a, node_list_bare_metal_req &b);
+
+	std::ostream& operator<<(std::ostream& out, const node_list_bare_metal_req& obj);
+
+
+	class node_list_bare_metal_rsp_body : public virtual ::apache::thrift::TBase {
+	public:
+
+		node_list_bare_metal_rsp_body(const node_list_bare_metal_rsp_body&);
+		node_list_bare_metal_rsp_body& operator=(const node_list_bare_metal_rsp_body&);
+		node_list_bare_metal_rsp_body() : data() {
+		}
+
+		virtual ~node_list_bare_metal_rsp_body() throw();
+		std::string data;
+
+		void __set_data(const std::string& val);
+
+		bool operator == (const node_list_bare_metal_rsp_body & rhs) const
+		{
+			if (!(data == rhs.data))
+				return false;
+			return true;
+		}
+		bool operator != (const node_list_bare_metal_rsp_body &rhs) const {
+			return !(*this == rhs);
+		}
+
+		bool operator < (const node_list_bare_metal_rsp_body & ) const;
+
+		uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+		uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+		virtual void printTo(std::ostream& out) const;
+	};
+
+	void swap(node_list_bare_metal_rsp_body &a, node_list_bare_metal_rsp_body &b);
+
+	std::ostream& operator<<(std::ostream& out, const node_list_bare_metal_rsp_body& obj);
+
+	typedef struct _node_list_bare_metal_rsp__isset {
+		_node_list_bare_metal_rsp__isset() : body(false) {}
+		bool body :1;
+	} _node_list_bare_metal_rsp__isset;
+
+	class node_list_bare_metal_rsp : public virtual ::apache::thrift::TMsgBase {
+	public:
+
+		node_list_bare_metal_rsp(const node_list_bare_metal_rsp&);
+		node_list_bare_metal_rsp& operator=(const node_list_bare_metal_rsp&);
+		node_list_bare_metal_rsp() {
+		}
+
+		virtual ~node_list_bare_metal_rsp() throw();
+		node_list_bare_metal_rsp_body body;
+
+		_node_list_bare_metal_rsp__isset __isset;
+
+		void __set_body(const node_list_bare_metal_rsp_body& val);
+
+		bool operator == (const node_list_bare_metal_rsp & rhs) const
+		{
+			if (!(body == rhs.body))
+				return false;
+			return true;
+		}
+		bool operator != (const node_list_bare_metal_rsp &rhs) const {
+			return !(*this == rhs);
+		}
+
+		bool operator < (const node_list_bare_metal_rsp & ) const;
+
+		uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+		uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+		virtual void printTo(std::ostream& out) const;
+	};
+
+	void swap(node_list_bare_metal_rsp &a, node_list_bare_metal_rsp &b);
+
+	std::ostream& operator<<(std::ostream& out, const node_list_bare_metal_rsp& obj);
+
+
+	class node_add_bare_metal_req_data : public virtual ::apache::thrift::TBase {
+	public:
+
+		node_add_bare_metal_req_data(const node_add_bare_metal_req_data&);
+		node_add_bare_metal_req_data& operator=(const node_add_bare_metal_req_data&);
+		node_add_bare_metal_req_data() : additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign() {
+		}
+
+		virtual ~node_add_bare_metal_req_data() throw();
+		std::vector<std::string>  peer_nodes_list;
+		std::string additional;
+		std::string wallet;
+		std::string nonce;
+		std::string sign;
+		std::vector<std::string>  multisig_wallets;
+		int32_t multisig_threshold;
+		std::vector<multisig_sign_item>  multisig_signs;
+		std::string session_id;
+		std::string session_id_sign;
+
+		void __set_peer_nodes_list(const std::vector<std::string> & val);
+
+		void __set_additional(const std::string& val);
+
+		void __set_wallet(const std::string& val);
+
+		void __set_nonce(const std::string& val);
+
+		void __set_sign(const std::string& val);
+
+		void __set_multisig_wallets(const std::vector<std::string> & val);
+
+		void __set_multisig_threshold(const int32_t val);
+
+		void __set_multisig_signs(const std::vector<multisig_sign_item> & val);
+
+		void __set_session_id(const std::string& val);
+
+		void __set_session_id_sign(const std::string& val);
+
+		bool operator == (const node_add_bare_metal_req_data & rhs) const
+		{
+			if (!(peer_nodes_list == rhs.peer_nodes_list))
+				return false;
+			if (!(additional == rhs.additional))
+				return false;
+			if (!(wallet == rhs.wallet))
+				return false;
+			if (!(nonce == rhs.nonce))
+				return false;
+			if (!(sign == rhs.sign))
+				return false;
+			if (!(multisig_wallets == rhs.multisig_wallets))
+				return false;
+			if (!(multisig_threshold == rhs.multisig_threshold))
+				return false;
+			if (!(multisig_signs == rhs.multisig_signs))
+				return false;
+			if (!(session_id == rhs.session_id))
+				return false;
+			if (!(session_id_sign == rhs.session_id_sign))
+				return false;
+			return true;
+		}
+		bool operator != (const node_add_bare_metal_req_data &rhs) const {
+			return !(*this == rhs);
+		}
+
+		bool operator < (const node_add_bare_metal_req_data & ) const;
+
+		uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+		uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+		virtual void printTo(std::ostream& out) const;
+	};
+
+	void swap(node_add_bare_metal_req_data &a, node_add_bare_metal_req_data &b);
+
+	std::ostream& operator<<(std::ostream& out, const node_add_bare_metal_req_data& obj);
+
+
+	class node_add_bare_metal_req_body : public virtual ::apache::thrift::TBase {
+	public:
+
+		node_add_bare_metal_req_body(const node_add_bare_metal_req_body&);
+		node_add_bare_metal_req_body& operator=(const node_add_bare_metal_req_body&);
+		node_add_bare_metal_req_body() : data() {
+		}
+
+		virtual ~node_add_bare_metal_req_body() throw();
+		std::string data;
+
+		void __set_data(const std::string& val);
+
+		bool operator == (const node_add_bare_metal_req_body & rhs) const
+		{
+			if (!(data == rhs.data))
+				return false;
+			return true;
+		}
+		bool operator != (const node_add_bare_metal_req_body &rhs) const {
+			return !(*this == rhs);
+		}
+
+		bool operator < (const node_add_bare_metal_req_body & ) const;
+
+		uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+		uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+		virtual void printTo(std::ostream& out) const;
+	};
+
+	void swap(node_add_bare_metal_req_body &a, node_add_bare_metal_req_body &b);
+
+	std::ostream& operator<<(std::ostream& out, const node_add_bare_metal_req_body& obj);
+
+	typedef struct _node_add_bare_metal_req__isset {
+		_node_add_bare_metal_req__isset() : body(false) {}
+		bool body :1;
+	} _node_add_bare_metal_req__isset;
+
+	class node_add_bare_metal_req : public virtual ::apache::thrift::TMsgBase {
+	public:
+
+		node_add_bare_metal_req(const node_add_bare_metal_req&);
+		node_add_bare_metal_req& operator=(const node_add_bare_metal_req&);
+		node_add_bare_metal_req() {
+		}
+
+		virtual ~node_add_bare_metal_req() throw();
+		node_add_bare_metal_req_body body;
+
+		_node_add_bare_metal_req__isset __isset;
+
+		void __set_body(const node_add_bare_metal_req_body& val);
+
+		bool operator == (const node_add_bare_metal_req & rhs) const
+		{
+			if (!(body == rhs.body))
+				return false;
+			return true;
+		}
+		bool operator != (const node_add_bare_metal_req &rhs) const {
+			return !(*this == rhs);
+		}
+
+		bool operator < (const node_add_bare_metal_req & ) const;
+
+		uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+		uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+		virtual void printTo(std::ostream& out) const;
+	};
+
+	void swap(node_add_bare_metal_req &a, node_add_bare_metal_req &b);
+
+	std::ostream& operator<<(std::ostream& out, const node_add_bare_metal_req& obj);
+
+
+	class node_add_bare_metal_rsp_body : public virtual ::apache::thrift::TBase {
+	public:
+
+		node_add_bare_metal_rsp_body(const node_add_bare_metal_rsp_body&);
+		node_add_bare_metal_rsp_body& operator=(const node_add_bare_metal_rsp_body&);
+		node_add_bare_metal_rsp_body() : data() {
+		}
+
+		virtual ~node_add_bare_metal_rsp_body() throw();
+		std::string data;
+
+		void __set_data(const std::string& val);
+
+		bool operator == (const node_add_bare_metal_rsp_body & rhs) const
+		{
+			if (!(data == rhs.data))
+				return false;
+			return true;
+		}
+		bool operator != (const node_add_bare_metal_rsp_body &rhs) const {
+			return !(*this == rhs);
+		}
+
+		bool operator < (const node_add_bare_metal_rsp_body & ) const;
+
+		uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+		uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+		virtual void printTo(std::ostream& out) const;
+	};
+
+	void swap(node_add_bare_metal_rsp_body &a, node_add_bare_metal_rsp_body &b);
+
+	std::ostream& operator<<(std::ostream& out, const node_add_bare_metal_rsp_body& obj);
+
+	typedef struct _node_add_bare_metal_rsp__isset {
+		_node_add_bare_metal_rsp__isset() : body(false) {}
+		bool body :1;
+	} _node_add_bare_metal_rsp__isset;
+
+	class node_add_bare_metal_rsp : public virtual ::apache::thrift::TMsgBase {
+	public:
+
+		node_add_bare_metal_rsp(const node_add_bare_metal_rsp&);
+		node_add_bare_metal_rsp& operator=(const node_add_bare_metal_rsp&);
+		node_add_bare_metal_rsp() {
+		}
+
+		virtual ~node_add_bare_metal_rsp() throw();
+		node_add_bare_metal_rsp_body body;
+
+		_node_add_bare_metal_rsp__isset __isset;
+
+		void __set_body(const node_add_bare_metal_rsp_body& val);
+
+		bool operator == (const node_add_bare_metal_rsp & rhs) const
+		{
+			if (!(body == rhs.body))
+				return false;
+			return true;
+		}
+		bool operator != (const node_add_bare_metal_rsp &rhs) const {
+			return !(*this == rhs);
+		}
+
+		bool operator < (const node_add_bare_metal_rsp & ) const;
+
+		uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+		uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+		virtual void printTo(std::ostream& out) const;
+	};
+
+	void swap(node_add_bare_metal_rsp &a, node_add_bare_metal_rsp &b);
+
+	std::ostream& operator<<(std::ostream& out, const node_add_bare_metal_rsp& obj);
+
+
+	class node_delete_bare_metal_req_data : public virtual ::apache::thrift::TBase {
+	public:
+
+		node_delete_bare_metal_req_data(const node_delete_bare_metal_req_data&);
+		node_delete_bare_metal_req_data& operator=(const node_delete_bare_metal_req_data&);
+		node_delete_bare_metal_req_data() : additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign() {
+		}
+
+		virtual ~node_delete_bare_metal_req_data() throw();
+		std::vector<std::string>  peer_nodes_list;
+		std::string additional;
+		std::string wallet;
+		std::string nonce;
+		std::string sign;
+		std::vector<std::string>  multisig_wallets;
+		int32_t multisig_threshold;
+		std::vector<multisig_sign_item>  multisig_signs;
+		std::string session_id;
+		std::string session_id_sign;
+
+		void __set_peer_nodes_list(const std::vector<std::string> & val);
+
+		void __set_additional(const std::string& val);
+
+		void __set_wallet(const std::string& val);
+
+		void __set_nonce(const std::string& val);
+
+		void __set_sign(const std::string& val);
+
+		void __set_multisig_wallets(const std::vector<std::string> & val);
+
+		void __set_multisig_threshold(const int32_t val);
+
+		void __set_multisig_signs(const std::vector<multisig_sign_item> & val);
+
+		void __set_session_id(const std::string& val);
+
+		void __set_session_id_sign(const std::string& val);
+
+		bool operator == (const node_delete_bare_metal_req_data & rhs) const
+		{
+			if (!(peer_nodes_list == rhs.peer_nodes_list))
+				return false;
+			if (!(additional == rhs.additional))
+				return false;
+			if (!(wallet == rhs.wallet))
+				return false;
+			if (!(nonce == rhs.nonce))
+				return false;
+			if (!(sign == rhs.sign))
+				return false;
+			if (!(multisig_wallets == rhs.multisig_wallets))
+				return false;
+			if (!(multisig_threshold == rhs.multisig_threshold))
+				return false;
+			if (!(multisig_signs == rhs.multisig_signs))
+				return false;
+			if (!(session_id == rhs.session_id))
+				return false;
+			if (!(session_id_sign == rhs.session_id_sign))
+				return false;
+			return true;
+		}
+		bool operator != (const node_delete_bare_metal_req_data &rhs) const {
+			return !(*this == rhs);
+		}
+
+		bool operator < (const node_delete_bare_metal_req_data & ) const;
+
+		uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+		uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+		virtual void printTo(std::ostream& out) const;
+	};
+
+	void swap(node_delete_bare_metal_req_data &a, node_delete_bare_metal_req_data &b);
+
+	std::ostream& operator<<(std::ostream& out, const node_delete_bare_metal_req_data& obj);
+
+
+	class node_delete_bare_metal_req_body : public virtual ::apache::thrift::TBase {
+	public:
+
+		node_delete_bare_metal_req_body(const node_delete_bare_metal_req_body&);
+		node_delete_bare_metal_req_body& operator=(const node_delete_bare_metal_req_body&);
+		node_delete_bare_metal_req_body() : data() {
+		}
+
+		virtual ~node_delete_bare_metal_req_body() throw();
+		std::string data;
+
+		void __set_data(const std::string& val);
+
+		bool operator == (const node_delete_bare_metal_req_body & rhs) const
+		{
+			if (!(data == rhs.data))
+				return false;
+			return true;
+		}
+		bool operator != (const node_delete_bare_metal_req_body &rhs) const {
+			return !(*this == rhs);
+		}
+
+		bool operator < (const node_delete_bare_metal_req_body & ) const;
+
+		uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+		uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+		virtual void printTo(std::ostream& out) const;
+	};
+
+	void swap(node_delete_bare_metal_req_body &a, node_delete_bare_metal_req_body &b);
+
+	std::ostream& operator<<(std::ostream& out, const node_delete_bare_metal_req_body& obj);
+
+	typedef struct _node_delete_bare_metal_req__isset {
+		_node_delete_bare_metal_req__isset() : body(false) {}
+		bool body :1;
+	} _node_delete_bare_metal_req__isset;
+
+	class node_delete_bare_metal_req : public virtual ::apache::thrift::TMsgBase {
+	public:
+
+		node_delete_bare_metal_req(const node_delete_bare_metal_req&);
+		node_delete_bare_metal_req& operator=(const node_delete_bare_metal_req&);
+		node_delete_bare_metal_req() {
+		}
+
+		virtual ~node_delete_bare_metal_req() throw();
+		node_delete_bare_metal_req_body body;
+
+		_node_delete_bare_metal_req__isset __isset;
+
+		void __set_body(const node_delete_bare_metal_req_body& val);
+
+		bool operator == (const node_delete_bare_metal_req & rhs) const
+		{
+			if (!(body == rhs.body))
+				return false;
+			return true;
+		}
+		bool operator != (const node_delete_bare_metal_req &rhs) const {
+			return !(*this == rhs);
+		}
+
+		bool operator < (const node_delete_bare_metal_req & ) const;
+
+		uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+		uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+		virtual void printTo(std::ostream& out) const;
+	};
+
+	void swap(node_delete_bare_metal_req &a, node_delete_bare_metal_req &b);
+
+	std::ostream& operator<<(std::ostream& out, const node_delete_bare_metal_req& obj);
+
+
+	class node_delete_bare_metal_rsp_body : public virtual ::apache::thrift::TBase {
+	public:
+
+		node_delete_bare_metal_rsp_body(const node_delete_bare_metal_rsp_body&);
+		node_delete_bare_metal_rsp_body& operator=(const node_delete_bare_metal_rsp_body&);
+		node_delete_bare_metal_rsp_body() : data() {
+		}
+
+		virtual ~node_delete_bare_metal_rsp_body() throw();
+		std::string data;
+
+		void __set_data(const std::string& val);
+
+		bool operator == (const node_delete_bare_metal_rsp_body & rhs) const
+		{
+			if (!(data == rhs.data))
+				return false;
+			return true;
+		}
+		bool operator != (const node_delete_bare_metal_rsp_body &rhs) const {
+			return !(*this == rhs);
+		}
+
+		bool operator < (const node_delete_bare_metal_rsp_body & ) const;
+
+		uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+		uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+		virtual void printTo(std::ostream& out) const;
+	};
+
+	void swap(node_delete_bare_metal_rsp_body &a, node_delete_bare_metal_rsp_body &b);
+
+	std::ostream& operator<<(std::ostream& out, const node_delete_bare_metal_rsp_body& obj);
+
+	typedef struct _node_delete_bare_metal_rsp__isset {
+		_node_delete_bare_metal_rsp__isset() : body(false) {}
+		bool body :1;
+	} _node_delete_bare_metal_rsp__isset;
+
+	class node_delete_bare_metal_rsp : public virtual ::apache::thrift::TMsgBase {
+	public:
+
+		node_delete_bare_metal_rsp(const node_delete_bare_metal_rsp&);
+		node_delete_bare_metal_rsp& operator=(const node_delete_bare_metal_rsp&);
+		node_delete_bare_metal_rsp() {
+		}
+
+		virtual ~node_delete_bare_metal_rsp() throw();
+		node_delete_bare_metal_rsp_body body;
+
+		_node_delete_bare_metal_rsp__isset __isset;
+
+		void __set_body(const node_delete_bare_metal_rsp_body& val);
+
+		bool operator == (const node_delete_bare_metal_rsp & rhs) const
+		{
+			if (!(body == rhs.body))
+				return false;
+			return true;
+		}
+		bool operator != (const node_delete_bare_metal_rsp &rhs) const {
+			return !(*this == rhs);
+		}
+
+		bool operator < (const node_delete_bare_metal_rsp & ) const;
+
+		uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+		uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+		virtual void printTo(std::ostream& out) const;
+	};
+
+	void swap(node_delete_bare_metal_rsp &a, node_delete_bare_metal_rsp &b);
+
+	std::ostream& operator<<(std::ostream& out, const node_delete_bare_metal_rsp& obj);
+
+
+	class node_bare_metal_power_req_data : public virtual ::apache::thrift::TBase {
+	public:
+
+		node_bare_metal_power_req_data(const node_bare_metal_power_req_data&);
+		node_bare_metal_power_req_data& operator=(const node_bare_metal_power_req_data&);
+		node_bare_metal_power_req_data() : command(), additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign() {
+		}
+
+		virtual ~node_bare_metal_power_req_data() throw();
+		std::string command;
+		std::vector<std::string>  peer_nodes_list;
+		std::string additional;
+		std::string wallet;
+		std::string nonce;
+		std::string sign;
+		std::vector<std::string>  multisig_wallets;
+		int32_t multisig_threshold;
+		std::vector<multisig_sign_item>  multisig_signs;
+		std::string session_id;
+		std::string session_id_sign;
+
+		void __set_command(const std::string& val);
+
+		void __set_peer_nodes_list(const std::vector<std::string> & val);
+
+		void __set_additional(const std::string& val);
+
+		void __set_wallet(const std::string& val);
+
+		void __set_nonce(const std::string& val);
+
+		void __set_sign(const std::string& val);
+
+		void __set_multisig_wallets(const std::vector<std::string> & val);
+
+		void __set_multisig_threshold(const int32_t val);
+
+		void __set_multisig_signs(const std::vector<multisig_sign_item> & val);
+
+		void __set_session_id(const std::string& val);
+
+		void __set_session_id_sign(const std::string& val);
+
+		bool operator == (const node_bare_metal_power_req_data & rhs) const
+		{
+			if (!(command == rhs.command))
+				return false;
+			if (!(peer_nodes_list == rhs.peer_nodes_list))
+				return false;
+			if (!(additional == rhs.additional))
+				return false;
+			if (!(wallet == rhs.wallet))
+				return false;
+			if (!(nonce == rhs.nonce))
+				return false;
+			if (!(sign == rhs.sign))
+				return false;
+			if (!(multisig_wallets == rhs.multisig_wallets))
+				return false;
+			if (!(multisig_threshold == rhs.multisig_threshold))
+				return false;
+			if (!(multisig_signs == rhs.multisig_signs))
+				return false;
+			if (!(session_id == rhs.session_id))
+				return false;
+			if (!(session_id_sign == rhs.session_id_sign))
+				return false;
+			return true;
+		}
+		bool operator != (const node_bare_metal_power_req_data &rhs) const {
+			return !(*this == rhs);
+		}
+
+		bool operator < (const node_bare_metal_power_req_data & ) const;
+
+		uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+		uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+		virtual void printTo(std::ostream& out) const;
+	};
+
+	void swap(node_bare_metal_power_req_data &a, node_bare_metal_power_req_data &b);
+
+	std::ostream& operator<<(std::ostream& out, const node_bare_metal_power_req_data& obj);
+
+
+	class node_bare_metal_power_req_body : public virtual ::apache::thrift::TBase {
+	public:
+
+		node_bare_metal_power_req_body(const node_bare_metal_power_req_body&);
+		node_bare_metal_power_req_body& operator=(const node_bare_metal_power_req_body&);
+		node_bare_metal_power_req_body() : data() {
+		}
+
+		virtual ~node_bare_metal_power_req_body() throw();
+		std::string data;
+
+		void __set_data(const std::string& val);
+
+		bool operator == (const node_bare_metal_power_req_body & rhs) const
+		{
+			if (!(data == rhs.data))
+				return false;
+			return true;
+		}
+		bool operator != (const node_bare_metal_power_req_body &rhs) const {
+			return !(*this == rhs);
+		}
+
+		bool operator < (const node_bare_metal_power_req_body & ) const;
+
+		uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+		uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+		virtual void printTo(std::ostream& out) const;
+	};
+
+	void swap(node_bare_metal_power_req_body &a, node_bare_metal_power_req_body &b);
+
+	std::ostream& operator<<(std::ostream& out, const node_bare_metal_power_req_body& obj);
+
+	typedef struct _node_bare_metal_power_req__isset {
+		_node_bare_metal_power_req__isset() : body(false) {}
+		bool body :1;
+	} _node_bare_metal_power_req__isset;
+
+	class node_bare_metal_power_req : public virtual ::apache::thrift::TMsgBase {
+	public:
+
+		node_bare_metal_power_req(const node_bare_metal_power_req&);
+		node_bare_metal_power_req& operator=(const node_bare_metal_power_req&);
+		node_bare_metal_power_req() {
+		}
+
+		virtual ~node_bare_metal_power_req() throw();
+		node_bare_metal_power_req_body body;
+
+		_node_bare_metal_power_req__isset __isset;
+
+		void __set_body(const node_bare_metal_power_req_body& val);
+
+		bool operator == (const node_bare_metal_power_req & rhs) const
+		{
+			if (!(body == rhs.body))
+				return false;
+			return true;
+		}
+		bool operator != (const node_bare_metal_power_req &rhs) const {
+			return !(*this == rhs);
+		}
+
+		bool operator < (const node_bare_metal_power_req & ) const;
+
+		uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+		uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+		virtual void printTo(std::ostream& out) const;
+	};
+
+	void swap(node_bare_metal_power_req &a, node_bare_metal_power_req &b);
+
+	std::ostream& operator<<(std::ostream& out, const node_bare_metal_power_req& obj);
+
+
+	class node_bare_metal_power_rsp_body : public virtual ::apache::thrift::TBase {
+	public:
+
+		node_bare_metal_power_rsp_body(const node_bare_metal_power_rsp_body&);
+		node_bare_metal_power_rsp_body& operator=(const node_bare_metal_power_rsp_body&);
+		node_bare_metal_power_rsp_body() : data() {
+		}
+
+		virtual ~node_bare_metal_power_rsp_body() throw();
+		std::string data;
+
+		void __set_data(const std::string& val);
+
+		bool operator == (const node_bare_metal_power_rsp_body & rhs) const
+		{
+			if (!(data == rhs.data))
+				return false;
+			return true;
+		}
+		bool operator != (const node_bare_metal_power_rsp_body &rhs) const {
+			return !(*this == rhs);
+		}
+
+		bool operator < (const node_bare_metal_power_rsp_body & ) const;
+
+		uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+		uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+		virtual void printTo(std::ostream& out) const;
+	};
+
+	void swap(node_bare_metal_power_rsp_body &a, node_bare_metal_power_rsp_body &b);
+
+	std::ostream& operator<<(std::ostream& out, const node_bare_metal_power_rsp_body& obj);
+
+	typedef struct _node_bare_metal_power_rsp__isset {
+		_node_bare_metal_power_rsp__isset() : body(false) {}
+		bool body :1;
+	} _node_bare_metal_power_rsp__isset;
+
+	class node_bare_metal_power_rsp : public virtual ::apache::thrift::TMsgBase {
+	public:
+
+		node_bare_metal_power_rsp(const node_bare_metal_power_rsp&);
+		node_bare_metal_power_rsp& operator=(const node_bare_metal_power_rsp&);
+		node_bare_metal_power_rsp() {
+		}
+
+		virtual ~node_bare_metal_power_rsp() throw();
+		node_bare_metal_power_rsp_body body;
+
+		_node_bare_metal_power_rsp__isset __isset;
+
+		void __set_body(const node_bare_metal_power_rsp_body& val);
+
+		bool operator == (const node_bare_metal_power_rsp & rhs) const
+		{
+			if (!(body == rhs.body))
+				return false;
+			return true;
+		}
+		bool operator != (const node_bare_metal_power_rsp &rhs) const {
+			return !(*this == rhs);
+		}
+
+		bool operator < (const node_bare_metal_power_rsp & ) const;
+
+		uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+		uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+		virtual void printTo(std::ostream& out) const;
+	};
+
+	void swap(node_bare_metal_power_rsp &a, node_bare_metal_power_rsp &b);
+
+	std::ostream& operator<<(std::ostream& out, const node_bare_metal_power_rsp& obj);
 
 } // namespace
 

@@ -28,6 +28,13 @@ struct AuthorityParams {
     std::string session_id_sign;
 };
 
+enum HitNodeType {
+    HitNone,
+    HitComputer,
+    HitBareMetal,
+    HitBareMetalManager
+};
+
 class node_request_service : public service_module, public Singleton<node_request_service> {
 public:
     node_request_service() = default;
@@ -38,9 +45,9 @@ public:
 
     void exit() override;
 
-protected:
-    void add_self_to_servicelist();
+    void add_self_to_servicelist(const std::string& node_id);
 
+protected:
     void init_timer() override;
 
     void init_invoker() override;
@@ -162,6 +169,8 @@ protected:
 
 	void query_node_info(const network::base_header& header, const std::shared_ptr<dbc::node_query_node_info_req_data>& data);
 
+    void query_bare_metal_node_info(const network::base_header& header, const std::shared_ptr<dbc::node_query_node_info_req_data>& data);
+
     void on_node_session_id_req(const std::shared_ptr<network::message>& msg);
 
     void node_session_id(const network::base_header& header, const std::shared_ptr<dbc::node_session_id_req_data>& data, const AuthoriseResult& result);
@@ -202,12 +211,32 @@ protected:
 
     void delete_lan(const network::base_header& header, const std::shared_ptr<dbc::node_delete_lan_req_data>& data, const AuthoriseResult& result);
 
+    // list bare metal
+    void on_node_list_bare_metal_req(const std::shared_ptr<network::message>& msg);
+
+    void list_bare_metal(const network::base_header& header, const std::shared_ptr<dbc::node_list_bare_metal_req_data>& data);
+
+    // add bare metal
+    void on_node_add_bare_metal_req(const std::shared_ptr<network::message>& msg);
+
+    void add_bare_metal(const network::base_header& header, const std::shared_ptr<dbc::node_add_bare_metal_req_data>& data);
+
+    // delete bare metal
+    void on_node_delete_bare_metal_req(const std::shared_ptr<network::message>& msg);
+
+    void delete_bare_metal(const network::base_header& header, const std::shared_ptr<dbc::node_delete_bare_metal_req_data>& data);
+
+    // bare metal power
+    void on_node_bare_metal_power_req(const std::shared_ptr<network::message>& msg);
+
+    void bare_metal_power(const network::base_header& header, const std::shared_ptr<dbc::node_bare_metal_power_req_data>& data, const AuthoriseResult& result);
+
 private:
     bool check_req_header(const std::shared_ptr<network::message> &msg);
 
     bool check_req_header_nonce(const std::string& nonce);
 
-    bool hit_node(const std::vector<std::string>& peer_node_list, const std::string& node_id);
+    HitNodeType hit_node(const std::vector<std::string>& peer_node_list, const std::string& node_id);
 
     FResult check_nonce(const std::string& wallet, const std::string& nonce, const std::string& sign);
 

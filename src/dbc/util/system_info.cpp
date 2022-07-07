@@ -57,21 +57,25 @@ ERRCODE SystemInfo::Init(NODE_TYPE node_type, int32_t reserved_cpu_cores, int32_
     m_public_ip = get_public_ip();
     m_default_route_ip = get_default_route_ip();
 
-	m_running = true;
-	if (m_thread_update == nullptr) {
-		m_thread_update = new std::thread(&SystemInfo::update_thread_func, this);
-	}
+    if (node_type != NODE_TYPE::BareMetalNode) {
+	    m_running = true;
+	    if (m_thread_update == nullptr) {
+	    	m_thread_update = new std::thread(&SystemInfo::update_thread_func, this);
+	    }
+    }
 
     return ERR_SUCCESS;
 }
 
 void SystemInfo::exit() {
     m_running = false;
-    if (m_thread_update != nullptr && m_thread_update->joinable()) {
-        m_thread_update->join();
+    if (m_thread_update != nullptr) {
+        if (m_thread_update->joinable()) {
+            m_thread_update->join();
+        }
+        delete m_thread_update;
+        m_thread_update = nullptr;
     }
-    delete m_thread_update;
-    m_thread_update = nullptr;
 }
 
 void SystemInfo::GetDiskInfo(const std::string& path, disk_info& info) {

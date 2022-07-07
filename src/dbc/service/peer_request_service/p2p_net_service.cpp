@@ -14,6 +14,7 @@
 #include <boost/lexical_cast.hpp>
 #include "network/protocol/thrift_binary.h"
 #include "util/system_info.h"
+#include "config/BareMetalNodeManager.h"
 
 #define CHECK_PEER_CANDIDATES_TIMER                 "p2p_timer_check_peer_candidates"
 #define DYANMIC_ADJUST_NETWORK_TIMER                "p2p_timer_dynamic_adjust_network"
@@ -849,6 +850,20 @@ void p2p_net_service::advertise_local(tcp::endpoint tcp_ep, network::socket_id s
     node->m_sid = sid;
 
     broadcast_peer_nodes(node);
+
+    if (Server::NodeType == NODE_TYPE::BareMetalNode) {
+        const std::map<std::string, std::shared_ptr<dbc::db_bare_metal>> bare_metal_nodes =
+            BareMetalNodeManager::instance().getBareMetalNodes();
+        for (const auto& iter : bare_metal_nodes) {
+            std::shared_ptr<peer_node> enode = std::make_shared<peer_node>();
+            enode->m_id = iter.first;
+            enode->m_live_time = time(nullptr);
+            enode->m_peer_addr = tcp::endpoint(tcp_ep.address(), m_listen_port);
+            enode->m_sid = sid;
+
+            broadcast_peer_nodes(enode);
+        }
+    }
 }
 
 int32_t p2p_net_service::broadcast_peer_nodes(std::shared_ptr<peer_node> node) {
