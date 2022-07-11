@@ -15,6 +15,13 @@ public:
 
     FResult PowerControl(const std::string& node_id, const std::string& command);
 
+    void PruneNode(const std::string& node_id);
+
+    void PruneNodes();
+
+protected:
+    bool stopped = false;
+
 };
 
 #endif // DBC_IPMITOOL_CLIENT_H

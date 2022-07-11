@@ -23,6 +23,7 @@
 
 #define AI_TRAINING_TASK_TIMER      "training_task"
 #define AI_PRUNE_TASK_TIMER         "prune_task"
+#define AI_PRUNE_BARE_METAL_TIMER   "prune_bare_metal"
 #define SERVICE_BROADCAST_TIMER     "service_broadcast_timer"
 
 #define TIME_SERVICE_INFO_LIST_EXPIRED  300 //second
@@ -167,6 +168,12 @@ void node_request_service::init_timer() {
         // 1min
         add_timer(AI_PRUNE_TASK_TIMER, 60 * 1000, 60 * 1000, ULLONG_MAX, "",
             std::bind(&node_request_service::on_prune_task_timer, this, std::placeholders::_1));
+    }
+
+    if (Server::NodeType == NODE_TYPE::BareMetalNode) {
+        // 15min
+        add_timer(AI_PRUNE_BARE_METAL_TIMER, 3 * 60 * 1000, 15 * 60 * 1000, ULLONG_MAX, "",
+            std::bind(&node_request_service::on_prune_bare_metal_timer, this, std::placeholders::_1));
     }
 
     // 10s
@@ -4224,11 +4231,12 @@ void node_request_service::on_node_query_node_info_req(const std::shared_ptr<net
     HitNodeType hit_self = hit_node(req_peer_nodes, ConfManager::instance().GetNodeId());
     if (hit_self == HitComputer) {
         query_node_info(node_req_msg->header, data);
-    }
-    else if (hit_self == HitBareMetal || hit_self == HitBareMetalManager) {
+    } else if (hit_self == HitBareMetal) {
         query_bare_metal_node_info(node_req_msg->header, data);
-    }
-    else {
+    } else if (hit_self == HitBareMetalManager) {
+        send_response_error<dbc::node_query_node_info_rsp>(NODE_QUERY_NODE_INFO_RSP, node_req_msg->header,
+            E_DEFAULT, "bare metal node has no machine info for now", data->peer_nodes_list[0]);
+    } else {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
     }
@@ -4358,8 +4366,89 @@ void node_request_service::query_node_info(const network::base_header& header,
 
 void node_request_service::query_bare_metal_node_info(const network::base_header& header,
     const std::shared_ptr<dbc::node_query_node_info_req_data>& data) {
-    //
-    send_response_error<dbc::node_query_node_info_rsp>(NODE_QUERY_NODE_INFO_RSP, header, ERR_SUCCESS, "bare metal node has no machine info for now", data->peer_nodes_list[0]);
+    // send_response_error<dbc::node_query_node_info_rsp>(NODE_QUERY_NODE_INFO_RSP, header, ERR_SUCCESS, "bare metal node has no machine info for now", data->peer_nodes_list[0]);
+    CommitteeUploadInfo info;
+    if (!HttpDBCChainClient::instance().getCommitteeUploadInfo(data->peer_nodes_list[0], info)) {
+        send_response_error<dbc::node_query_node_info_rsp>(NODE_QUERY_NODE_INFO_RSP, header,
+            E_DEFAULT, "query committee upload info of bare metal node failed", data->peer_nodes_list[0]);
+        return;
+    }
+
+    std::shared_ptr<dbc::db_bare_metal> bm = BareMetalNodeManager::instance().getBareMetalNode(data->peer_nodes_list[0]);
+    if (!bm) {
+        send_response_error<dbc::node_query_node_info_rsp>(NODE_QUERY_NODE_INFO_RSP, header,
+            E_DEFAULT, "get bare metal node info failed", data->peer_nodes_list[0]);
+        return;
+    }
+
+    std::stringstream ss;
+    ss << "{";
+    ss << "\"errcode\":" << 0;
+    ss << ",\"message\":" << "{";
+    ss << "\"version\":" << "\"" << dbcversion() << "\"";
+    ss << ",\"ip\":" << "\"" << bm->ip << "\"";
+    ss << ",\"os\":" << "\"" << bm->os << "\"";
+
+    ss << ",\"cpu\":" << "{";
+    ss << "\"type\":" << "\"" << info.cpu_type << "\"";
+    ss << ",\"hz\":" << "\"" << info.cpu_rate << "MHz\"";
+    ss << ",\"cores\":" << "\"" << info.cpu_core_num << "\"";
+    // ss << ",\"used_usage\":" << "\"" << f2s(SystemInfo::instance().GetCpuUsage() * 100) << "%" << "\"";
+    ss << "}";
+
+    ss << ",\"gpu\":" << "{";
+    ss << "\"gpu_count\":" << "\"" << info.gpu_num << "\"";
+    ss << ",\"gpu_type\":" << "\"" << info.gpu_type << "\"";
+    ss << "}";
+
+    ss << ",\"mem\":" << "{";
+    ss << "\"size\":" << "\"" << info.mem_num << "G\"";
+    // ss << ",\"free\":" << "\"" << size2GB(tmp_meminfo.free) << "\"";
+    // ss << ",\"used_usage\":" << "\"" << f2s(tmp_meminfo.usage * 100) << "%" << "\"";
+    ss << "}";
+
+    ss << ",\"disk_system\":" << "{";
+    // ss << "\"type\":" << "\"" << (tmp_diskinfo.disk_type == DISK_SSD ? "SSD" : "HDD") << "\"";
+    ss << "\"size\":" << "\"" << info.sys_disk << "G\"";
+    ss << "}";
+ 
+    ss << ",\"disk_data\":" << "{";
+    ss << "\"size\":" << "\"" << info.data_disk << "G\"";
+    ss << "}";
+
+    /*
+    int32_t count = TaskMgr::instance().GetRunningTaskSize();
+    std::string state;
+    if (count <= 0) {
+        state = "idle";
+    }
+    else {
+        state = "busy(" + std::to_string(count) + ")";
+    }
+    ss << ",\"state\":" << "\"" << state << "\"";
+    */
+    ss << "}";
+    ss << "}";
+
+    const std::map<std::string, std::string>& mp = header.exten_info;
+    auto it = mp.find("pub_key");
+    if (it != mp.end()) {
+        std::string pub_key = it->second;
+        std::string priv_key = ConfManager::instance().GetPrivKey();
+
+        if (!pub_key.empty() && !priv_key.empty()) {
+            std::string s_data = encrypt_data((unsigned char*)ss.str().c_str(), ss.str().size(), pub_key, priv_key);
+            send_response_json<dbc::node_query_node_info_rsp>(NODE_QUERY_NODE_INFO_RSP, header, s_data, data->peer_nodes_list[0]);
+        }
+        else {
+            LOG_ERROR << "pub_key or priv_key is empty";
+            send_response_error<dbc::node_query_node_info_rsp>(NODE_QUERY_NODE_INFO_RSP, header, E_DEFAULT, "pub_key or priv_key is empty", data->peer_nodes_list[0]);
+        }
+    }
+    else {
+        LOG_ERROR << "request no pub_key";
+        send_response_error<dbc::node_query_node_info_rsp>(NODE_QUERY_NODE_INFO_RSP, header, E_DEFAULT, "request no pub_key", data->peer_nodes_list[0]);
+    }
 }
 
 // 查询session_id
@@ -4581,6 +4670,10 @@ void node_request_service::node_free_memory(const network::base_header& header,
 
 void node_request_service::on_training_task_timer(const std::shared_ptr<core_timer>& timer) {
     //TaskMgr::instance().ProcessTask();
+}
+
+void node_request_service::on_prune_bare_metal_timer(const std::shared_ptr<core_timer>& timer) {
+    IpmiToolClient::instance().PruneNodes();
 }
 
 void node_request_service::on_prune_task_timer(const std::shared_ptr<core_timer>& timer) {
@@ -5382,7 +5475,7 @@ void node_request_service::on_node_list_bare_metal_req(const std::shared_ptr<net
     HitNodeType hit_self = hit_node(req_peer_nodes, ConfManager::instance().GetNodeId());
     if (hit_self == HitBareMetalManager) {
         list_bare_metal(node_req_msg->header, data);
-    } if (hit_self == HitBareMetal) {
+    } else if (hit_self == HitComputer || hit_self == HitBareMetal) {
         send_response_error<dbc::node_list_bare_metal_rsp>(NODE_LIST_BARE_METAL_RSP,
             node_req_msg->header, E_DEFAULT, "Not supported", data->peer_nodes_list[0]);
     } else {
@@ -5418,6 +5511,8 @@ void node_request_service::list_bare_metal(const network::base_header& header,
             ss << "\"node_id\":" << "\"" << it.second->node_id << "\"";
             ss << ",\"node_private_key\":" << "\"" << it.second->node_private_key << "\"";
             ss << ",\"uuid\":" << "\"" << it.second->uuid << "\"";
+            ss << ",\"ip\":" << "\"" << it.second->ip << "\"";
+            ss << ",\"os\":" << "\"" << it.second->os << "\"";
             ss << ",\"description\":" << "\"" << it.second->desc << "\"";
             ss << ",\"ipmi_hostname\":" << "\"" << it.second->ipmi_hostname << "\"";
             ss << ",\"ipmi_username\":" << "\"" << it.second->ipmi_username << "\"";
@@ -5513,7 +5608,7 @@ void node_request_service::on_node_add_bare_metal_req(const std::shared_ptr<netw
     HitNodeType hit_self = hit_node(req_peer_nodes, ConfManager::instance().GetNodeId());
     if (hit_self == HitBareMetalManager) {
         add_bare_metal(node_req_msg->header, data);
-    } else if (hit_self == HitBareMetal) {
+    } else if (hit_self == HitComputer || hit_self == HitBareMetal) {
         send_response_error<dbc::node_add_bare_metal_rsp>(NODE_ADD_BARE_METAL_RSP,
             node_req_msg->header, E_DEFAULT, "Not supported", data->peer_nodes_list[0]);
     } else {
@@ -5556,8 +5651,12 @@ void node_request_service::add_bare_metal(const network::base_header& header,
     std::map<std::string, std::string> ids;
     for (const auto& v : v_bm_nodes.GetArray()) {
         bare_metal_info info;
-        if (v.HasMember("node_id") && v["node_id"].IsString())
-            info.uuid = v["node_id"].GetString();
+        if (v.HasMember("uuid") && v["uuid"].IsString())
+            info.uuid = v["uuid"].GetString();
+        if (v.HasMember("ip") && v["ip"].IsString())
+            info.ip = v["ip"].GetString();
+        if (v.HasMember("os") && v["os"].IsString())
+            info.os = v["os"].GetString();
         if (v.HasMember("desc") && v["desc"].IsString())
             info.desc = v["desc"].GetString();
         if (v.HasMember("ipmi_hostname") && v["ipmi_hostname"].IsString())
@@ -5693,7 +5792,7 @@ void node_request_service::on_node_delete_bare_metal_req(const std::shared_ptr<n
     HitNodeType hit_self = hit_node(req_peer_nodes, ConfManager::instance().GetNodeId());
     if (hit_self == HitBareMetalManager) {
         delete_bare_metal(node_req_msg->header, data);
-    } else if (hit_self == HitBareMetal) {
+    } else if (hit_self == HitComputer || hit_self == HitBareMetal) {
         send_response_error<dbc::node_delete_bare_metal_rsp>(NODE_DELETE_BARE_METAL_RSP,
             node_req_msg->header, E_DEFAULT, "Not supported", data->peer_nodes_list[0]);
     } else {
@@ -5831,7 +5930,7 @@ void node_request_service::on_node_bare_metal_power_req(const std::shared_ptr<ne
         }
 
         bare_metal_power(node_req_msg->header, data, result);
-    } else if (hit_self == HitBareMetalManager) {
+    } else if (hit_self == HitComputer || hit_self == HitBareMetalManager) {
         send_response_error<dbc::node_bare_metal_power_rsp>(NODE_BARE_METAL_POWER_RSP,
             node_req_msg->header, E_DEFAULT, "Not supported", data->peer_nodes_list[0]);
     } else {

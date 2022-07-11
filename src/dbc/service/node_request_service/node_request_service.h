@@ -183,6 +183,8 @@ protected:
 
     void on_prune_task_timer(const std::shared_ptr<core_timer>& timer);
 
+    void on_prune_bare_metal_timer(const std::shared_ptr<core_timer>& timer);
+
     void on_timer_service_broadcast(const std::shared_ptr<core_timer>& timer);
 
     std::shared_ptr<network::message> create_service_broadcast_req_msg(const std::map <std::string, std::shared_ptr<dbc::node_service_info>>& mp);

@@ -6,6 +6,8 @@
 
 struct bare_metal_info {
     std::string uuid;
+    std::string ip;
+    std::string os;
     std::string desc;
     std::string ipmi_hostname;
     std::string ipmi_username;
@@ -13,6 +15,7 @@ struct bare_metal_info {
 
     bool validate() const {
         if (uuid.empty()) return false;
+        if (ip.empty()) return false;
         if (ipmi_hostname.empty()) return false;
         if (ipmi_username.empty()) return false;
         if (ipmi_password.empty()) return false;
@@ -26,9 +29,9 @@ public:
     BareMetalNodeManager();
     virtual ~BareMetalNodeManager();
 
-    const std::map<std::string, std::shared_ptr<dbc::db_bare_metal>> getBareMetalNodes() const { return m_bare_metal_nodes; }
-
     ERRCODE Init();
+
+    const std::map<std::string, std::shared_ptr<dbc::db_bare_metal>> getBareMetalNodes() const;
 
     std::shared_ptr<dbc::db_bare_metal> getBareMetalNode(const std::string& node_id);
 
@@ -41,6 +44,8 @@ public:
     FResult DeleteBareMetalNode(const std::vector<std::string>& ids);
 
 private:
+    mutable RwMutex m_mtx;
+
     std::map<std::string, std::shared_ptr<dbc::db_bare_metal>> m_bare_metal_nodes;
 
     BareMetalDB m_db;

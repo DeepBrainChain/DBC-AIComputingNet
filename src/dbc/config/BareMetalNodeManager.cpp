@@ -23,7 +23,13 @@ ERRCODE BareMetalNodeManager::Init() {
     return ERR_SUCCESS;
 }
 
+const std::map<std::string, std::shared_ptr<dbc::db_bare_metal>> BareMetalNodeManager::getBareMetalNodes() const {
+    RwMutex::ReadLock rlock(m_mtx);
+    return m_bare_metal_nodes;
+}
+
 std::shared_ptr<dbc::db_bare_metal> BareMetalNodeManager::getBareMetalNode(const std::string& node_id) {
+    RwMutex::ReadLock rlock(m_mtx);
     auto iter = m_bare_metal_nodes.find(node_id);
     if (iter != m_bare_metal_nodes.end())
         return iter->second;
@@ -31,6 +37,7 @@ std::shared_ptr<dbc::db_bare_metal> BareMetalNodeManager::getBareMetalNode(const
 }
 
 bool BareMetalNodeManager::ExistNodeID(const std::string& node_id) const {
+    RwMutex::ReadLock rlock(m_mtx);
     // for (const auto& iter : m_bare_metal_nodes) {
     //     LOG_INFO << "qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq " << iter.first;
     // }
@@ -39,6 +46,7 @@ bool BareMetalNodeManager::ExistNodeID(const std::string& node_id) const {
 }
 
 bool BareMetalNodeManager::ExistUUID(const std::string& uuid) const {
+    RwMutex::ReadLock rlock(m_mtx);
     bool bExisted = false;
     for (const auto& iter : m_bare_metal_nodes) {
         if (iter.second->uuid == uuid) {
@@ -50,6 +58,8 @@ bool BareMetalNodeManager::ExistUUID(const std::string& uuid) const {
 }
 
 FResult BareMetalNodeManager::AddBareMetalNodes(std::map<std::string, bare_metal_info> nodes, std::map<std::string, std::string>& ids) {
+    RwMutex::WriteLock wlock(m_mtx);
+
     FResult fret = {ERR_ERROR, ""};
     for (const auto& iter : nodes) {
         if (!iter.second.validate()) {
@@ -67,6 +77,8 @@ FResult BareMetalNodeManager::AddBareMetalNodes(std::map<std::string, bare_metal
         bm->__set_node_id(info.node_id);
         bm->__set_node_private_key(info.node_private_key);
         bm->__set_uuid(iter.second.uuid);
+        bm->__set_ip(iter.second.ip);
+        bm->__set_os(iter.second.os);
         bm->__set_desc(iter.second.desc);
         bm->__set_ipmi_hostname(iter.second.ipmi_hostname);
         bm->__set_ipmi_username(iter.second.ipmi_username);
@@ -80,6 +92,8 @@ FResult BareMetalNodeManager::AddBareMetalNodes(std::map<std::string, bare_metal
         node_request_service::instance().add_self_to_servicelist(info.node_id);
         ids[iter.second.uuid] = info.node_id;
         LOG_INFO << "add bare metal node successful, uuid: " << iter.second.uuid
+            << ", ip: " << iter.second.ip
+            << ", os: " << iter.second.os
             << ", desc: " << iter.second.desc
             << ", ipmi hostname: " << iter.second.ipmi_hostname
             << ", ipmi username: " << iter.second.ipmi_username
@@ -91,6 +105,8 @@ FResult BareMetalNodeManager::AddBareMetalNodes(std::map<std::string, bare_metal
 }
 
 FResult BareMetalNodeManager::DeleteBareMetalNode(const std::vector<std::string>& ids) {
+    RwMutex::WriteLock wlock(m_mtx);
+
     FResult fret = {-1, "ids is empty"};
 
     if (ids.empty()) return fret;

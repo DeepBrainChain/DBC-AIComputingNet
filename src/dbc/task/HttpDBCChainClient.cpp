@@ -257,3 +257,124 @@ void HttpDBCChainClient::request_cur_renter(const std::string& node_id, std::str
         }
     }
 }
+
+bool HttpDBCChainClient::getCommitteeUploadInfo(const std::string& node_id, CommitteeUploadInfo& info) {
+    bool bret = false;
+
+    for (auto& it : m_addrs) {
+        httplib::SSLClient cli(it.second.get_ip(), it.second.get_port());
+        cli.set_timeout_sec(5);
+        cli.set_read_timeout(10, 0);
+
+        std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"onlineProfile_getMachineInfo", "params": [")"
+            + node_id + R"("]})";
+        std::shared_ptr<httplib::Response> resp = cli.Post("/", str_send, "application/json");
+        if (resp != nullptr) {
+            rapidjson::Document doc;
+            doc.Parse(resp->body.c_str());
+            if (!doc.IsObject()) break;
+
+            if (!doc.HasMember("result")) break;
+            const rapidjson::Value& v_result = doc["result"];
+            if (!v_result.IsObject()) break;
+
+            if (!v_result.HasMember("machineInfoDetail")) break;
+            const rapidjson::Value& v_machineInfoDetail = v_result["machineInfoDetail"];
+            if (!v_machineInfoDetail.IsObject()) break;
+
+            if (!v_machineInfoDetail.HasMember("committee_upload_info")) break;
+            const rapidjson::Value& v_committeeUploadInfo = v_machineInfoDetail["committee_upload_info"];
+            if (!v_committeeUploadInfo.IsObject()) break;
+
+            if (v_committeeUploadInfo.HasMember("machine_id") && v_committeeUploadInfo["machine_id"].IsArray()) {
+                const rapidjson::Value& v_array = v_committeeUploadInfo["machine_id"];
+                std::vector<unsigned char> bytes;
+                for (const auto& v : v_array.GetArray()) {
+                    bytes.push_back(v.GetUint());
+                }
+                info.machine_id = std::string((char*)&bytes[0], bytes.size());
+            }
+
+            if (v_committeeUploadInfo.HasMember("gpu_type") && v_committeeUploadInfo["gpu_type"].IsArray()) {
+                const rapidjson::Value& v_array = v_committeeUploadInfo["gpu_type"];
+                std::vector<unsigned char> bytes;
+                for (const auto& v : v_array.GetArray()) {
+                    bytes.push_back(v.GetUint());
+                }
+                info.gpu_type = std::string((char*)&bytes[0], bytes.size());
+            }
+
+            if (v_committeeUploadInfo.HasMember("gpu_num") && v_committeeUploadInfo["gpu_num"].IsUint()) {
+                info.gpu_num = v_committeeUploadInfo["gpu_num"].GetUint();
+            } else {
+                info.gpu_num = 0;
+            }
+
+            if (v_committeeUploadInfo.HasMember("cuda_core") && v_committeeUploadInfo["cuda_core"].IsUint()) {
+                info.cuda_core = v_committeeUploadInfo["cuda_core"].GetUint();
+            } else {
+                info.cuda_core = 0;
+            }
+
+            if (v_committeeUploadInfo.HasMember("gpu_mem") && v_committeeUploadInfo["gpu_mem"].IsUint64()) {
+                info.gpu_mem = v_committeeUploadInfo["gpu_mem"].GetUint64();
+            } else {
+                info.gpu_mem = 0;
+            }
+
+            if (v_committeeUploadInfo.HasMember("calc_point") && v_committeeUploadInfo["calc_point"].IsUint64()) {
+                info.calc_point = v_committeeUploadInfo["calc_point"].GetUint64();
+            } else {
+                info.calc_point = 0;
+            }
+
+            if (v_committeeUploadInfo.HasMember("sys_disk") && v_committeeUploadInfo["sys_disk"].IsUint64()) {
+                info.sys_disk = v_committeeUploadInfo["sys_disk"].GetUint64();
+            } else {
+                info.sys_disk = 0;
+            }
+
+            if (v_committeeUploadInfo.HasMember("data_disk") && v_committeeUploadInfo["data_disk"].IsUint64()) {
+                info.data_disk = v_committeeUploadInfo["data_disk"].GetUint64();
+            } else {
+                info.data_disk = 0;
+            }
+
+            if (v_committeeUploadInfo.HasMember("cpu_type") && v_committeeUploadInfo["cpu_type"].IsArray()) {
+                const rapidjson::Value& v_array = v_committeeUploadInfo["cpu_type"];
+                std::vector<unsigned char> bytes;
+                for (const auto& v : v_array.GetArray()) {
+                    bytes.push_back(v.GetUint());
+                }
+                info.cpu_type = std::string((char*)&bytes[0], bytes.size());
+            }
+
+            if (v_committeeUploadInfo.HasMember("cpu_core_num") && v_committeeUploadInfo["cpu_core_num"].IsUint()) {
+                info.cpu_core_num = v_committeeUploadInfo["cpu_core_num"].GetUint();
+            } else {
+                info.cpu_core_num = 0;
+            }
+
+            if (v_committeeUploadInfo.HasMember("cpu_rate") && v_committeeUploadInfo["cpu_rate"].IsUint64()) {
+                info.cpu_rate = v_committeeUploadInfo["cpu_rate"].GetUint64();
+            } else {
+                info.cpu_rate = 0;
+            }
+
+            if (v_committeeUploadInfo.HasMember("mem_num") && v_committeeUploadInfo["mem_num"].IsUint64()) {
+                info.mem_num = v_committeeUploadInfo["mem_num"].GetUint64();
+            } else {
+                info.mem_num = 0;
+            }
+
+            if (v_committeeUploadInfo.HasMember("is_support") && v_committeeUploadInfo["is_support"].IsBool()) {
+                info.is_support = v_committeeUploadInfo["is_support"].GetBool();
+            } else {
+                info.is_support = 0;
+            }
+            bret = true;
+        }
+    }
+
+    return bret;
+}

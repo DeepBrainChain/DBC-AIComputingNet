@@ -26,7 +26,8 @@ namespace dbc {
 class db_bare_metal;
 
 typedef struct _db_bare_metal__isset {
-  _db_bare_metal__isset() : desc(false), ipmi_hostname(false), ipmi_username(false), ipmi_password(false) {}
+  _db_bare_metal__isset() : os(false), desc(false), ipmi_hostname(false), ipmi_username(false), ipmi_password(false) {}
+  bool os :1;
   bool desc :1;
   bool ipmi_hostname :1;
   bool ipmi_username :1;
@@ -38,13 +39,15 @@ class db_bare_metal : public virtual ::apache::thrift::TBase {
 
   db_bare_metal(const db_bare_metal&);
   db_bare_metal& operator=(const db_bare_metal&);
-  db_bare_metal() : node_id(), node_private_key(), uuid(), desc(), ipmi_hostname(), ipmi_username(), ipmi_password() {
+  db_bare_metal() : node_id(), node_private_key(), uuid(), ip(), os(), desc(), ipmi_hostname(), ipmi_username(), ipmi_password() {
   }
 
   virtual ~db_bare_metal() throw();
   std::string node_id;
   std::string node_private_key;
   std::string uuid;
+  std::string ip;
+  std::string os;
   std::string desc;
   std::string ipmi_hostname;
   std::string ipmi_username;
@@ -57,6 +60,10 @@ class db_bare_metal : public virtual ::apache::thrift::TBase {
   void __set_node_private_key(const std::string& val);
 
   void __set_uuid(const std::string& val);
+
+  void __set_ip(const std::string& val);
+
+  void __set_os(const std::string& val);
 
   void __set_desc(const std::string& val);
 
@@ -73,6 +80,12 @@ class db_bare_metal : public virtual ::apache::thrift::TBase {
     if (!(node_private_key == rhs.node_private_key))
       return false;
     if (!(uuid == rhs.uuid))
+      return false;
+    if (!(ip == rhs.ip))
+      return false;
+    if (__isset.os != rhs.__isset.os)
+      return false;
+    else if (__isset.os && !(os == rhs.os))
       return false;
     if (__isset.desc != rhs.__isset.desc)
       return false;

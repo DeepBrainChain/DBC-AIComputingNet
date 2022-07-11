@@ -9769,6 +9769,8 @@ void bare_metal_list(const std::map<std::string, std::shared_ptr<dbc::db_bare_me
         ss << "\"node_id\":" << "\"" << it.second->node_id << "\"";
         ss << ",\"node_private_key\":" << "\"" << it.second->node_private_key << "\"";
         ss << ",\"uuid\":" << "\"" << it.second->uuid << "\"";
+        ss << ",\"ip\":" << "\"" << it.second->ip << "\"";
+        ss << ",\"os\":" << "\"" << it.second->os << "\"";
         ss << ",\"description\":" << "\"" << it.second->desc << "\"";
         ss << ",\"ipmi_hostname\":" << "\"" << it.second->ipmi_hostname << "\"";
         ss << ",\"ipmi_username\":" << "\"" << it.second->ipmi_username << "\"";
@@ -10102,8 +10104,12 @@ void rest_api_service::rest_add_bare_metal(const std::shared_ptr<network::http_r
         std::map<std::string, std::string> ids;
         for (const auto& v : v_bm_nodes.GetArray()) {
             bare_metal_info info;
-            if (v.HasMember("node_id") && v["node_id"].IsString())
-                info.uuid = v["node_id"].GetString();
+            if (v.HasMember("uuid") && v["uuid"].IsString())
+                info.uuid = v["uuid"].GetString();
+            if (v.HasMember("ip") && v["ip"].IsString())
+                info.ip = v["ip"].GetString();
+            if (v.HasMember("os") && v["os"].IsString())
+                info.os = v["os"].GetString();
             if (v.HasMember("desc") && v["desc"].IsString())
                 info.desc = v["desc"].GetString();
             if (v.HasMember("ipmi_hostname") && v["ipmi_hostname"].IsString())

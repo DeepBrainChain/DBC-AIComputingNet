@@ -30,6 +30,15 @@ void db_bare_metal::__set_uuid(const std::string& val) {
   this->uuid = val;
 }
 
+void db_bare_metal::__set_ip(const std::string& val) {
+  this->ip = val;
+}
+
+void db_bare_metal::__set_os(const std::string& val) {
+  this->os = val;
+__isset.os = true;
+}
+
 void db_bare_metal::__set_desc(const std::string& val) {
   this->desc = val;
 __isset.desc = true;
@@ -71,6 +80,7 @@ uint32_t db_bare_metal::read(::apache::thrift::protocol::TProtocol* iprot) {
   bool isset_node_id = false;
   bool isset_node_private_key = false;
   bool isset_uuid = false;
+  bool isset_ip = false;
 
   while (true)
   {
@@ -106,13 +116,29 @@ uint32_t db_bare_metal::read(::apache::thrift::protocol::TProtocol* iprot) {
         break;
       case 4:
         if (ftype == ::apache::thrift::protocol::T_STRING) {
+          xfer += iprot->readString(this->ip);
+          isset_ip = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 5:
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
+          xfer += iprot->readString(this->os);
+          this->__isset.os = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 6:
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
           xfer += iprot->readString(this->desc);
           this->__isset.desc = true;
         } else {
           xfer += iprot->skip(ftype);
         }
         break;
-      case 5:
+      case 7:
         if (ftype == ::apache::thrift::protocol::T_STRING) {
           xfer += iprot->readString(this->ipmi_hostname);
           this->__isset.ipmi_hostname = true;
@@ -120,7 +146,7 @@ uint32_t db_bare_metal::read(::apache::thrift::protocol::TProtocol* iprot) {
           xfer += iprot->skip(ftype);
         }
         break;
-      case 6:
+      case 8:
         if (ftype == ::apache::thrift::protocol::T_STRING) {
           xfer += iprot->readString(this->ipmi_username);
           this->__isset.ipmi_username = true;
@@ -128,7 +154,7 @@ uint32_t db_bare_metal::read(::apache::thrift::protocol::TProtocol* iprot) {
           xfer += iprot->skip(ftype);
         }
         break;
-      case 7:
+      case 9:
         if (ftype == ::apache::thrift::protocol::T_STRING) {
           xfer += iprot->readString(this->ipmi_password);
           this->__isset.ipmi_password = true;
@@ -151,6 +177,8 @@ uint32_t db_bare_metal::read(::apache::thrift::protocol::TProtocol* iprot) {
     throw TProtocolException(TProtocolException::INVALID_DATA);
   if (!isset_uuid)
     throw TProtocolException(TProtocolException::INVALID_DATA);
+  if (!isset_ip)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
   return xfer;
 }
 
@@ -171,23 +199,32 @@ uint32_t db_bare_metal::write(::apache::thrift::protocol::TProtocol* oprot) cons
   xfer += oprot->writeString(this->uuid);
   xfer += oprot->writeFieldEnd();
 
+  xfer += oprot->writeFieldBegin("ip", ::apache::thrift::protocol::T_STRING, 4);
+  xfer += oprot->writeString(this->ip);
+  xfer += oprot->writeFieldEnd();
+
+  if (this->__isset.os) {
+    xfer += oprot->writeFieldBegin("os", ::apache::thrift::protocol::T_STRING, 5);
+    xfer += oprot->writeString(this->os);
+    xfer += oprot->writeFieldEnd();
+  }
   if (this->__isset.desc) {
-    xfer += oprot->writeFieldBegin("desc", ::apache::thrift::protocol::T_STRING, 4);
+    xfer += oprot->writeFieldBegin("desc", ::apache::thrift::protocol::T_STRING, 6);
     xfer += oprot->writeString(this->desc);
     xfer += oprot->writeFieldEnd();
   }
   if (this->__isset.ipmi_hostname) {
-    xfer += oprot->writeFieldBegin("ipmi_hostname", ::apache::thrift::protocol::T_STRING, 5);
+    xfer += oprot->writeFieldBegin("ipmi_hostname", ::apache::thrift::protocol::T_STRING, 7);
     xfer += oprot->writeString(this->ipmi_hostname);
     xfer += oprot->writeFieldEnd();
   }
   if (this->__isset.ipmi_username) {
-    xfer += oprot->writeFieldBegin("ipmi_username", ::apache::thrift::protocol::T_STRING, 6);
+    xfer += oprot->writeFieldBegin("ipmi_username", ::apache::thrift::protocol::T_STRING, 8);
     xfer += oprot->writeString(this->ipmi_username);
     xfer += oprot->writeFieldEnd();
   }
   if (this->__isset.ipmi_password) {
-    xfer += oprot->writeFieldBegin("ipmi_password", ::apache::thrift::protocol::T_STRING, 7);
+    xfer += oprot->writeFieldBegin("ipmi_password", ::apache::thrift::protocol::T_STRING, 9);
     xfer += oprot->writeString(this->ipmi_password);
     xfer += oprot->writeFieldEnd();
   }
@@ -201,6 +238,8 @@ void swap(db_bare_metal &a, db_bare_metal &b) {
   swap(a.node_id, b.node_id);
   swap(a.node_private_key, b.node_private_key);
   swap(a.uuid, b.uuid);
+  swap(a.ip, b.ip);
+  swap(a.os, b.os);
   swap(a.desc, b.desc);
   swap(a.ipmi_hostname, b.ipmi_hostname);
   swap(a.ipmi_username, b.ipmi_username);
@@ -212,6 +251,8 @@ db_bare_metal::db_bare_metal(const db_bare_metal& other0) {
   node_id = other0.node_id;
   node_private_key = other0.node_private_key;
   uuid = other0.uuid;
+  ip = other0.ip;
+  os = other0.os;
   desc = other0.desc;
   ipmi_hostname = other0.ipmi_hostname;
   ipmi_username = other0.ipmi_username;
@@ -222,6 +263,8 @@ db_bare_metal& db_bare_metal::operator=(const db_bare_metal& other1) {
   node_id = other1.node_id;
   node_private_key = other1.node_private_key;
   uuid = other1.uuid;
+  ip = other1.ip;
+  os = other1.os;
   desc = other1.desc;
   ipmi_hostname = other1.ipmi_hostname;
   ipmi_username = other1.ipmi_username;
@@ -235,6 +278,8 @@ void db_bare_metal::printTo(std::ostream& out) const {
   out << "node_id=" << to_string(node_id);
   out << ", " << "node_private_key=" << to_string(node_private_key);
   out << ", " << "uuid=" << to_string(uuid);
+  out << ", " << "ip=" << to_string(ip);
+  out << ", " << "os="; (__isset.os ? (out << to_string(os)) : (out << "<null>"));
   out << ", " << "desc="; (__isset.desc ? (out << to_string(desc)) : (out << "<null>"));
   out << ", " << "ipmi_hostname="; (__isset.ipmi_hostname ? (out << to_string(ipmi_hostname)) : (out << "<null>"));
   out << ", " << "ipmi_username="; (__isset.ipmi_username ? (out << to_string(ipmi_username)) : (out << "<null>"));
