@@ -8,7 +8,10 @@
 #include "network/protocol/thrift_binary.h"
 #include "util/system_info.h"
 #include "server/server.h"
+#include "task/HttpDBCChainClient.h"
 #include "task/detail/gpu/TaskGpuManager.h"
+
+#define MAX_MONITOR_QUEUE_SIZE 1024
 
 node_monitor_service::~node_monitor_service() {
 
@@ -36,6 +39,17 @@ ERRCODE node_monitor_service::init() {
             }
         }
 
+        m_io_service_pool = std::make_shared<network::io_service_pool>();
+        if (ERR_SUCCESS != m_io_service_pool->init(1)) {
+            LOG_ERROR << "init monitor io service failed";
+            return E_DEFAULT;
+        }
+
+        if (ERR_SUCCESS != m_io_service_pool->start()) {
+            LOG_ERROR << "monitor io service run failed";
+            return E_DEFAULT;
+        }
+
         if (ERR_SUCCESS != init_db()) {
             LOG_ERROR << "init_db error";
             return E_DEFAULT;
@@ -50,6 +64,19 @@ ERRCODE node_monitor_service::init() {
 void node_monitor_service::exit() {
 	service_module::exit();
 
+    LOG_INFO << "wait for monitor socket close";
+    for (const auto& iter : m_senders) {
+        int count = 0;
+        while (!iter->overed() && count++ < 3) {
+            sleep(3);
+        }
+        if (!iter->overed()) iter->stop();
+    }
+
+    if (m_io_service_pool) {
+        m_io_service_pool->stop();
+        m_io_service_pool->exit();
+    }
 }
 
 void node_monitor_service::listMonitorServer(const std::string& wallet, std::vector<monitor_server>& servers) const {
@@ -263,10 +290,12 @@ void node_monitor_service::on_monitor_data_sender_task_timer(const std::shared_p
             // send monitor data
             if (monitor_servers != m_wallet_monitors.end()) {
                 for (const auto& server : monitor_servers->second) {
-                    send_monitor_data(dmData, server);
+                    // send_monitor_data(dmData, server);
+                    add_monitor_send_queue(server, dmData.domainName, dmData.toZabbixString());
                 }
             }
             // send_monitor_data(dmData, m_dbc_monitor_server);
+            // add_monitor_send_queue(m_dbc_monitor_server, dmData.domainName, dmData.toZabbixString());
         }
     }
     
@@ -304,12 +333,15 @@ void node_monitor_service::on_monitor_data_sender_task_timer(const std::shared_p
         auto monitor_servers = m_wallet_monitors.find(m_cur_renter_wallet);
         if (monitor_servers != m_wallet_monitors.end()) {
             for (const auto& server : monitor_servers->second) {
-                send_monitor_data(hmData, server);
+                // send_monitor_data(hmData, server);
+                add_monitor_send_queue(server, hmData.nodeId, hmData.toZabbixString());
             }
         }
     }
-    send_monitor_data(hmData, m_dbc_monitor_server);
-    send_monitor_data(hmData, m_miner_monitor_server);
+    // send_monitor_data(hmData, m_dbc_monitor_server);
+    // send_monitor_data(hmData, m_miner_monitor_server);
+    add_monitor_send_queue(m_dbc_monitor_server, hmData.nodeId, hmData.toZabbixString());
+    add_monitor_send_queue(m_miner_monitor_server, hmData.nodeId, hmData.toZabbixString());
 }
 
 void node_monitor_service::on_update_cur_renter_wallet_timer(const std::shared_ptr<core_timer>& timer) {
@@ -337,34 +369,62 @@ void node_monitor_service::on_libvirt_auto_reconnect_timer(const std::shared_ptr
     }
 }
 
-void node_monitor_service::send_monitor_data(const dbcMonitor::domMonitorData& dmData, const monitor_server& server) const {
-    if (server.host.empty() || server.port.empty()) return;
-    // TASK_LOG_INFO(dmData.domainName, dmData.toJsonString());
-    zabbixSender zs(server.host, server.port);
-    if (zs.is_server_want_monitor_data(dmData.domainName)) {
-        if (!zs.sendJsonData(dmData.toZabbixString())) {
-            LOG_ERROR << "send monitor data of task(" << dmData.domainName << ") to server(" << server.host << ") error";
-            // TASK_LOG_ERROR(dmData.domainName, "send monitor data error");
+void node_monitor_service::add_monitor_send_queue(const monitor_server& server, const std::string& host, const std::string& json) {
+    if (server.host.empty() || server.port.empty() || host.empty() || json.empty()) return;
+
+    for (auto iter = m_senders.begin(); iter != m_senders.end();) {
+        if ((*iter)->overed()) {
+            iter = m_senders.erase(iter);
         } else {
-            LOG_INFO << "send monitor data of task(" << dmData.domainName << ") to server(" << server.host << ") success";
-            // TASK_LOG_INFO(dmData.domainName, "send monitor data success");
+            iter++;
         }
-    } else {
-        LOG_ERROR << "server: " << server.host << " does not need monitor data of vm: " << dmData.domainName;
+    }
+
+    if (m_monitor_send_queue.size() > MAX_MONITOR_QUEUE_SIZE) {
+        LOG_INFO << "monitor send queue is full, the oldest data will be deleted";
+        m_monitor_send_queue.pop();
+    }
+    m_monitor_send_queue.push({server, host, json});
+
+    while (!m_monitor_send_queue.empty() && m_senders.size() < 10) {
+        monitor_param param = m_monitor_send_queue.front();
+        m_monitor_send_queue.pop();
+        std::shared_ptr<zabbixSender> zs =
+            std::make_shared<zabbixSender>(*m_io_service_pool->get_io_service().get(),
+                param.host, param.json);
+        zs->start(param.server.host, param.server.port);
+        m_senders.push_back(std::move(zs));
     }
 }
 
+void node_monitor_service::send_monitor_data(const dbcMonitor::domMonitorData& dmData, const monitor_server& server) const {
+    // if (server.host.empty() || server.port.empty()) return;
+    // // TASK_LOG_INFO(dmData.domainName, dmData.toJsonString());
+    // zabbixSender zs(server.host, server.port);
+    // if (zs.is_server_want_monitor_data(dmData.domainName)) {
+    //     if (!zs.sendJsonData(dmData.toZabbixString())) {
+    //         LOG_ERROR << "send monitor data of task(" << dmData.domainName << ") to server(" << server.host << ") error";
+    //         // TASK_LOG_ERROR(dmData.domainName, "send monitor data error");
+    //     } else {
+    //         LOG_INFO << "send monitor data of task(" << dmData.domainName << ") to server(" << server.host << ") success";
+    //         // TASK_LOG_INFO(dmData.domainName, "send monitor data success");
+    //     }
+    // } else {
+    //     LOG_ERROR << "server: " << server.host << " does not need monitor data of vm: " << dmData.domainName;
+    // }
+}
+
 void node_monitor_service::send_monitor_data(const dbcMonitor::hostMonitorData& hmData, const monitor_server& server) const {
-    if (server.host.empty() || server.port.empty()) return;
-    // LOG_INFO << "machine monitor data:" << hmData.toJsonString();
-    zabbixSender zs(server.host, server.port);
-    if (zs.is_server_want_monitor_data(hmData.nodeId)) {
-        if (!zs.sendJsonData(hmData.toZabbixString())) {
-            LOG_ERROR << "send host monitor data to server(" << server.host << ") error";
-        } else {
-            LOG_INFO << "send host monitor data to server(" << server.host << ") success";
-        }
-    } else {
-        LOG_ERROR << "server: " << server.host << " does not need host monitor data";
-    }
+    // if (server.host.empty() || server.port.empty()) return;
+    // // LOG_INFO << "machine monitor data:" << hmData.toJsonString();
+    // zabbixSender zs(server.host, server.port);
+    // if (zs.is_server_want_monitor_data(hmData.nodeId)) {
+    //     if (!zs.sendJsonData(hmData.toZabbixString())) {
+    //         LOG_ERROR << "send host monitor data to server(" << server.host << ") error";
+    //     } else {
+    //         LOG_INFO << "send host monitor data to server(" << server.host << ") success";
+    //     }
+    // } else {
+    //     LOG_ERROR << "server: " << server.host << " does not need host monitor data";
+    // }
 }

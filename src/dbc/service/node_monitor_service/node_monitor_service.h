@@ -7,7 +7,7 @@
 #include "task/detail/info/TaskInfoManager.h"
 #include "task/detail/wallet_rent_task/WalletRentTaskManager.h"
 #include "task/detail/TaskMonitorInfo.h"
-#include "task/HttpDBCChainClient.h"
+#include "network/utils/io_service_pool.h"
 #include "hostMonitorInfo.h"
 
 #define MONITOR_DATA_SENDER_TASK_TIMER                                   "monitor_data_sender_task"
@@ -18,6 +18,8 @@ struct monitor_server {
     std::string host;
     std::string port;
 };
+
+class zabbixSender;
 
 class node_monitor_service : public service_module, public Singleton<node_monitor_service> {
 public:
@@ -51,6 +53,8 @@ protected:
 
     void on_libvirt_auto_reconnect_timer(const std::shared_ptr<core_timer>& timer);
 
+    void add_monitor_send_queue(const monitor_server& server, const std::string& host, const std::string& json);
+
     void send_monitor_data(const dbcMonitor::domMonitorData& dmData, const monitor_server& server) const;
 
     void send_monitor_data(const dbcMonitor::hostMonitorData& hmData, const monitor_server& server) const;
@@ -75,6 +79,18 @@ private:
 
     // 当前租用人的钱包地址
     std::string m_cur_renter_wallet;
+
+    struct monitor_param {
+        monitor_server server;
+        std::string host;
+        std::string json;
+    };
+
+    std::queue<monitor_param> m_monitor_send_queue;
+
+    std::shared_ptr<network::io_service_pool> m_io_service_pool = nullptr;
+
+    std::vector<std::shared_ptr<zabbixSender>> m_senders;
 
 };
 

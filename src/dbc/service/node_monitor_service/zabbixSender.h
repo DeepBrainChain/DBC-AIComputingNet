@@ -2,25 +2,57 @@
 #define DBC_ZABBIX_SENDER_H
 
 #include <string>
+#include <boost/asio.hpp>
 
-class zabbixSender {
+class zabbixSender : public std::enable_shared_from_this<zabbixSender> {
 public:
-    zabbixSender(const std::string &server, const std::string &port);
+    zabbixSender(boost::asio::io_service& io_service,
+        const std::string& host,
+        const std::string& json);
 
-    bool sendJsonData(const std::string &data);
+    bool start(const std::string& host, const std::string& port);
 
-    bool is_server_want_monitor_data(const std::string& hostname);
+    bool stop();
+
+    bool overed() const;
 
 protected:
-    void sendData(const std::string &data, std::string &reply);
+    void start_connect(boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
 
-    const char* getJsonString(const char* result, unsigned long long &jsonLength);
+    void handle_connect(const boost::system::error_code& error,
+        boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
+    
+    void send_json_data(const std::string &data);
 
-    bool checkResponse(const std::string &reply);
+    void is_server_want_monitor_data(const std::string& hostname);
+
+    void start_write(const std::string &data);
+
+    void handle_write(const boost::system::error_code& error);
+
+    // type == 0 send monitor data | type == 1 query server wants
+    void start_read(int type);
+
+    void do_read(const std::string& response, int type);
+
+    const char* get_json_string(const char* result, unsigned long long &jsonLength);
+
+    bool check_response(const char* response);
+
+    void check_deadline();
 
 private:
-    std::string server_;
-    std::string port_;
+    const int max_length_ = 4096;
+    bool stopped_ = false;
+    boost::asio::ip::tcp::resolver resolver_;
+    boost::asio::ip::tcp::resolver::results_type endpoints_;
+    boost::asio::ip::tcp::socket socket_;
+    std::string input_buffer_;
+    boost::asio::steady_timer deadline_;
+    std::string host_;
+    std::string json_;
+    bool over_ = false;
+
 };
 
 #endif
