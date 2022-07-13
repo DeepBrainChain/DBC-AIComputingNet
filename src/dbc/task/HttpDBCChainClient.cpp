@@ -2,6 +2,11 @@
 #include "log/log.h"
 #include "config/conf_manager.h"
 
+bool chainScore::operator<(const chainScore& other) const {
+    if (block == other.block) return time < other.time;
+    return block > other.block;
+}
+
 HttpDBCChainClient::HttpDBCChainClient() {
 
 }
@@ -26,30 +31,8 @@ void HttpDBCChainClient::init(const std::vector<std::string>& dbc_chain_addrs) {
             net_addr.set_port(443);
         }
          
-        httplib::SSLClient cli(net_addr.get_ip(), net_addr.get_port());
-        cli.set_timeout_sec(5);
-        cli.set_read_timeout(10, 0);
-        if (cli.is_valid()) {
-            struct timeval tv1{};
-            gettimeofday(&tv1, 0);
-
-            // cur block
-            std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"chain_getBlock", "params": []})";
-            std::shared_ptr<httplib::Response> resp = cli.Post("/", str_send, "application/json");
-            if (resp == nullptr) {
-                m_addrs[0xFF + i] = net_addr;
-                continue;
-            }
-
-            struct timeval tv2 {};
-            gettimeofday(&tv2, 0);
-
-            int64_t msec = (tv2.tv_sec * 1000 + tv2.tv_usec / 1000) - (tv1.tv_sec * 1000 + tv1.tv_usec / 1000);
-            m_addrs[msec] = net_addr;
-        }
-        else {
-            m_addrs[0xFFFF + i] = net_addr;
-        }
+        chainScore cs = getChainScore(net_addr, i);
+        m_addrs[cs] = net_addr;
     }
 }
 
@@ -373,8 +356,62 @@ bool HttpDBCChainClient::getCommitteeUploadInfo(const std::string& node_id, Comm
                 info.is_support = 0;
             }
             bret = true;
+
+            break;
         }
     }
 
     return bret;
+}
+
+chainScore HttpDBCChainClient::getChainScore(const network::net_address& addr, int delta) const {
+    int64_t cur_block = 0;
+    int32_t time = 0xFFFF + delta;
+
+    do {
+        struct timeval tv1{};
+        gettimeofday(&tv1, 0);
+
+        httplib::SSLClient cli(addr.get_ip(), addr.get_port());
+        cli.set_timeout_sec(5);
+        cli.set_read_timeout(10, 0);
+
+        std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"chain_getBlock", "params": []})";
+        std::shared_ptr<httplib::Response> resp = cli.Post("/", str_send, "application/json");
+        if (!resp) break;
+
+        struct timeval tv2 {};
+        gettimeofday(&tv2, 0);
+        time = (tv2.tv_sec * 1000 + tv2.tv_usec / 1000) - (tv1.tv_sec * 1000 + tv1.tv_usec / 1000);
+
+        rapidjson::Document doc;
+        rapidjson::ParseResult ok = doc.Parse(resp->body.c_str());
+        if (!ok) break;
+        
+        if (!doc.HasMember("result")) break;
+        const rapidjson::Value& v_result = doc["result"];
+        if (!v_result.IsObject()) break;
+
+        if (!v_result.HasMember("block")) break;
+        const rapidjson::Value& v_block = v_result["block"];
+        if (!v_block.IsObject()) break;
+
+        if (!v_block.HasMember("header")) break;
+        const rapidjson::Value& v_header = v_block["header"];
+        if (!v_header.IsObject()) break;
+
+        if (!v_header.HasMember("number")) break;
+        const rapidjson::Value& v_number = v_header["number"];
+        if (!v_number.IsString()) break;
+
+        char* p;
+        try {
+            cur_block = strtol(v_number.GetString(), &p, 16);
+        }
+        catch (...) {
+            cur_block = 0;
+        }
+    } while (0);
+    
+    return {cur_block, time};
 }

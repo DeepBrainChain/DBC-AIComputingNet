@@ -23,6 +23,13 @@ struct CommitteeUploadInfo {
     bool is_support; // 是否支持上链
 };
 
+struct chainScore {
+    int64_t block;
+    int32_t time;
+
+    bool operator<(const chainScore& other) const;
+};
+
 class HttpDBCChainClient : public Singleton<HttpDBCChainClient> {
 public:
     HttpDBCChainClient();
@@ -43,8 +50,11 @@ public:
 
     bool getCommitteeUploadInfo(const std::string& node_id, CommitteeUploadInfo& info);
 
+protected:
+    chainScore getChainScore(const network::net_address& addr, int delta) const;
+
 private:
-    std::map<int32_t, network::net_address> m_addrs;
+    std::map<chainScore, network::net_address> m_addrs;
 };
 
 #endif
