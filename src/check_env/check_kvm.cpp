@@ -596,7 +596,7 @@ namespace check_kvm {
         int64_t memory_total = info.totalram/1024;
         memory_total *= 0.1; //-= 32 * 1024 * 1024;
 
-        std::string cmd = "lspci |grep NVIDIA |grep -E 'VGA|Audio|USB|Serial bus' | awk '{print $1}' |tr \"\n\" \"|\"";
+        std::string cmd = "lspci |grep NVIDIA | awk '{print $1}' |tr \"\n\" \"|\"";
         std::string vga_gpu = run_shell(cmd.c_str());
 
         // std::string public_ip = get_public_ip();
