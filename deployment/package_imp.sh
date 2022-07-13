@@ -44,6 +44,10 @@ dbc_package()
         cp $shell_dir/mining/*.sh $dbc_repo_dir/shell/
     fi
 
+    if [ $type == 'baremetal' ]; then
+        cp $shell_dir/baremetal/*.sh $dbc_repo_dir/shell/
+    fi
+
     cp -r $shell_dir/crontab $dbc_repo_dir/shell
     cp -r $shell_dir/network $dbc_repo_dir/shell
 

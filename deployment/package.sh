@@ -41,3 +41,4 @@ rm -rf ./package/*
 /bin/bash ./package_imp.sh $version "client"
 /bin/bash ./package_imp.sh $version "seed"
 /bin/bash ./package_imp.sh $version "mining"
+/bin/bash ./package_imp.sh $version "baremetal"
