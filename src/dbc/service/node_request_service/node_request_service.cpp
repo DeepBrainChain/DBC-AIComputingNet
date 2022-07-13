@@ -991,6 +991,8 @@ void node_request_service::on_node_create_task_req(const std::shared_ptr<network
             return;
         }
 
+        TaskMgr::instance().closeOtherRentedTasks(result.rent_wallet);
+
         if (found_other_running_domains()) {
             send_response_error<dbc::node_create_task_rsp>(NODE_CREATE_TASK_RSP, node_req_msg->header, E_DEFAULT, "create task failed, please try again in a minute");
             return;
@@ -1135,6 +1137,8 @@ void node_request_service::on_node_start_task_req(const std::shared_ptr<network:
             send_response_error<dbc::node_start_task_rsp>(NODE_START_TASK_RSP, node_req_msg->header, E_DEFAULT, "check authority failed: " + result.errmsg);
             return;
         }
+
+        TaskMgr::instance().closeOtherRentedTasks(result.rent_wallet);
 
         if (found_other_running_domains()) {
             send_response_error<dbc::node_start_task_rsp>(NODE_START_TASK_RSP, node_req_msg->header, E_DEFAULT, "start task failed, please try again in a minute");

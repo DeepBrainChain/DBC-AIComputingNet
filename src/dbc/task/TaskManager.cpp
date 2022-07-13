@@ -2205,6 +2205,28 @@ void TaskManager::deleteOtherCheckTasks(const std::string& wallet) {
     }
 }
 
+void TaskManager::closeOtherRentedTasks(const std::string& wallet) {
+    std::vector<std::string> ids_running;
+    auto renttasks = WalletRentTaskMgr::instance().getAllWalletRentTasks();
+    for (const auto& iter : renttasks) {
+        if (iter.first != wallet) {
+            auto ids = iter.second->getTaskIds();
+            for (const auto& task_id : ids) {
+                if (VmClient::instance().GetDomainStatus(task_id) == VIR_DOMAIN_RUNNING) {
+                    TASK_LOG_INFO(task_id,
+                        "task will be shutdown later because the owner is " << iter.first
+                            << ", but current renter is " << wallet);
+                    ids_running.push_back(task_id);
+                }
+            }
+        }
+    }
+
+    for (const auto& task_id : ids_running) {
+        close_task(task_id);
+    }
+}
+
 FResult TaskManager::listTaskSnapshot(const std::string& wallet, const std::string& task_id, std::vector<dbc::snapshot_info>& snapshots) {
 	auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
 	if (taskinfo == nullptr) {

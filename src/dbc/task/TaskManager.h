@@ -118,6 +118,8 @@ public:
 
     void deleteOtherCheckTasks(const std::string& wallet);
 
+    void closeOtherRentedTasks(const std::string& wallet);
+
     // image
 	FResult listImages(const std::shared_ptr<dbc::node_list_images_req_data>& data,
 		const AuthoriseResult& result, std::vector<ImageFile>& images);
