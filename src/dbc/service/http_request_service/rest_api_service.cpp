@@ -8401,7 +8401,7 @@ void rest_api_service::on_node_delete_snapshot_timer(const std::shared_ptr<core_
 }
 
 // monitor
-void rest_api_service::rest_monitor(const network::HTTP_REQUEST_PTR &httpReq, const std::__cxx11::string &path) {
+void rest_api_service::rest_monitor(const network::HTTP_REQUEST_PTR &httpReq, const std::string &path) {
     std::vector<std::string> path_list;
     util::split_path(path, path_list);
 
@@ -8888,7 +8888,7 @@ void rest_api_service::on_node_set_monitor_server_timer(const std::shared_ptr<co
 }
 
 // local area netwrok
-void rest_api_service::rest_lan(const network::HTTP_REQUEST_PTR &httpReq, const std::__cxx11::string &path) {
+void rest_api_service::rest_lan(const network::HTTP_REQUEST_PTR &httpReq, const std::string &path) {
     std::vector<std::string> path_list;
     util::split_path(path, path_list);
 
@@ -9728,7 +9728,7 @@ void rest_api_service::on_node_delete_lan_timer(const std::shared_ptr<core_timer
 }
 
 // bare metal server
-void rest_api_service::rest_bare_metal(const network::HTTP_REQUEST_PTR &httpReq, const std::__cxx11::string &path) {
+void rest_api_service::rest_bare_metal(const network::HTTP_REQUEST_PTR &httpReq, const std::string &path) {
     std::vector<std::string> path_list;
     util::split_path(path, path_list);
 
@@ -10119,11 +10119,11 @@ void rest_api_service::rest_add_bare_metal(const std::shared_ptr<network::http_r
             if (v.HasMember("ipmi_password") && v["ipmi_password"].IsString())
                 info.ipmi_password = v["ipmi_password"].GetString();
             if (!info.validate()) {
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "bare metal node id " + info.uuid + " invalid");
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "bare metal node info " + info.uuid + " invalid");
 			    return;
             }
             if (BareMetalNodeManager::instance().ExistUUID(info.uuid)) {
-                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "bare metal node id " + info.uuid + " already existed");
+                httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS, "bare metal node uuid " + info.uuid + " already existed");
 			    return;
             }
             bare_metal_infos[info.uuid] = info;

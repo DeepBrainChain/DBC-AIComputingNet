@@ -5431,7 +5431,7 @@ void node_request_service::on_node_list_bare_metal_req(const std::shared_ptr<net
         return;
     }
 
-    if (Server::NodeType != NODE_TYPE::BareMetalNode) {
+    if (Server::NodeType != NODE_TYPE::ComputeNode && Server::NodeType != NODE_TYPE::BareMetalNode) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -5454,7 +5454,7 @@ void node_request_service::on_node_list_bare_metal_req(const std::shared_ptr<net
         return;
     }
 
-     std::shared_ptr<dbc::node_list_bare_metal_req_data> data = std::make_shared<dbc::node_list_bare_metal_req_data>();
+    std::shared_ptr<dbc::node_list_bare_metal_req_data> data = std::make_shared<dbc::node_list_bare_metal_req_data>();
     try {
         std::string ori_message;
         bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
@@ -5564,7 +5564,7 @@ void node_request_service::on_node_add_bare_metal_req(const std::shared_ptr<netw
         return;
     }
 
-    if (Server::NodeType != NODE_TYPE::BareMetalNode) {
+    if (Server::NodeType != NODE_TYPE::ComputeNode && Server::NodeType != NODE_TYPE::BareMetalNode) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -5587,7 +5587,7 @@ void node_request_service::on_node_add_bare_metal_req(const std::shared_ptr<netw
         return;
     }
 
-     std::shared_ptr<dbc::node_add_bare_metal_req_data> data = std::make_shared<dbc::node_add_bare_metal_req_data>();
+    std::shared_ptr<dbc::node_add_bare_metal_req_data> data = std::make_shared<dbc::node_add_bare_metal_req_data>();
     try {
         std::string ori_message;
         bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
@@ -5671,12 +5671,12 @@ void node_request_service::add_bare_metal(const network::base_header& header,
             info.ipmi_password = v["ipmi_password"].GetString();
         if (!info.validate()) {
             send_response_error<dbc::node_add_bare_metal_rsp>(NODE_ADD_BARE_METAL_RSP, header,
-                E_DEFAULT, "bare metal node id " + info.uuid + " invalid", data->peer_nodes_list[0]);
+                E_DEFAULT, "bare metal node info " + info.uuid + " invalid", data->peer_nodes_list[0]);
             return;
         }
         if (BareMetalNodeManager::instance().ExistUUID(info.uuid)) {
             send_response_error<dbc::node_add_bare_metal_rsp>(NODE_ADD_BARE_METAL_RSP, header,
-                E_DEFAULT, "bare metal node id " + info.uuid + " already existed", data->peer_nodes_list[0]);
+                E_DEFAULT, "bare metal node uuid " + info.uuid + " already existed", data->peer_nodes_list[0]);
             return;
         }
         bare_metal_infos[info.uuid] = info;
@@ -5748,7 +5748,7 @@ void node_request_service::on_node_delete_bare_metal_req(const std::shared_ptr<n
         return;
     }
 
-    if (Server::NodeType != NODE_TYPE::BareMetalNode) {
+    if (Server::NodeType != NODE_TYPE::ComputeNode && Server::NodeType != NODE_TYPE::BareMetalNode) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
@@ -5771,7 +5771,7 @@ void node_request_service::on_node_delete_bare_metal_req(const std::shared_ptr<n
         return;
     }
 
-     std::shared_ptr<dbc::node_delete_bare_metal_req_data> data = std::make_shared<dbc::node_delete_bare_metal_req_data>();
+    std::shared_ptr<dbc::node_delete_bare_metal_req_data> data = std::make_shared<dbc::node_delete_bare_metal_req_data>();
     try {
         std::string ori_message;
         bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
@@ -5868,7 +5868,7 @@ void node_request_service::on_node_bare_metal_power_req(const std::shared_ptr<ne
         return;
     }
 
-    if (Server::NodeType != NODE_TYPE::BareMetalNode) {
+    if (Server::NodeType != NODE_TYPE::ComputeNode && Server::NodeType != NODE_TYPE::BareMetalNode) {
         node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
         network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
         return;
