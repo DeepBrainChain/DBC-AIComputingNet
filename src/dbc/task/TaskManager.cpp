@@ -192,6 +192,7 @@ void TaskManager::start_task(const std::string &task_id) {
         auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
         if (taskinfo != nullptr) {
             taskinfo->setTaskStatus(TaskStatus::TS_Task_Running);
+            TaskInfoManager::instance().update(taskinfo);
         }
 		add_iptable_to_system(task_id);
 		TASK_LOG_INFO(task_id, "start task successful");
@@ -206,6 +207,7 @@ void TaskManager::close_task(const std::string &task_id) {
         auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
         if (taskinfo != nullptr) {
 			taskinfo->setTaskStatus(TaskStatus::TS_Task_Shutoff);
+            TaskInfoManager::instance().update(taskinfo);
         }
 		remove_iptable_from_system(task_id);
 		TASK_LOG_INFO(task_id, "close task successful");
@@ -2837,6 +2839,8 @@ void TaskManager::prune_task_thread_func() {
                 }
             }
         }
+
+        TaskInfoMgr::instance().update_running_tasks();
 
         // 空闲状态定时清理缓存
         if (machine_status == MACHINE_STATUS::Online) {
