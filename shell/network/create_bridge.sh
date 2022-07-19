@@ -5,7 +5,7 @@ BRIDGE_NAME=$1
 VXLAN_NAME=$2
 VXLAN_VNI=$3
 
-sudo ip link add ${VXLAN_NAME} type vxlan vni ${VXLAN_VNI} group 239.0.0.8 dev ${VTEP} df inherit dstport 4789 >/dev/null 2>&1
+sudo ip link add ${VXLAN_NAME} type vxlan vni ${VXLAN_VNI} group 239.0.0.8 dev ${VTEP} dstport 4789 >/dev/null 2>&1
 if [ $? -ne 0 ];then
     printf "{\"errcode\":-1,\"message\":\"create vxlan failed\"}\n"
     exit 1
