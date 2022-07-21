@@ -224,10 +224,10 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    dbcMonitor::domMonitorData dmData;
-    dmData.domainName = domain_name;
-    dmData.delay = 5;
-    dmData.version = dbcversion();
+    dbcMonitor::domMonitorData dmData, dmData2;
+    dmData.domainName = dmData2.domainName = domain_name;
+    dmData.delay = dmData2.delay = 5;
+    dmData.version = dmData2.version = dbcversion();
 
     // get domain info
     dbcMonitor::getDomainInfo(dmData, domain);
@@ -236,19 +236,29 @@ int main(int argc, char* argv[]) {
     dbcMonitor::getDomainNetworkInfo(dmData, domain);
     dbcMonitor::getDomainGpuInfo(dmData, domain);
 
+    sleep(1);
+
+    dbcMonitor::getDomainInfo(dmData2, domain);
+    dbcMonitor::getDomainMemoryInfo(dmData2, domain);
+    dbcMonitor::getDomainDiskInfo(dmData2, domain);
+    dbcMonitor::getDomainNetworkInfo(dmData2, domain);
+    dbcMonitor::getDomainGpuInfo(dmData2, domain);
+
     // calculator
+    dmData2.calculatorUsageAndSpeed(dmData);
 
     // sender monitor data
     // std::cout << dmData.toZabbixString(domain_name) << std::endl;
-    zabbixSender zs(zabbix_host, zabbix_port);
-    if (zs.is_server_want_monitor_data(domain_name)) {
-        if (!zs.sendJsonData(dmData.toZabbixString())) {
-            std::cout << "send monitor data of task(" << domain_name << ") to server(" << zabbix_host << ") error" << std::endl;
-        } else {
-            std::cout << "send monitor data of task(" << domain_name << ") to server(" << zabbix_host << ") success" << std::endl;
-        }
-    } else {
-        std::cout << "server: " << zabbix_host << " does not need monitor data of vm: " << domain_name << std::endl;
-    }
+
+    boost::asio::io_context io_context;
+    
+    zabbixSender zs(io_context, zabbix_host, zabbix_port);
+    zs.push(domain_name, dmData.toZabbixString());
+    zs.push(domain_name, dmData2.toZabbixString());
+    zs.start();
+
+    // io_context.run();
+    std::thread t([&io_context](){ io_context.run(); });
+    t.join();
     return 0;
 }

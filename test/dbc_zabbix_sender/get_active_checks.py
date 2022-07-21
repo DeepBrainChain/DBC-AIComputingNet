@@ -13,7 +13,7 @@ import socket
 import argparse
 
 parser = argparse.ArgumentParser(description='script simulate zabbix_sender')
-parser.add_argument('-s','--server',dest='server',action='store',help='Zabbix server ip',default='116.169.53.132')
+parser.add_argument('-s','--server',dest='server',action='store',help='Zabbix server ip',default='119.6.235.169')
 parser.add_argument('-p','--port',dest='port',action='store',help='Zabbix server port',default=10051,type=int)
 parser.add_argument('-n','--host',dest='host',action='store',help='hostname',default='14.152.85.57')
 args = parser.parse_args()
