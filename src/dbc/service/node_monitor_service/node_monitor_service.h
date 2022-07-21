@@ -17,6 +17,9 @@
 struct monitor_server {
     std::string host;
     std::string port;
+
+    bool operator < (const monitor_server& other) const;
+    bool operator == (const monitor_server& other) const;
 };
 
 class zabbixSender;
@@ -46,6 +49,8 @@ protected:
     int32_t init_db();
 
     int32_t load_wallet_monitor_from_db();
+
+    bool write_db(const std::string& wallet, const std::vector<monitor_server>& servers);
 
     void on_monitor_data_sender_task_timer(const std::shared_ptr<core_timer>& timer);
 
@@ -90,7 +95,7 @@ private:
 
     std::shared_ptr<network::io_service_pool> m_io_service_pool = nullptr;
 
-    std::vector<std::shared_ptr<zabbixSender>> m_senders;
+    std::map<monitor_server, std::shared_ptr<zabbixSender>> m_senders;
 
 };
 

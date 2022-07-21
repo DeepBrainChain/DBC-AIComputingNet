@@ -48,17 +48,19 @@ FResult TaskInfoManager::init() {
         }
         // vnc
         tinyxml2::XMLElement* ele_devices = root->FirstChildElement("devices");
-        tinyxml2::XMLElement* ele_graphics = ele_devices->FirstChildElement("graphics");
-        while (ele_graphics != nullptr) {
-            std::string graphics_type = ele_graphics->Attribute("type");
-            if (graphics_type == "vnc") {
-                std::string vnc_port = ele_graphics->Attribute("port");
-                std::string vnc_pwd = ele_graphics->Attribute("passwd");
-                taskinfo->setVncPort(vnc_port.empty() ? -1 : atoi(vnc_port.c_str()));
-                taskinfo->setVncPassword(vnc_pwd);
-                break;
+        if (ele_devices != nullptr) {
+            tinyxml2::XMLElement* ele_graphics = ele_devices->FirstChildElement("graphics");
+            while (ele_graphics != nullptr) {
+                std::string graphics_type = ele_graphics->Attribute("type");
+                if (graphics_type == "vnc") {
+                    std::string vnc_port = ele_graphics->Attribute("port");
+                    std::string vnc_pwd = ele_graphics->Attribute("passwd");
+                    taskinfo->setVncPort(vnc_port.empty() ? -1 : atoi(vnc_port.c_str()));
+                    taskinfo->setVncPassword(vnc_pwd);
+                    break;
+                }
+                ele_graphics = ele_graphics->NextSiblingElement("graphics");
             }
-            ele_graphics = ele_graphics->NextSiblingElement("graphics");
         }
 
         m_task_infos.insert({ task_id, taskinfo });

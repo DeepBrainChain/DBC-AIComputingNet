@@ -122,7 +122,7 @@ MACHINE_STATUS HttpDBCChainClient::request_machine_status(const std::string& nod
         return MACHINE_STATUS::Rented;
     }
     else {
-        return MACHINE_STATUS::Online;
+        return MACHINE_STATUS::Unknown;
     }
 }
 

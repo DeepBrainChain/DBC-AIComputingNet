@@ -2,21 +2,31 @@
 #define DBC_ZABBIX_SENDER_H
 
 #include <string>
+#include <queue>
 #include <boost/asio.hpp>
 
 class zabbixSender : public std::enable_shared_from_this<zabbixSender> {
 public:
     zabbixSender(boost::asio::io_service& io_service,
-        const std::string& host,
-        const std::string& json);
+        const std::string& host, const std::string& port);
 
-    bool start(const std::string& host, const std::string& port);
+    void start();
 
-    bool stop();
+    void stop_graceful();
+    
+    void stop();
 
-    bool overed() const;
+    void push(const std::string& hostname, const std::string& json);
+
+public:
+    struct zabbix_server {
+        std::string host;
+        std::string port;
+    };
 
 protected:
+    void queue_process();
+
     void start_connect(boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
 
     void handle_connect(const boost::system::error_code& error,
@@ -33,7 +43,7 @@ protected:
     // type == 0 send monitor data | type == 1 query server wants
     void start_read(int type);
 
-    void do_read(const std::string& response, int type);
+    void handle_read(const boost::system::error_code& error, std::size_t n, int type);
 
     const char* get_json_string(const char* result, unsigned long long &jsonLength);
 
@@ -49,9 +59,11 @@ private:
     boost::asio::ip::tcp::socket socket_;
     std::string input_buffer_;
     boost::asio::steady_timer deadline_;
-    std::string host_;
-    std::string json_;
-    bool over_ = false;
+    zabbix_server server_;
+    boost::asio::steady_timer queue_timer_;
+    std::queue<std::pair<std::string, std::string>> msg_queue_;
+    std::queue<std::pair<std::string, std::string>> wait_queue_;
+    std::map<std::string, int64_t> wants_;
 
 };
 

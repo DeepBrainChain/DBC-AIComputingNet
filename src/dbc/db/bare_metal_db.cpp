@@ -64,8 +64,7 @@ std::shared_ptr<dbc::db_bare_metal> BareMetalDB::read_data(const std::string& no
         network::binary_protocol proto(bm_buf.get());
         bm->read(&proto);
         return bm;
-    }
-    else {
+    } else {
         return nullptr;
     }
 }
@@ -82,9 +81,8 @@ bool BareMetalDB::write_data(const std::shared_ptr<dbc::db_bare_metal>& bm)
     leveldb::Status status = m_db->Put(write_options, bm->node_id, slice);
     if (status.ok()) {
         return true;
-    }
-    else {
-        LOG_INFO << "put data failed: " << bm->node_id;
+    } else {
+        LOG_ERROR << "put data failed: " << bm->node_id;
         return false;
     }
 }
@@ -99,8 +97,7 @@ bool BareMetalDB::delete_data(const std::string& node_id)
 	leveldb::Status status = m_db->Delete(write_options, node_id);
 	if (status.ok()) {
 		return true;
-	}
-	else {
+	} else {
 		return false;
 	}
 }

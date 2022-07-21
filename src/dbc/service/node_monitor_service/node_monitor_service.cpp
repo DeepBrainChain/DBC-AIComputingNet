@@ -13,6 +13,15 @@
 
 #define MAX_MONITOR_QUEUE_SIZE 1024
 
+bool monitor_server::operator<(const monitor_server& other) const {
+    if (host == other.host) return port < other.port;
+    return host < other.host;
+}
+
+bool monitor_server::operator==(const monitor_server& other) const {
+    return host == other.host && port == other.port;
+}
+
 node_monitor_service::~node_monitor_service() {
 
 }
@@ -66,11 +75,9 @@ void node_monitor_service::exit() {
 
     LOG_INFO << "wait for monitor socket close";
     for (const auto& iter : m_senders) {
-        int count = 0;
-        while (!iter->overed() && count++ < 3) {
-            sleep(3);
-        }
-        if (!iter->overed()) iter->stop();
+        // iter.second->stop_graceful();
+        boost::asio::post(*m_io_service_pool->get_io_service().get(),
+            boost::bind(&zabbixSender::stop_graceful, iter.second));
     }
 
     if (m_io_service_pool) {
@@ -113,7 +120,11 @@ FResult node_monitor_service::setMonitorServer(const std::string& wallet, const 
                     LOG_INFO << "set monitor server host:" << vecSplit[0] << ", port:" << vecSplit[1];
                 }
             }
-            m_wallet_monitors[wallet] = servers;
+            if (write_db(wallet, servers)) {
+                m_wallet_monitors[wallet] = servers;
+            } else {
+                return FResult(ERR_ERROR, "save monitor server failed");
+            }
         } else {
             return FResult(ERR_ERROR, "servers must be an array");
         }
@@ -226,6 +237,35 @@ int32_t node_monitor_service::load_wallet_monitor_from_db() {
     }
 
     return ERR_SUCCESS;
+}
+
+bool node_monitor_service::write_db(const std::string& wallet, const std::vector<monitor_server>& servers) {
+    if (wallet.empty()) return false;
+    std::shared_ptr<dbc::db_wallet_monitors> db_wallet_monitor = std::make_shared<dbc::db_wallet_monitors>();
+    db_wallet_monitor->__set_wallet(wallet);
+    std::vector<dbc::db_monitor_server> monitors;
+    for (const auto& iter : servers) {
+        dbc::db_monitor_server server;
+        server.__set_host(iter.host);
+        server.__set_port(iter.port);
+        monitors.push_back(server);
+    }
+    db_wallet_monitor->__set_monitors(monitors);
+
+    std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
+    network::binary_protocol proto(out_buf.get());
+    db_wallet_monitor->write(&proto);
+
+    leveldb::WriteOptions write_options;
+    write_options.sync = true;
+    leveldb::Slice slice(out_buf->get_read_ptr(), out_buf->get_valid_read_len());
+    leveldb::Status status = m_wallet_monitors_db->Put(write_options, wallet, slice);
+    if (status.ok()) {
+        return true;
+    } else {
+        LOG_ERROR << "write wallet monitor data failed: " << wallet;
+        return false;
+    }
 }
 
 void node_monitor_service::on_monitor_data_sender_task_timer(const std::shared_ptr<core_timer>& timer) {
@@ -372,28 +412,30 @@ void node_monitor_service::on_libvirt_auto_reconnect_timer(const std::shared_ptr
 void node_monitor_service::add_monitor_send_queue(const monitor_server& server, const std::string& host, const std::string& json) {
     if (server.host.empty() || server.port.empty() || host.empty() || json.empty()) return;
 
-    for (auto iter = m_senders.begin(); iter != m_senders.end();) {
-        if ((*iter)->overed()) {
-            iter = m_senders.erase(iter);
-        } else {
-            iter++;
-        }
-    }
-
     if (m_monitor_send_queue.size() > MAX_MONITOR_QUEUE_SIZE) {
         LOG_INFO << "monitor send queue is full, the oldest data will be deleted";
         m_monitor_send_queue.pop();
     }
     m_monitor_send_queue.push({server, host, json});
 
-    while (!m_monitor_send_queue.empty() && m_senders.size() < 10) {
+    while (!m_monitor_send_queue.empty()) {
         monitor_param param = m_monitor_send_queue.front();
         m_monitor_send_queue.pop();
-        std::shared_ptr<zabbixSender> zs =
-            std::make_shared<zabbixSender>(*m_io_service_pool->get_io_service().get(),
-                param.host, param.json);
-        zs->start(param.server.host, param.server.port);
-        m_senders.push_back(std::move(zs));
+        auto iter = m_senders.find(param.server);
+        if (iter != m_senders.end()) {
+            boost::asio::post(*m_io_service_pool->get_io_service().get(),
+                boost::bind(&zabbixSender::push, iter->second,
+                    param.host, param.json));
+        } else {
+            std::shared_ptr<zabbixSender> zs =
+                std::make_shared<zabbixSender>(*m_io_service_pool->get_io_service().get(),
+                    param.server.host, param.server.port);
+            boost::asio::post(*m_io_service_pool->get_io_service().get(),
+                boost::bind(&zabbixSender::push, zs,
+                    param.host, param.json));
+            zs->start();
+            m_senders.insert(std::make_pair(param.server, std::move(zs)));
+        }
     }
 }
 
