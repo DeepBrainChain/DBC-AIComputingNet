@@ -5,6 +5,36 @@
 #include <queue>
 #include <boost/asio.hpp>
 
+class zabbixResponse {
+public: 
+    enum { header_length = 13 };
+    enum { max_body_length = 4096 };
+
+    zabbixResponse();
+
+    const char* data() const;
+
+    char* data();
+
+    std::size_t length() const;
+
+    const char* body() const;
+
+    char* body();
+
+    std::size_t body_length() const;
+
+    bool decode_header();
+
+    void clear();
+
+private:
+    std::string data_;
+    std::size_t body_length_;
+};
+
+///////////////////////////////////////////////////////////////////////////////
+
 class zabbixSender : public std::enable_shared_from_this<zabbixSender> {
 public:
     zabbixSender(boost::asio::io_service& io_service,
@@ -43,7 +73,9 @@ protected:
     // type == 0 send monitor data | type == 1 query server wants
     void start_read(int type);
 
-    void handle_read(const boost::system::error_code& error, std::size_t n, int type);
+    void handle_read_header(const boost::system::error_code& error, std::size_t n, int type);
+
+    void handle_read_body(const boost::system::error_code& error, std::size_t n, int type);
 
     const char* get_json_string(const char* result, unsigned long long &jsonLength);
 
@@ -57,7 +89,7 @@ private:
     boost::asio::ip::tcp::resolver resolver_;
     boost::asio::ip::tcp::resolver::results_type endpoints_;
     boost::asio::ip::tcp::socket socket_;
-    std::string input_buffer_;
+    zabbixResponse response_;
     boost::asio::steady_timer deadline_;
     zabbix_server server_;
     boost::asio::steady_timer queue_timer_;

@@ -10,6 +10,57 @@ using boost::asio::ip::tcp;
 
 #define ZBX_TCP_HEADER_DATA "ZBXD"
 
+///////////////////////////////////////////////////////////////////////////////
+
+zabbixResponse::zabbixResponse() : body_length_(0) {
+    data_.resize(header_length + max_body_length);
+}
+
+const char* zabbixResponse::data() const {
+    return data_.c_str();
+}
+
+char* zabbixResponse::data() {
+    return &data_[0];
+}
+
+std::size_t zabbixResponse::length() const {
+    return header_length + body_length_;
+}
+
+const char* zabbixResponse::body() const {
+    return data_.c_str() + header_length;
+}
+
+char* zabbixResponse::body() {
+    return &data_[header_length];
+}
+
+std::size_t zabbixResponse::body_length() const {
+    return body_length_;
+}
+
+bool zabbixResponse::decode_header() {
+    body_length_ = 0;
+    if (data_.find(ZBX_TCP_HEADER_DATA) == std::string::npos)
+        return false;
+    char header[header_length + 1] = {0};
+    std::strncat(header, data_.c_str(), header_length);
+    unsigned long long jsonLength =
+        *reinterpret_cast<unsigned long long*>(header + 5);
+    if (jsonLength > max_body_length) return false;
+    if (jsonLength <= 0) return false;
+    body_length_ = jsonLength;
+    return true;
+}
+
+void zabbixResponse::clear() {
+    data_.erase(0, header_length + body_length_);
+    body_length_ = 0;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
 zabbixSender::zabbixSender(boost::asio::io_service& io_service,
     const std::string& host, const std::string& port)
     : resolver_(io_service)
@@ -17,7 +68,7 @@ zabbixSender::zabbixSender(boost::asio::io_service& io_service,
     , deadline_(io_service)
     , server_({host, port})
     , queue_timer_(io_service) {
-    input_buffer_.resize(max_length_);
+
 }
 
 void zabbixSender::start() {
@@ -50,6 +101,15 @@ void zabbixSender::stop() {
 }
 
 void zabbixSender::push(const std::string& hostname, const std::string& json) {
+    auto iter = wants_.find(hostname);
+    if (iter != wants_.end()) {
+        int64_t cur_time = time(NULL);
+        if (difftime(cur_time, iter->second) >= 600) {
+            LOG_INFO << "server " << server_.host << " does not need " << hostname;
+            return;
+        }
+    }
+
     if (wait_queue_.size() > 100) {
         LOG_INFO << "msg queue of server " << server_.host << " is full";
         // return;
@@ -89,6 +149,7 @@ void zabbixSender::start_connect(tcp::resolver::results_type::iterator endpoint_
             boost::bind(&zabbixSender::handle_connect, shared_from_this(),
                 boost::asio::placeholders::error, endpoint_iter));
     } else {
+        msg_queue_.pop();
         stop();
     }
 }
@@ -107,10 +168,10 @@ void zabbixSender::handle_connect(const boost::system::error_code& error,
     } else {
         LOG_INFO << "Connected to " << endpoint_iter->endpoint();
         int type = 1;
-        int64_t cur_time = time(NULL);
         std::pair<std::string, std::string> data = msg_queue_.front();
         auto iter = wants_.find(data.first);
         if (iter != wants_.end()) {
+            int64_t cur_time = time(NULL);
             if (difftime(cur_time, iter->second) < 600) {
                 type = 0;
                 send_json_data(data.second);
@@ -173,59 +234,73 @@ void zabbixSender::handle_write(const boost::system::error_code& error) {
 void zabbixSender::start_read(int type) {
     deadline_.expires_after(std::chrono::seconds(10));
 
-    socket_.async_read_some(boost::asio::buffer(input_buffer_),
-        boost::bind(&zabbixSender::handle_read, shared_from_this(),
+    response_.clear();
+
+    boost::asio::async_read(socket_,
+        boost::asio::buffer(response_.data(), zabbixResponse::header_length),
+        boost::bind(&zabbixSender::handle_read_header, shared_from_this(),
             boost::asio::placeholders::error,
             boost::asio::placeholders::bytes_transferred, type));
 }
 
-void zabbixSender::handle_read(const boost::system::error_code& error, std::size_t n, int type) {
+void zabbixSender::handle_read_header(const boost::system::error_code& error, std::size_t n, int type) {
     if (stopped_) return;
 
     std::pair<std::string, std::string> data = msg_queue_.front();
-    if (!error) {
-        std::string response(input_buffer_.substr(0, n));
-        input_buffer_.erase(0, n);
+    if (!error && response_.decode_header()) {
+        LOG_INFO << "decode response header of " << data.first
+            << " from server " << server_.host << " over";
         
-        if (!response.empty()) {
-            LOG_INFO << "Received: " << response;
-            unsigned long long jsonLength = 0;
-            const char* jsonstr = get_json_string(response.c_str(), jsonLength);
-            if (jsonstr && jsonLength > 0 && response.length() > jsonLength) {
-                bool check = check_response(jsonstr);
-                if (type == 1) {
-                    wants_[data.first] = check ? time(NULL) : 0;
-                    LOG_INFO << "monitor server " << server_.host
-                        << (check ? " " : " does not ")
-                        << "need data of host: "
-                        << data.first;
-                } else {
-                    LOG_INFO << "send monitor data of " << data.first
-                        << " to server " << server_.host
-                        << (check ? " success" : " failed");
-                }
-            } else {
-                LOG_ERROR << "parse zabbix reply error(string begin: "
-                    << jsonstr << ", string length: "
-                    << jsonLength << ")";
-            }
-        } else {
-            LOG_ERROR << "Response is empty of host: " << data.first
-                << " from server " << server_.host;
-        }
+        deadline_.expires_after(std::chrono::seconds(10));
 
-        msg_queue_.pop();
+        boost::asio::async_read(socket_,
+            boost::asio::buffer(response_.body(), response_.body_length()),
+            boost::bind(&zabbixSender::handle_read_body, shared_from_this(),
+                boost::asio::placeholders::error,
+                boost::asio::placeholders::bytes_transferred, type));
+    } else {
+        LOG_ERROR << "Error on receive header: " << error.message()
+            << " of host: " << data.first
+            << " from server " << server_.host;
 
         boost::system::error_code ignored_error;
         socket_.shutdown(tcp::socket::shutdown_both, ignored_error);
 
         stop();
+    }
+}
+
+void zabbixSender::handle_read_body(const boost::system::error_code& error, std::size_t n, int type) {
+    if (stopped_) return;
+
+    std::pair<std::string, std::string> data = msg_queue_.front();
+    if (!error) {
+        LOG_INFO << "read zabbix response body " << response_.body();
+        bool check = check_response(response_.body());
+        if (type == 1) {
+            wants_[data.first] = check ? time(NULL) : 0;
+            LOG_INFO << "monitor server " << server_.host
+                << (check ? " " : " does not ")
+                << "need data of host: "
+                << data.first;
+        } else {
+            LOG_INFO << "send monitor data of " << data.first
+                << " to server " << server_.host
+                << (check ? " success" : " failed");
+        }
+
+        if (type == 0 || !check)
+            msg_queue_.pop();
     } else {
-        LOG_ERROR << "Error on receive: " << error.message()
+        LOG_ERROR << "Error on receive body: " << error.message()
             << " of host: " << data.first
             << " from server " << server_.host;
-        stop();
     }
+
+    boost::system::error_code ignored_error;
+    socket_.shutdown(tcp::socket::shutdown_both, ignored_error);
+
+    stop();
 }
 
 bool zabbixSender::check_response(const char* response) {

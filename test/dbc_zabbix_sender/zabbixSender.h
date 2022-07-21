@@ -25,6 +25,34 @@ struct monitor_server {
     }
 };
 
+class zabbixResponse {
+public: 
+    enum { header_length = 13 };
+    enum { max_body_length = 4096 };
+
+    zabbixResponse();
+
+    const char* data() const;
+
+    char* data();
+
+    std::size_t length() const;
+
+    const char* body() const;
+
+    char* body();
+
+    std::size_t body_length() const;
+
+    bool decode_header();
+
+    void clear();
+
+private:
+    std::string data_;
+    std::size_t body_length_;
+};
+
 class zabbixSender {
 public:
     zabbixSender(boost::asio::io_service& io_service,
@@ -55,6 +83,10 @@ protected:
     // type == 0 send monitor data | type == 1 query server wants
     void start_read(int type);
 
+    void handle_read_header(const boost::system::error_code& error, std::size_t n, int type);
+
+    void handle_read_body(const boost::system::error_code& error, std::size_t n, int type);
+
     void handle_read(const boost::system::error_code& error, std::size_t n, int type);
 
     void do_read(const std::string& response, int type);
@@ -71,7 +103,7 @@ private:
     tcp::resolver resolver_;
     tcp::resolver::results_type endpoints_;
     tcp::socket socket_;
-    std::string input_buffer_;
+    zabbixResponse response_;
     steady_timer deadline_;
     steady_timer queue_timer_;
     std::queue<std::pair<std::string, std::string>> msg_queue_;
