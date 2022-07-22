@@ -16,8 +16,10 @@ static const char* qemu_url = "qemu+tcp://localhost:16509/system";
 // enum virDomainState
 static const char* arrayDomainState[] = {"no state", "running", "blocked", "paused", "shutdown", "shutoff", "crashed", "pmsuspended", "last"};
 // default zabbix server
-static const char* default_zabbix_host = "116.169.53.132";
+static const char* default_zabbix_host = "119.6.235.169";
 static const char* default_zabbix_port = "10051";
+
+static int stopped = 0;
 
 std::ostream& operator <<(std::ostream& out, const dbcMonitor::domMonitorData& obj) {
     out << "domain_name: " << obj.domainName << std::endl;
@@ -171,7 +173,14 @@ void getDomainGpuInfo(domMonitorData& data, std::shared_ptr<virDomainImpl> domai
 }
 }
 
+void signal_handler(int sig) {
+    std::cout << "catch signal and wait for quit..." << std::endl;
+    stopped = 1;
+}
+
 int main(int argc, char* argv[]) {
+    signal(SIGINT, signal_handler);
+    
     std::string domain_name;
     std::string zabbix_host = default_zabbix_host;
     std::string zabbix_port = default_zabbix_port;
@@ -224,10 +233,10 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    dbcMonitor::domMonitorData dmData, dmData2;
-    dmData.domainName = dmData2.domainName = domain_name;
-    dmData.delay = dmData2.delay = 5;
-    dmData.version = dmData2.version = dbcversion();
+    dbcMonitor::domMonitorData dmData;
+    dmData.domainName = domain_name;
+    dmData.delay = 5;
+    dmData.version = dbcversion();
 
     // get domain info
     dbcMonitor::getDomainInfo(dmData, domain);
@@ -236,29 +245,40 @@ int main(int argc, char* argv[]) {
     dbcMonitor::getDomainNetworkInfo(dmData, domain);
     dbcMonitor::getDomainGpuInfo(dmData, domain);
 
-    sleep(1);
-
-    dbcMonitor::getDomainInfo(dmData2, domain);
-    dbcMonitor::getDomainMemoryInfo(dmData2, domain);
-    dbcMonitor::getDomainDiskInfo(dmData2, domain);
-    dbcMonitor::getDomainNetworkInfo(dmData2, domain);
-    dbcMonitor::getDomainGpuInfo(dmData2, domain);
-
-    // calculator
-    dmData2.calculatorUsageAndSpeed(dmData);
-
-    // sender monitor data
     // std::cout << dmData.toZabbixString(domain_name) << std::endl;
 
+    // sender monitor data
     boost::asio::io_context io_context;
-    
     zabbixSender zs(io_context, zabbix_host, zabbix_port);
     zs.push(domain_name, dmData.toZabbixString());
-    zs.push(domain_name, dmData2.toZabbixString());
     zs.start();
 
     // io_context.run();
     std::thread t([&io_context](){ io_context.run(); });
-    t.join();
+
+    while (!stopped) {
+        dbcMonitor::domMonitorData newData;
+        newData.domainName = domain_name;
+        newData.delay = 5;
+        newData.version = dbcversion();
+        dbcMonitor::getDomainInfo(newData, domain);
+        dbcMonitor::getDomainMemoryInfo(newData, domain);
+        dbcMonitor::getDomainDiskInfo(newData, domain);
+        dbcMonitor::getDomainNetworkInfo(newData, domain);
+        dbcMonitor::getDomainGpuInfo(newData, domain);
+
+        // calculator
+        newData.calculatorUsageAndSpeed(dmData);
+
+        zs.push(domain_name, newData.toZabbixString());
+        sleep(3);
+        dmData = newData;
+    }
+
+    boost::asio::post(io_context, std::bind(&zabbixSender::stop_graceful, &zs));
+
+    io_context.stop();
+    if (t.joinable()) t.join();
+
     return 0;
 }

@@ -43,7 +43,7 @@ public:
     void start();
 
     void stop_graceful();
-    
+
     void stop();
 
     void push(const std::string& hostname, const std::string& json);
@@ -61,21 +61,24 @@ protected:
 
     void handle_connect(const boost::system::error_code& error,
         boost::asio::ip::tcp::resolver::results_type::iterator endpoint_iter);
-    
-    void send_json_data(const std::string &data);
+
+    void send_json_data(const std::string& hostname, const std::string &data);
 
     void is_server_want_monitor_data(const std::string& hostname);
 
-    void start_write(const std::string &data);
+    void start_write(const std::string& hostname, const std::string &data);
 
-    void handle_write(const boost::system::error_code& error);
+    void handle_write(const boost::system::error_code& error,
+        const std::string& hostname);
 
     // type == 0 send monitor data | type == 1 query server wants
-    void start_read(int type);
+    void start_read(const std::string& hostname, int type);
 
-    void handle_read_header(const boost::system::error_code& error, std::size_t n, int type);
+    void handle_read_header(const boost::system::error_code& error, std::size_t n,
+        const std::string& hostname, int type);
 
-    void handle_read_body(const boost::system::error_code& error, std::size_t n, int type);
+    void handle_read_body(const boost::system::error_code& error, std::size_t n,
+        const std::string& hostname, int type);
 
     const char* get_json_string(const char* result, unsigned long long &jsonLength);
 
@@ -84,19 +87,16 @@ protected:
     void check_deadline();
 
 private:
-    const int max_length_ = 4096;
     bool stopped_ = false;
     boost::asio::ip::tcp::resolver resolver_;
     boost::asio::ip::tcp::resolver::results_type endpoints_;
     boost::asio::ip::tcp::socket socket_;
     zabbixResponse response_;
     boost::asio::steady_timer deadline_;
-    zabbix_server server_;
     boost::asio::steady_timer queue_timer_;
     std::queue<std::pair<std::string, std::string>> msg_queue_;
-    std::queue<std::pair<std::string, std::string>> wait_queue_;
     std::map<std::string, int64_t> wants_;
-
+    zabbix_server server_;
 };
 
 #endif
