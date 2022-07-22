@@ -5079,24 +5079,24 @@ void node_request_service::on_node_list_lan_req(const std::shared_ptr<network::m
     std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
     HitNodeType hit_self = hit_node(req_peer_nodes, ConfManager::instance().GetNodeId());
     if (hit_self == HitComputer) {
-        AuthorityParams params;
-        params.wallet = data->wallet;
-        params.nonce = data->nonce;
-        params.sign = data->sign;
-        params.multisig_wallets = data->multisig_wallets;
-        params.multisig_threshold = data->multisig_threshold;
-        params.multisig_signs = data->multisig_signs;
-        params.session_id = data->session_id;
-        params.session_id_sign = data->session_id_sign;
-        AuthoriseResult result;
-        check_authority(params, result);
-        if (!result.success || result.user_role == USER_ROLE::Unknown || result.user_role == USER_ROLE::Verifier) {
-            LOG_ERROR << "check authority failed: " << result.errmsg;
-            send_response_error<dbc::node_list_lan_rsp>(NODE_LIST_LAN_RSP, node_req_msg->header, E_DEFAULT, "check authority failed: " + result.errmsg);
-            return;
-        }
+        // AuthorityParams params;
+        // params.wallet = data->wallet;
+        // params.nonce = data->nonce;
+        // params.sign = data->sign;
+        // params.multisig_wallets = data->multisig_wallets;
+        // params.multisig_threshold = data->multisig_threshold;
+        // params.multisig_signs = data->multisig_signs;
+        // params.session_id = data->session_id;
+        // params.session_id_sign = data->session_id_sign;
+        // AuthoriseResult result;
+        // check_authority(params, result);
+        // if (!result.success || result.user_role == USER_ROLE::Unknown || result.user_role == USER_ROLE::Verifier) {
+        //     LOG_ERROR << "check authority failed: " << result.errmsg;
+        //     send_response_error<dbc::node_list_lan_rsp>(NODE_LIST_LAN_RSP, node_req_msg->header, E_DEFAULT, "check authority failed: " + result.errmsg);
+        //     return;
+        // }
 
-        list_lan(node_req_msg->header, data, result);
+        list_lan(node_req_msg->header, data);
     } else if (hit_self == HitBareMetal || hit_self == HitBareMetalManager) {
         send_response_error<dbc::node_list_lan_rsp>(NODE_LIST_LAN_RSP, node_req_msg->header,
             E_DEFAULT, "bare metal nodes are not supported", data->peer_nodes_list[0]);
@@ -5106,7 +5106,7 @@ void node_request_service::on_node_list_lan_req(const std::shared_ptr<network::m
     }
 }
 
-void node_request_service::list_lan(const network::base_header& header, const std::shared_ptr<dbc::node_list_lan_req_data>& data, const AuthoriseResult& result) {
+void node_request_service::list_lan(const network::base_header& header, const std::shared_ptr<dbc::node_list_lan_req_data>& data) {
     // send_response_error<dbc::node_list_lan_rsp>(NODE_LIST_LAN_RSP, header, ERR_SUCCESS, "AAAAAAAAAAAA");
     int ret_code = ERR_SUCCESS;
     std::string ret_msg = "ok";

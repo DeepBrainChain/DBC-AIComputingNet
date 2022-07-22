@@ -203,7 +203,7 @@ protected:
     // network
     void on_node_list_lan_req(const std::shared_ptr<network::message>& msg);
 
-    void list_lan(const network::base_header& header, const std::shared_ptr<dbc::node_list_lan_req_data>& data, const AuthoriseResult& result);
+    void list_lan(const network::base_header& header, const std::shared_ptr<dbc::node_list_lan_req_data>& data);
 
     void on_node_create_lan_req(const std::shared_ptr<network::message>& msg);
 
