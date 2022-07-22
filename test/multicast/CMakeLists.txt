@@ -9,3 +9,9 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/output)
 
 add_executable(${PROJECT_NAME} main.cpp multicast_manager.cpp)
 target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES} -pthread)
+
+add_executable(msender sender.cpp)
+target_link_libraries(msender ${Boost_LIBRARIES} -pthread)
+
+add_executable(mreceiver receiver.cpp)
+target_link_libraries(mreceiver ${Boost_LIBRARIES} -pthread)
