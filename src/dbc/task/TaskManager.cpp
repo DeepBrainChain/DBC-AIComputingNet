@@ -2782,6 +2782,8 @@ void TaskManager::prune_task_thread_func() {
 
         shell_remove_reject_iptable_from_system();
 
+        HttpDBCChainClient::instance().update_chain_order(ConfManager::instance().GetDbcChainDomain());
+
         MACHINE_STATUS machine_status = HttpDBCChainClient::instance().request_machine_status(
             ConfManager::instance().GetNodeId());
         if (machine_status == MACHINE_STATUS::Unknown) continue;

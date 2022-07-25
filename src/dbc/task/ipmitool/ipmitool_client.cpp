@@ -69,6 +69,8 @@ void IpmiToolClient::PruneNode(const std::string& node_id) {
 }
 
 void IpmiToolClient::PruneNodes() {
+    HttpDBCChainClient::instance().update_chain_order(ConfManager::instance().GetDbcChainDomain());
+
     std::vector<std::string> ids;
     {
         const std::map<std::string, std::shared_ptr<dbc::db_bare_metal>> bm_nodes = 

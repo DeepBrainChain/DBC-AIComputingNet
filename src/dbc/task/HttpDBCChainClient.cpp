@@ -16,6 +16,11 @@ HttpDBCChainClient::~HttpDBCChainClient() {
 }
 
 void HttpDBCChainClient::init(const std::vector<std::string>& dbc_chain_addrs) {
+    update_chain_order(dbc_chain_addrs);
+}
+
+void HttpDBCChainClient::update_chain_order(const std::vector<std::string>& dbc_chain_addrs) {
+    std::map<chainScore, network::net_address> addrs;
     for (int i = 0; i < dbc_chain_addrs.size(); i++) {
         std::vector<std::string> addr = util::split(dbc_chain_addrs[i], ":");
         if (addr.empty()) continue;
@@ -30,15 +35,18 @@ void HttpDBCChainClient::init(const std::vector<std::string>& dbc_chain_addrs) {
         else {
             net_addr.set_port(443);
         }
-         
+
         chainScore cs = getChainScore(net_addr, i);
-        m_addrs[cs] = net_addr;
+        addrs[cs] = net_addr;
     }
+    RwMutex::WriteLock wlock(m_mtx);
+    m_addrs.swap(addrs);
 }
 
 int64_t HttpDBCChainClient::request_cur_block() {
     int64_t cur_block = 0;
 
+    RwMutex::ReadLock rlock(m_mtx);
     for (auto& it : m_addrs) {
         httplib::SSLClient cli(it.second.get_ip(), it.second.get_port());
         cli.set_timeout_sec(5);
@@ -50,7 +58,7 @@ int64_t HttpDBCChainClient::request_cur_block() {
             rapidjson::Document doc;
             rapidjson::ParseResult ok = doc.Parse(resp->body.c_str());
             if (!ok) continue;
-            
+
             if (!doc.HasMember("result")) break;
             const rapidjson::Value& v_result = doc["result"];
             if (!v_result.IsObject()) break;
@@ -78,13 +86,14 @@ int64_t HttpDBCChainClient::request_cur_block() {
             break;
         }
     }
-    
+
     return cur_block;
 }
 
 MACHINE_STATUS HttpDBCChainClient::request_machine_status(const std::string& node_id) {
     std::string machine_status;
 
+    RwMutex::ReadLock rlock(m_mtx);
     for (auto& it : m_addrs) {
         httplib::SSLClient cli(it.second.get_ip(), it.second.get_port());
         cli.set_timeout_sec(5);
@@ -131,6 +140,7 @@ bool HttpDBCChainClient::in_verify_time(const std::string& node_id, const std::s
 
     bool in_time = false;
 
+    RwMutex::ReadLock rlock(m_mtx);
     for (auto& it : m_addrs) {
         httplib::SSLClient cli(it.second.get_ip(), it.second.get_port());
         cli.set_timeout_sec(5);
@@ -171,7 +181,8 @@ bool HttpDBCChainClient::in_verify_time(const std::string& node_id, const std::s
 
 int64_t HttpDBCChainClient::request_rent_end(const std::string& node_id, const std::string &wallet) {
     int64_t rent_end = 0;
-    
+
+    RwMutex::ReadLock rlock(m_mtx);
     for (auto& it : m_addrs) {
         httplib::SSLClient cli(it.second.get_ip(), it.second.get_port());
         cli.set_timeout_sec(5);
@@ -194,7 +205,7 @@ int64_t HttpDBCChainClient::request_rent_end(const std::string& node_id, const s
             if (!v_renter.IsString()) break;
             std::string str_renter = v_renter.GetString();
             if (str_renter != wallet) break;
-                
+
             if (!v_result.HasMember("rentEnd")) break;
             const rapidjson::Value& v_rentEnd = v_result["rentEnd"];
             if (!v_rentEnd.IsNumber()) break;
@@ -209,6 +220,7 @@ int64_t HttpDBCChainClient::request_rent_end(const std::string& node_id, const s
 }
 
 void HttpDBCChainClient::request_cur_renter(const std::string& node_id, std::string& renter, int64_t& rent_end) {
+    RwMutex::ReadLock rlock(m_mtx);
     for (auto& it : m_addrs) {
         httplib::SSLClient cli(it.second.get_ip(), it.second.get_port());
         cli.set_timeout_sec(5);
@@ -235,7 +247,7 @@ void HttpDBCChainClient::request_cur_renter(const std::string& node_id, std::str
             const rapidjson::Value& v_rentEnd = v_result["rentEnd"];
             if (!v_rentEnd.IsNumber()) break; 
             rent_end = v_rentEnd.GetInt64();
-            
+
             break;
         }
     }
@@ -244,6 +256,7 @@ void HttpDBCChainClient::request_cur_renter(const std::string& node_id, std::str
 bool HttpDBCChainClient::getCommitteeUploadInfo(const std::string& node_id, CommitteeUploadInfo& info) {
     bool bret = false;
 
+    RwMutex::ReadLock rlock(m_mtx);
     for (auto& it : m_addrs) {
         httplib::SSLClient cli(it.second.get_ip(), it.second.get_port());
         cli.set_timeout_sec(5);
@@ -387,7 +400,7 @@ chainScore HttpDBCChainClient::getChainScore(const network::net_address& addr, i
         rapidjson::Document doc;
         rapidjson::ParseResult ok = doc.Parse(resp->body.c_str());
         if (!ok) break;
-        
+
         if (!doc.HasMember("result")) break;
         const rapidjson::Value& v_result = doc["result"];
         if (!v_result.IsObject()) break;
@@ -412,6 +425,6 @@ chainScore HttpDBCChainClient::getChainScore(const network::net_address& addr, i
             cur_block = 0;
         }
     } while (0);
-    
+
     return {cur_block, time};
 }

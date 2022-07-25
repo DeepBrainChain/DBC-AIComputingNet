@@ -38,6 +38,8 @@ public:
 
     void init(const std::vector<std::string>& dbc_chain_addrs);
 
+    void update_chain_order(const std::vector<std::string>& dbc_chain_addrs);
+
     int64_t request_cur_block();
 
     MACHINE_STATUS request_machine_status(const std::string& node_id);
@@ -54,6 +56,7 @@ protected:
     chainScore getChainScore(const network::net_address& addr, int delta) const;
 
 private:
+    mutable RwMutex m_mtx;
     std::map<chainScore, network::net_address> m_addrs;
 };
 
