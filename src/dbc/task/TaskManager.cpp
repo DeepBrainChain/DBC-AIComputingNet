@@ -678,6 +678,19 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
 	int64_t disk_size_k = 0; // KB
     uint16_t n_ssh_port, n_rdp_port, n_vnc_port;
 
+    // "task_id"
+    JSON_PARSE_STRING(doc, "task_id", task_id);
+    if (!task_id.empty()) {
+        FResult fret = check_task_id(task_id);
+        if (fret.errcode != ERR_SUCCESS)
+            return fret;
+    } else {
+        task_id = util::create_task_id();
+    }
+    if (role == USER_ROLE::Verifier) {
+        task_id = "vm_check_" + std::to_string(time(nullptr));
+    }
+
     // "desc"
     JSON_PARSE_STRING(doc, "desc", desc);
     
@@ -961,12 +974,6 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
         }
     }
     
-    // task_id
-    task_id = util::create_task_id();
-    if (role == USER_ROLE::Verifier) {
-        task_id = "vm_check_" + std::to_string(time(nullptr));
-    }
-
     // password
     login_password = vnc_password = genpwd();
     
@@ -994,6 +1001,19 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     params.public_ip = public_ip;
     params.nwfilter = nwfilter;
 
+    return FResultOk;
+}
+
+FResult TaskManager::check_task_id(const std::string& task_id) {
+    if (task_id.length() < 20 || task_id.length() > 22)
+        return FResult(ERR_ERROR, "wrong task id length");
+    for (const auto& ch : task_id) {
+        if (!isalnum(ch))
+            return FResult(ERR_ERROR, "task id requires a combination of letters or numbers");
+    }
+    auto taskinfos = TaskInfoMgr::instance().getAllTaskInfos();
+    if (taskinfos.find(task_id) != taskinfos.end())
+        return FResult(ERR_ERROR, "task id already existed");
     return FResultOk;
 }
 

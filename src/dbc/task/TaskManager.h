@@ -179,6 +179,8 @@ protected:
     // 创建task
     FResult parse_create_params(const std::string &additional, USER_ROLE role, CreateTaskParams& params);
 
+    FResult check_task_id(const std::string& task_id);
+
     FResult check_image(const std::string& image_name);
 
     FResult check_operation_system(const std::string& os);
