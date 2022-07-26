@@ -212,7 +212,8 @@ protected:
 
     FResult check_mem(int64_t mem_size_k);
 
-    FResult check_gpu(const std::map<std::string, std::shared_ptr<GpuInfo>>& gpus);
+    FResult check_gpu(const std::map<std::string, std::shared_ptr<GpuInfo>>& gpus,
+        const std::string& exclude_task_id);
 
     FResult check_resource(const std::shared_ptr<TaskInfo>& taskinfo);
 
@@ -228,6 +229,8 @@ protected:
                              const std::string &task_local_ip, const std::string& public_ip);
 
     static void getNeededBackingImage(const std::string &image_name, std::vector<std::string> &backing_images);
+
+    void update_task_iptable(const std::string& domain_name);
 
     void process_start_task(const std::shared_ptr<TaskEvent>& ev);
 

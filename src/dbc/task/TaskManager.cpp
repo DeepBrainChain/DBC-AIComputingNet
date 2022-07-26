@@ -194,6 +194,7 @@ void TaskManager::start_task(const std::string &task_id) {
             taskinfo->setTaskStatus(TaskStatus::TS_Task_Running);
             TaskInfoManager::instance().update(taskinfo);
         }
+        update_task_iptable(task_id);
 		add_iptable_to_system(task_id);
 		TASK_LOG_INFO(task_id, "start task successful");
     }
@@ -1291,10 +1292,12 @@ FResult TaskManager::check_cpu(int32_t sockets, int32_t cores, int32_t threads) 
     return FResultOk;
 }
 
-FResult TaskManager::check_gpu(const std::map<std::string, std::shared_ptr<GpuInfo>>& gpus) {
+FResult TaskManager::check_gpu(const std::map<std::string, std::shared_ptr<GpuInfo>>& gpus,
+    const std::string& exclude_task_id) {
     std::map<std::string, gpu_info> can_use_gpu = SystemInfo::instance().GetGpuInfo();
     auto taskinfos = TaskInfoMgr::instance().getAllTaskInfos();
     for (auto& iter : taskinfos) {
+        if (iter.first == exclude_task_id) continue;
         virDomainState st = VmClient::instance().GetDomainStatus(iter.first);
         if (st != VIR_DOMAIN_SHUTOFF) {
             auto _gpus = TaskGpuMgr::instance().getTaskGpus(iter.first);
@@ -1352,7 +1355,7 @@ FResult TaskManager::check_resource(const std::shared_ptr<TaskInfo>& taskinfo) {
 
     // gpu
     auto gpus = TaskGpuMgr::instance().getTaskGpus(taskinfo->getTaskId());
-    fret = check_gpu(gpus);
+    fret = check_gpu(gpus, taskinfo->getTaskId());
     if (fret.errcode != ERR_SUCCESS) {
         return FResult(ERR_ERROR, "check gpu failed");
     }
@@ -2501,6 +2504,27 @@ void TaskManager::getNeededBackingImage(const std::string &image_name, std::vect
     }
 }
 
+void TaskManager::update_task_iptable(const std::string& domain_name) {
+    auto taskinfo = TaskInfoMgr::instance().getTaskInfo(domain_name);
+    if (taskinfo == nullptr) return;
+
+    if (taskinfo->getBiosMode() == "pxe") return;
+
+    if (taskinfo->getTaskStatus() != TaskStatus::TS_Task_Running) return;
+
+    auto taskIptablePtr = TaskIptableMgr::instance().getIptableInfo(domain_name);
+    if (taskIptablePtr == nullptr) return;
+
+    std::string local_ip = VmClient::instance().GetDomainLocalIP(domain_name);
+    if (!local_ip.empty() && taskIptablePtr->getTaskLocalIP() != local_ip) {
+        TASK_LOG_INFO(domain_name, "local ip changed from "
+            << taskIptablePtr->getTaskLocalIP()
+            << " to " << local_ip);
+        taskIptablePtr->setTaskLocalIP(local_ip);
+        TaskIptableMgr::instance().update(taskIptablePtr);
+    }
+}
+
 void TaskManager::process_start_task(const std::shared_ptr<TaskEvent>& ev) {
     std::shared_ptr<StartTaskEvent> ev_starttask = std::dynamic_pointer_cast<StartTaskEvent>(ev);
     if (ev_starttask == nullptr) return;
@@ -2546,6 +2570,7 @@ void TaskManager::process_start_task(const std::shared_ptr<TaskEvent>& ev) {
         if (taskinfo->getTaskStatus() == TaskStatus::TS_Task_Starting) {
             taskinfo->setTaskStatus(TaskStatus::TS_Task_Running);
         }
+        update_task_iptable(ev->task_id);
         add_iptable_to_system(ev->task_id);
         TASK_LOG_INFO(ev->task_id, "start task successful");
     }
@@ -2657,6 +2682,7 @@ void TaskManager::process_restart_task(const std::shared_ptr<TaskEvent>& ev) {
             if (taskinfo->getTaskStatus() == TaskStatus::TS_Task_Restarting) {
                 taskinfo->setTaskStatus(TaskStatus::TS_Task_Running);
             }
+            update_task_iptable(ev->task_id);
             add_iptable_to_system(ev->task_id);
             TASK_LOG_INFO(ev->task_id, "restart task successful");
         }
@@ -2671,6 +2697,7 @@ void TaskManager::process_restart_task(const std::shared_ptr<TaskEvent>& ev) {
 			if (taskinfo->getTaskStatus() == TaskStatus::TS_Task_Restarting) {
 				taskinfo->setTaskStatus(TaskStatus::TS_Task_Running);
 			}
+            update_task_iptable(ev->task_id);
             add_iptable_to_system(ev->task_id);
             TASK_LOG_INFO(ev->task_id, "restart task successful");
         }
@@ -2696,6 +2723,7 @@ void TaskManager::process_force_reboot_task(const std::shared_ptr<TaskEvent>& ev
             if (taskinfo->getTaskStatus() == TaskStatus::TS_Task_Restarting) {
                 taskinfo->setTaskStatus(TaskStatus::TS_Task_Running);
             }
+            update_task_iptable(ev->task_id);
             add_iptable_to_system(ev->task_id);
             TASK_LOG_INFO(ev->task_id, "restart task successful");
         }
@@ -2712,6 +2740,7 @@ void TaskManager::process_force_reboot_task(const std::shared_ptr<TaskEvent>& ev
 				if (taskinfo->getTaskStatus() == TaskStatus::TS_Task_Restarting) {
 					taskinfo->setTaskStatus(TaskStatus::TS_Task_Running);
 				}
+                update_task_iptable(ev->task_id);
                 add_iptable_to_system(ev->task_id);
                 TASK_LOG_INFO(ev->task_id, "restart task successful");
             } else {
