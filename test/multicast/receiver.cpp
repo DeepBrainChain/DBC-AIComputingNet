@@ -46,6 +46,14 @@ private:
         {
           if (!ec)
           {
+            struct tm _tm{};
+            time_t tt = time(NULL);
+            localtime_r(&tt, &_tm);
+            char buf[256] = {0};
+            memset(buf, 0, sizeof(char) * 256);
+            strftime(buf, sizeof(char) * 256, "%Y-%m-%d %H:%M:%S", &_tm);
+            std::cout << buf << " | ";
+            std::cout << sender_endpoint_.address().to_string() << " | ";
             std::cout.write(data_.data(), length);
             std::cout << std::endl;
 

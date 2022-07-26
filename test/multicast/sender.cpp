@@ -14,7 +14,7 @@
 #include <boost/asio.hpp>
 
 constexpr short multicast_port = 30001;
-constexpr int max_message_count = 10;
+static int max_message_count = 10;
 
 class sender
 {
@@ -68,13 +68,21 @@ int main(int argc, char* argv[])
 {
   try
   {
-    if (argc != 2)
+    if (argc != 2 && argc != 3)
     {
-      std::cerr << "Usage: sender <multicast_address>\n";
+      std::cerr << "Usage: sender <multicast_address> [repeat_times]\n";
       std::cerr << "  For IPv4, try:\n";
       std::cerr << "    sender 239.255.0.1\n";
       std::cerr << "  For IPv6, try:\n";
       std::cerr << "    sender ff31::8000:1234\n";
+      return 1;
+    }
+
+    if (argc == 3) {
+      max_message_count = atoi(argv[2]);
+    }
+    if (max_message_count < 1) {
+      std::cerr << "invalid repeat times\n";
       return 1;
     }
 
