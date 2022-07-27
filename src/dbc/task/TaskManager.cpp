@@ -1214,12 +1214,14 @@ bool TaskManager::allocate_mem(int64_t mem_size_k) {
     return mem_size_k > 0 && mem_size_k <= SystemInfo::instance().GetMemInfo().free;
 }
 
-bool TaskManager::allocate_gpu(int32_t gpu_count, std::map<std::string, std::list<std::string>>& gpus) {
+bool TaskManager::allocate_gpu(int32_t gpu_count, std::map<std::string, std::list<std::string>>& gpus,
+    const std::string& exclude_task_id) {
     if (gpu_count == 0) return true;
 
     std::map<std::string, gpu_info> can_use_gpu = SystemInfo::instance().GetGpuInfo();
     auto taskinfos = TaskInfoMgr::instance().getAllTaskInfos();
     for (auto& iter : taskinfos) {
+        if (iter.first == exclude_task_id) continue;
         virDomainState st = VmClient::instance().GetDomainStatus(iter.first);
         if (st != VIR_DOMAIN_SHUTOFF) {
             auto gpus = TaskGpuMgr::instance().getTaskGpus(iter.first);
@@ -1562,16 +1564,18 @@ FResult TaskManager::modifyTask(const std::string& wallet,
     if (fret.errcode != ERR_SUCCESS) {
         return fret;
     } else if (new_public_ip != taskinfoPtr->getPublicIP()) {
-        need_reset_iptables = true;
-        TASK_LOG_INFO(task_id, "modify task old public ip: " << taskinfoPtr->getPublicIP()
-                               << ", new public ip: " << new_public_ip);
-        taskinfoPtr->setPublicIP(new_public_ip);
-        TaskInfoManager::instance().update(taskinfoPtr);
-
         auto taskIptablePtr = TaskIptableManager::instance().getIptableInfo(task_id);
         if (taskIptablePtr != nullptr) {
+            need_reset_iptables = true;
+            TASK_LOG_INFO(task_id, "modify task old public ip: " << taskinfoPtr->getPublicIP()
+                                << ", new public ip: " << new_public_ip);
+            taskinfoPtr->setPublicIP(new_public_ip);
+            TaskInfoManager::instance().update(taskinfoPtr);
+
             taskIptablePtr->setPublicIP(new_public_ip);
             TaskIptableManager::instance().update(taskIptablePtr);
+        } else {
+            return FResult(ERR_ERROR, "can not find iptable info when modify public ip");
         }
     }
 
@@ -1591,17 +1595,20 @@ FResult TaskManager::modifyTask(const std::string& wallet,
 
         old_ssh_port = taskinfoPtr->getSSHPort();
         if (new_ssh_port != old_ssh_port) {
-            need_reset_iptables = true;
-            taskinfoPtr->setSSHPort(new_ssh_port);
-            TaskInfoMgr::instance().update(taskinfoPtr);
-
             auto taskIptablePtr = TaskIptableManager::instance().getIptableInfo(task_id);
             if (taskIptablePtr != nullptr) {
+                need_reset_iptables = true;
+                taskinfoPtr->setSSHPort(new_ssh_port);
+                TaskInfoMgr::instance().update(taskinfoPtr);
+
                 taskIptablePtr->setSSHPort(new_ssh_port);
                 TaskIptableManager::instance().update(taskIptablePtr);
-            }
-            TASK_LOG_INFO(task_id, "modify task old ssh port: " << old_ssh_port
+
+                TASK_LOG_INFO(task_id, "modify task old ssh port: " << old_ssh_port
                                 << ", new ssh port: " << new_ssh_port);
+            } else {
+                return FResult(ERR_ERROR, "can not find iptable info when modify ssh port");
+            }
         }
     }
 
@@ -1620,17 +1627,19 @@ FResult TaskManager::modifyTask(const std::string& wallet,
         }
 
         if (new_rdp_port != taskinfoPtr->getRDPPort()) {
-            need_reset_iptables = true;
-            TASK_LOG_INFO(task_id, "modify task old rdp port: " << taskinfoPtr->getRDPPort()
-                                << ", new rdp port: " << new_rdp_port);
-
-            taskinfoPtr->setRDPPort(new_rdp_port);
-            TaskInfoMgr::instance().update(taskinfoPtr);
-
             auto taskIptablePtr = TaskIptableManager::instance().getIptableInfo(task_id);
             if (taskIptablePtr != nullptr) {
+                need_reset_iptables = true;
+                TASK_LOG_INFO(task_id, "modify task old rdp port: " << taskinfoPtr->getRDPPort()
+                                    << ", new rdp port: " << new_rdp_port);
+
+                taskinfoPtr->setRDPPort(new_rdp_port);
+                TaskInfoMgr::instance().update(taskinfoPtr);
+
                 taskIptablePtr->setRDPPort(new_rdp_port);
                 TaskIptableManager::instance().update(taskIptablePtr);
+            } else {
+                return FResult(ERR_ERROR, "can not find iptable info when modify rdp port");
             }
         }
     }
@@ -1649,16 +1658,19 @@ FResult TaskManager::modifyTask(const std::string& wallet,
             }
 
             if (new_custom_port != taskinfoPtr->getCustomPort()) {
-                need_reset_iptables = true;
-                taskinfoPtr->setCustomPort(new_custom_port);
-                TaskInfoMgr::instance().update(taskinfoPtr);
-
                 auto taskIptablePtr = TaskIptableManager::instance().getIptableInfo(task_id);
                 if (taskIptablePtr != nullptr) {
+                    need_reset_iptables = true;
+                    taskinfoPtr->setCustomPort(new_custom_port);
+                    TaskInfoMgr::instance().update(taskinfoPtr);
+
                     taskIptablePtr->setCustomPort(new_custom_port);
                     TaskIptableManager::instance().update(taskIptablePtr);
+
+                    TASK_LOG_INFO(task_id, "modify task custom port");
+                } else {
+                    return FResult(ERR_ERROR, "can not find iptable info when modify custom port");
                 }
-                TASK_LOG_INFO(task_id, "modify task custom port");
             }
         }
     }
@@ -1721,25 +1733,30 @@ FResult TaskManager::modifyTask(const std::string& wallet,
     JSON_PARSE_STRING(doc, "new_gpu_count", new_gpu_count);
     if (!new_gpu_count.empty()) {
 		int count = (uint16_t) atoi(new_gpu_count.c_str());
-		if (allocate_gpu(count, new_gpus)) {
-            std::map<std::string, std::shared_ptr<GpuInfo>> mp_gpus;
-            for (auto& iter_gpu : new_gpus) {
-                std::shared_ptr<GpuInfo> ptr = std::make_shared<GpuInfo>();
-                ptr->setId(iter_gpu.first);
-                for (auto& iter_device_id : iter_gpu.second) {
-                    ptr->addDeviceId(iter_device_id);
+        if (count < 0) return FResult(ERR_ERROR, "new gpu count is invalid");
+        int old_gpu_count = TaskGpuMgr::instance().getTaskGpusCount(task_id);
+        if (count != old_gpu_count) {
+            if (allocate_gpu(count, new_gpus, task_id)) {
+                std::map<std::string, std::shared_ptr<GpuInfo>> mp_gpus;
+                for (auto& iter_gpu : new_gpus) {
+                    std::shared_ptr<GpuInfo> ptr = std::make_shared<GpuInfo>();
+                    ptr->setId(iter_gpu.first);
+                    for (auto& iter_device_id : iter_gpu.second) {
+                        ptr->addDeviceId(iter_device_id);
+                    }
+                    mp_gpus.insert({ ptr->getId(), ptr });
                 }
-                mp_gpus.insert({ ptr->getId(), ptr });
-            }
 
-			TaskGpuMgr::instance().setTaskGpus(task_id, mp_gpus);
-            TASK_LOG_INFO(task_id, "modify task new gpu count: " << new_gpu_count);
-            need_reboot_vm = true;
-            need_redefine_vm = true;
-		}
-		else {
-			return FResult(ERR_ERROR, "allocate gpu failed");
-		}
+                TaskGpuMgr::instance().setTaskGpus(task_id, mp_gpus);
+                TASK_LOG_INFO(task_id, "modify task new gpu count: " << new_gpu_count
+                    << ", old gpu count " << old_gpu_count);
+                need_reboot_vm = true;
+                need_redefine_vm = true;
+            }
+            else {
+                return FResult(ERR_ERROR, "allocate gpu failed");
+            }
+        }
     }
     
     std::string s_new_cpu_cores;
@@ -1804,6 +1821,7 @@ FResult TaskManager::modifyTask(const std::string& wallet,
             TASK_LOG_ERROR(task_id, "modify task error: " << fret.errmsg);
             return fret;
         }
+        TaskInfoMgr::instance().update(taskinfoPtr);
         TASK_LOG_INFO(task_id, "redefine task sucessful");
     }
 
@@ -1846,6 +1864,7 @@ FResult TaskManager::passwdTask(const std::string& wallet, const std::shared_ptr
         std::string old_username = taskinfoPtr->getLoginUsername();
         if (old_username.empty() || old_username == "N/A")
             taskinfoPtr->setLoginUsername(username);
+        TaskInfoMgr::instance().update(taskinfoPtr);
     }
     return fret;
 }

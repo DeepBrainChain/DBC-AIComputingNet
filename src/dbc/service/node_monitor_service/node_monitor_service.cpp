@@ -288,8 +288,7 @@ void node_monitor_service::on_monitor_data_sender_task_timer(const std::shared_p
             if (!taskinfo) continue;
             if (rentlist.first == m_cur_renter_wallet) {
                 if (taskinfo && taskinfo->getTaskStatus() == TaskStatus::TS_Task_Running) {
-                    auto gpus = TaskGpuMgr::instance().getTaskGpus(task_id);
-                    hmData.gpuUsed += gpus.size();
+                    hmData.gpuUsed += TaskGpuMgr::instance().getTaskGpusCount(task_id);
                     hmData.vmRunning++;
                 }
             }

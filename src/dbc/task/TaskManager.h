@@ -203,7 +203,8 @@ protected:
 
     bool allocate_mem(int64_t mem_size_k);
 
-    bool allocate_gpu(int32_t gpu_count, std::map<std::string, std::list<std::string>>& gpus);
+    bool allocate_gpu(int32_t gpu_count, std::map<std::string, std::list<std::string>>& gpus,
+        const std::string& exclude_task_id = "");
 
     bool allocate_disk(int64_t disk_size_k);
 

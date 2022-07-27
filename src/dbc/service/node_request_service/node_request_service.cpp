@@ -790,8 +790,7 @@ void node_request_service::task_list(const network::base_header& header,
             ss_tasks << ", \"login_password\":" << "\"" << taskinfo->getLoginPassword() << "\"";
             
             int32_t cpu_cores = taskinfo->getTotalCores();
-            auto gpus = TaskGpuMgr::instance().getTaskGpus(taskinfo->getTaskId());
-            int32_t gpu_count = gpus.size();
+            int32_t gpu_count = TaskGpuMgr::instance().getTaskGpusCount(taskinfo->getTaskId());
             int64_t mem_size = taskinfo->getMemSize();
             uint16_t vnc_port = taskinfo->getVncPort();
             std::string vnc_password = taskinfo->getVncPassword();
@@ -4272,8 +4271,7 @@ void node_request_service::query_node_info(const network::base_header& header,
     for (const auto& taskinfo : taskinfos) {
         if (taskinfo.second->getTaskStatus() != TaskStatus::TS_Task_Shutoff 
             && taskinfo.second->getTaskStatus() < TaskStatus::TS_Error) {
-            auto gpus = TaskGpuMgr::instance().getTaskGpus(taskinfo.second->getTaskId());
-            gpu_used += gpus.size();
+            gpu_used += TaskGpuMgr::instance().getTaskGpusCount(taskinfo.second->getTaskId());
         }
     }
     ss << ",\"gpu_used\":" << "\"" << gpu_used << "\"";

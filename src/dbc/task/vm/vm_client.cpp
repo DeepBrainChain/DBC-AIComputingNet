@@ -1232,6 +1232,8 @@ FResult VmClient::RedefineDomain(const std::shared_ptr<TaskInfo>& taskinfo) {
 	// new mem
 	int64_t memoryTotal = taskinfo->getMemSize(); // KB
 
+    bool is_windows = isWindowsOS(taskinfo->getOperationSystem());
+
 	char* pContent = virDomainGetXMLDesc(domainPtr, VIR_DOMAIN_XML_SECURE | VIR_DOMAIN_XML_INACTIVE);
     if (pContent != nullptr) {
         tinyxml2::XMLDocument doc;
@@ -1300,6 +1302,11 @@ FResult VmClient::RedefineDomain(const std::shared_ptr<TaskInfo>& taskinfo) {
 					address_node->SetAttribute("function", ("0x" + infos2[1]).c_str());
 					source_node->LinkEndChild(address_node);
 					hostdev_node->LinkEndChild(source_node);
+                    if (is_windows) {
+                        tinyxml2::XMLElement* rom_node = doc.NewElement("rom");
+                        rom_node->SetAttribute("bar", "off");
+                        hostdev_node->LinkEndChild(rom_node);
+                    }
 
                     ele_devices->LinkEndChild(hostdev_node);
 				}
@@ -2018,8 +2025,8 @@ bool VmClient::GetDomainMonitorData(const std::string& domain_name, dbcMonitor::
         }
 
         // gpu info
-        auto gpus = TaskGpuMgr::instance().getTaskGpus(domain_name);
-        if (isActive && gpus.size() > 0) {
+        int32_t gpus = TaskGpuMgr::instance().getTaskGpusCount(domain_name);
+        if (isActive && gpus > 0) {
             char *result = virDomainQemuAgentCommand(domain_ptr, "{\"execute\":\"guest-get-gpus\"}", VIR_DOMAIN_QEMU_AGENT_COMMAND_DEFAULT, 0);
             if (result) {
                 rapidjson::Document doc;

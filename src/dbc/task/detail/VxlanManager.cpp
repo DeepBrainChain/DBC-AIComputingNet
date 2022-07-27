@@ -585,6 +585,36 @@ int32_t VxlanManager::LoadNetworkInfoFromDb() {
                 continue;
             }
 
+            // check network device and dnsmasq
+            if (db_item->nativeFlags & NATIVE_FLAGS_DEVICE) {
+                std::string cmd = "ip link show type bridge | grep " + db_item->bridgeName;
+                std::string ret = run_shell(cmd);
+                if (ret.empty()) {
+                    FResult fret = CreateVxlanDevice(db_item->bridgeName, db_item->vxlanName, db_item->vxlanVni);
+                    if (fret.errcode != ERR_SUCCESS) {
+                        LOG_ERROR << "found bridge " << db_item->bridgeName
+                            << " not existed, and restore failed";
+                        return E_DEFAULT;
+                    }
+                }
+            }
+            if (db_item->nativeFlags & NATIVE_FLAGS_DHCPSERVER) {
+                std::string cmd = "ps -ef | grep dnsmasq | grep " + db_item->bridgeName;
+                std::string ret = run_shell(cmd);
+                if (ret.empty()) {
+                    std::vector<std::string> vecSplit = util::split(db_item->ipCidr, "/");
+                    ipRangeHelper ipHelper(vecSplit[0], atoi(vecSplit[1].c_str()));
+                    FResult fret = StartDhcpServer(db_item->bridgeName, db_item->vxlanName,
+                        db_item->dhcpInterface, ipHelper.getSubnetMask(), db_item->ipStart,
+                        db_item->ipEnd, std::to_string(ipHelper.getMaxDHCPLeases()));
+                    if (fret.errcode != ERR_SUCCESS) {
+                        LOG_ERROR << "found network " << db_item->networkId
+                            << " not running, and restart failed";
+                        return E_DEFAULT;
+                    }
+                }
+            }
+
             db_item->__set_lastUpdateTime(time(NULL));
 
             m_networks[db_item->networkId] = db_item;

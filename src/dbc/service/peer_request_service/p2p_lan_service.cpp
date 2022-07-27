@@ -323,6 +323,7 @@ void p2p_lan_service::on_multicast_receive(const std::string& data, const std::s
                 info->__set_nativeFlags(0);
                 info->__set_lastUpdateTime(time(NULL));
                 FResult fret = VxlanManager::instance().AddNetworkFromMulticast(std::move(info));
+
                 RwMutex::WriteLock wlock(m_mtx_timer);
                 auto iter = m_network_move_timer_id.find(network_name);
                 if (iter != m_network_move_timer_id.end()) {
@@ -731,6 +732,7 @@ void p2p_lan_service::on_multicast_network_move_task_timer(const std::shared_ptr
     }
 }
 
+// 如果启动了一段时间后，发现有网络的所在machineId为空，就自动认领。
 void p2p_lan_service::on_multicast_network_resume_task_timer(const std::shared_ptr<core_timer>& timer) {
     std::vector<std::string> network_resumes;
     {
