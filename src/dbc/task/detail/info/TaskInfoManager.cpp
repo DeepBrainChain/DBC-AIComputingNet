@@ -83,6 +83,13 @@ FResult TaskInfoManager::init() {
         }
     }
 
+    // init deleted tasks
+    ret = m_deleted_db.init_db(EnvManager::instance().get_db_path(), "deleted_tasks.db");
+    if (!ret) {
+        return FResult(ERR_ERROR, "init deleted tasks db failed");
+    }
+    m_deleted_db.load_datas(m_deleted_tasks);
+
     return FResultOk;
 }
 

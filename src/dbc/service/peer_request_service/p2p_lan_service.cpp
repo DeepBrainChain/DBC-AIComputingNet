@@ -715,6 +715,7 @@ void p2p_lan_service::on_multicast_network_task_timer(const std::shared_ptr<core
     // 删除长时间没有虚拟机使用的网络
     VxlanManager::instance().ClearEmptyNetwork();
     VxlanManager::instance().ClearExpiredNetwork();
+    VxlanManager::instance().ClearNotExistedMember();
 }
 
 void p2p_lan_service::on_multicast_network_move_task_timer(const std::shared_ptr<core_timer>& timer) {

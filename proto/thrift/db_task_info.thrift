@@ -17,5 +17,6 @@ struct db_task_info {
     24: optional string network_name,       //vxlan network name
     30: optional string public_ip,          //公网ip
     31: optional list<string> nwfilter,     //安全组，只有设置了公网ip才会使用
-    35: optional string login_username      //登陆用户名
+    35: optional string login_username,     //登陆用户名
+    36: optional i64 delete_time            //删除时间
 }

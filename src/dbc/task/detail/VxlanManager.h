@@ -54,6 +54,9 @@ public:
     // 清理长时间没有更新的网络
     void ClearExpiredNetwork();
 
+    // 检查member中的虚拟机是否已删除
+    void ClearNotExistedMember();
+
 protected:
     int32_t InitDb();
 
@@ -68,6 +71,8 @@ protected:
     std::string RandomVni() const;
 
     bool CheckIpCidr(const std::string &ipCidr) const;
+
+    bool IsDhcpRun(const std::string &networkName) const;
 
 private:
     mutable RwMutex m_mtx;

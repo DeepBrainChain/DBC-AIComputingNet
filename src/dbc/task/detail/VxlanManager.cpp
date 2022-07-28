@@ -4,6 +4,8 @@
 #include "network/protocol/thrift_binary.h"
 #include "server/server.h"
 #include "service/peer_request_service/p2p_lan_service.h"
+#include "task/detail/info/TaskInfoManager.h"
+#include "task/vm/vm_client.h"
 
 // VXLAN网络标识VNI（VXLAN Network Identifier），由24比特组成，支持多达16M的VXLAN段，有效得解决了云计算中海量租户隔离的问题。
 #define VNI_MAX 16777216
@@ -516,9 +518,16 @@ void VxlanManager::ClearExpiredNetwork() {
         for (const auto& iter : m_networks) {
             if (iter.second->machineId == ConfManager::instance().GetNodeId())
                 continue;
-            if (!iter.second->members.empty())
+            if (difftime(cur_time, iter.second->lastUpdateTime) < 259200)// 60s * 60 * 24 * 3
                 continue;
-            if (difftime(cur_time, iter.second->lastUpdateTime) > 259200)// 60s * 60 * 24 * 3
+            bool bFind = false;
+            for (const auto& task_id : iter.second->members) {
+                if (VmClient::instance().IsExistDomain(task_id)) {
+                    bFind = true;
+                    break;
+                }
+            }
+            if (!bFind)
                 networks.push_back(iter.first);
         }
     }
@@ -526,6 +535,25 @@ void VxlanManager::ClearExpiredNetwork() {
         LOG_INFO << "Network " << iter <<
             " has not been updated for a long time and will be deleted";
         DeleteNetworkFromMulticast(iter, "");
+    }
+}
+
+void VxlanManager::ClearNotExistedMember() {
+    std::vector<std::pair<std::string, std::string>> deleted;
+    {
+        RwMutex::ReadLock rlock(m_mtx);
+        for (const auto& iter : m_networks) {
+            for (const auto& task_id : iter.second->members) {
+                std::shared_ptr<dbc::db_task_info> info =
+                    TaskInfoMgr::instance().get_deleted_task(task_id);
+                if (info && info->network_name == iter.first) {
+                    deleted.push_back(std::make_pair(iter.first, task_id));
+                }
+            }
+        }
+    }
+    for (const auto& iter : deleted) {
+        p2p_lan_service::instance().send_network_leave_request(iter.first, iter.second);
     }
 }
 
@@ -599,9 +627,7 @@ int32_t VxlanManager::LoadNetworkInfoFromDb() {
                 }
             }
             if (db_item->nativeFlags & NATIVE_FLAGS_DHCPSERVER) {
-                std::string cmd = "ps -ef | grep dnsmasq | grep " + db_item->bridgeName;
-                std::string ret = run_shell(cmd);
-                if (ret.empty()) {
+                if (!IsDhcpRun(db_item->networkId)) {
                     std::vector<std::string> vecSplit = util::split(db_item->ipCidr, "/");
                     ipRangeHelper ipHelper(vecSplit[0], atoi(vecSplit[1].c_str()));
                     FResult fret = StartDhcpServer(db_item->bridgeName, db_item->vxlanName,
@@ -685,4 +711,24 @@ bool VxlanManager::CheckIpCidr(const std::string &ipCidr) const {
         if (ipHelper.hasIntersection(ipHelper2)) return true;
     }
     return false;
+}
+
+bool VxlanManager::IsDhcpRun(const std::string &networkName) const {
+    std::string pid_file = "/var/run/vx" + networkName + ".pid";
+    boost::system::error_code error_code;
+    if (!boost::filesystem::exists(pid_file, error_code) || error_code)
+        return false;
+    std::ifstream ifs(pid_file, std::ios_base::in);
+    if (!ifs.is_open()) return false;
+    std::string content;
+    getline(ifs, content);
+    ifs.close();
+    if (content.empty()) return false;
+    for (const auto & ch : content) {
+        if (!isdigit(ch)) return false;
+    }
+    std::string proc_path = "/proc/" + content;
+    if (!boost::filesystem::exists(proc_path, error_code) || error_code)
+        return false;
+    return true;
 }

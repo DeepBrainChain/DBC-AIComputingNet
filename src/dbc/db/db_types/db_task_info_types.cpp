@@ -93,6 +93,11 @@ namespace dbc {
 		this->login_username = val;
 		__isset.login_username = true;
 	}
+
+	void db_task_info::__set_delete_time(const int64_t val) {
+		this->delete_time = val;
+		__isset.delete_time = true;
+	}
 	std::ostream& operator<<(std::ostream& out, const db_task_info& obj)
 	{
 		obj.printTo(out);
@@ -301,6 +306,14 @@ namespace dbc {
 					xfer += iprot->skip(ftype);
 				}
 				break;
+			case 36:
+				if (ftype == ::apache::thrift::protocol::T_I64) {
+					xfer += iprot->readI64(this->delete_time);
+					this->__isset.delete_time = true;
+				} else {
+					xfer += iprot->skip(ftype);
+				}
+				break;
 			default:
 				xfer += iprot->skip(ftype);
 				break;
@@ -423,6 +436,11 @@ namespace dbc {
 			xfer += oprot->writeString(this->login_username);
 			xfer += oprot->writeFieldEnd();
 		}
+		if (this->__isset.delete_time) {
+			xfer += oprot->writeFieldBegin("delete_time", ::apache::thrift::protocol::T_I64, 36);
+			xfer += oprot->writeI64(this->delete_time);
+			xfer += oprot->writeFieldEnd();
+		}
 		xfer += oprot->writeFieldStop();
 		xfer += oprot->writeStructEnd();
 		return xfer;
@@ -446,6 +464,7 @@ namespace dbc {
 		swap(a.public_ip, b.public_ip);
 		swap(a.nwfilter, b.nwfilter);
 		swap(a.login_username, b.login_username);
+		swap(a.delete_time, b.delete_time);
 		swap(a.__isset, b.__isset);
 	}
 
@@ -466,6 +485,7 @@ namespace dbc {
 		public_ip = other18.public_ip;
 		nwfilter = other18.nwfilter;
 		login_username = other18.login_username;
+		delete_time = other18.delete_time;
 		__isset = other18.__isset;
 	}
 	db_task_info& db_task_info::operator=(const db_task_info& other19) {
@@ -485,6 +505,7 @@ namespace dbc {
 		public_ip = other19.public_ip;
 		nwfilter = other19.nwfilter;
 		login_username = other19.login_username;
+		delete_time = other19.delete_time;
 		__isset = other19.__isset;
 		return *this;
 	}
@@ -507,6 +528,7 @@ namespace dbc {
 		out << ", " << "public_ip="; (__isset.public_ip ? (out << to_string(public_ip)) : (out << "<null>"));
 		out << ", " << "nwfilter="; (__isset.nwfilter ? (out << to_string(nwfilter)) : (out << "<null>"));
 		out << ", " << "login_username="; (__isset.login_username ? (out << to_string(login_username)) : (out << "<null>"));
+		out << ", " << "delete_time="; (__isset.delete_time ? (out << to_string(delete_time)) : (out << "<null>"));
 		out << ")";
 	}
 

@@ -2911,6 +2911,7 @@ void TaskManager::prune_task_thread_func() {
         }
 
         TaskInfoMgr::instance().update_running_tasks();
+        TaskInfoMgr::instance().update_deleted_tasks();
 
         // 空闲状态定时清理缓存
         if (machine_status == MACHINE_STATUS::Online) {

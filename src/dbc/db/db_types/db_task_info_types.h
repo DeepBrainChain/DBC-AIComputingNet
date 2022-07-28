@@ -17,7 +17,7 @@ namespace dbc {
 	class db_task_info;
 
 	typedef struct _db_task_info__isset {
-		_db_task_info__isset() : image_name(false), login_password(false), ssh_port(false), create_time(false), operation_system(false), bios_mode(false), rdp_port(false), custom_port(false), multicast(false), desc(false), vda_rootbackfile(false), network_name(false), public_ip(false), nwfilter(false), login_username(false) {}
+		_db_task_info__isset() : image_name(false), login_password(false), ssh_port(false), create_time(false), operation_system(false), bios_mode(false), rdp_port(false), custom_port(false), multicast(false), desc(false), vda_rootbackfile(false), network_name(false), public_ip(false), nwfilter(false), login_username(false), delete_time(false) {}
 		bool image_name : 1;
 		bool login_password : 1;
 		bool ssh_port : 1;
@@ -32,7 +32,8 @@ namespace dbc {
 		bool network_name : 1;
 		bool public_ip : 1;
 		bool nwfilter : 1;
-		bool login_username :1;
+		bool login_username : 1;
+		bool delete_time : 1;
 	} _db_task_info__isset;
 
 	class db_task_info : public virtual ::apache::thrift::TBase {
@@ -40,7 +41,7 @@ namespace dbc {
 
 		db_task_info(const db_task_info&);
 		db_task_info& operator=(const db_task_info&);
-		db_task_info() : task_id(), image_name(), login_password(), ssh_port(), create_time(0), operation_system(), bios_mode(), rdp_port(), desc(), vda_rootbackfile(), network_name(), public_ip(), login_username() {
+		db_task_info() : task_id(), image_name(), login_password(), ssh_port(), create_time(0), operation_system(), bios_mode(), rdp_port(), desc(), vda_rootbackfile(), network_name(), public_ip(), login_username(), delete_time(0) {
 		}
 
 		virtual ~db_task_info() throw();
@@ -60,6 +61,7 @@ namespace dbc {
 		std::string public_ip;
 		std::vector<std::string>  nwfilter;
 		std::string login_username;
+		int64_t delete_time;
 
 		_db_task_info__isset __isset;
 
@@ -94,6 +96,8 @@ namespace dbc {
 		void __set_nwfilter(const std::vector<std::string>& val);
 
 		void __set_login_username(const std::string& val);
+
+		void __set_delete_time(const int64_t val);
 
 		bool operator == (const db_task_info& rhs) const
 		{
@@ -158,6 +162,10 @@ namespace dbc {
 			if (__isset.login_username != rhs.__isset.login_username)
 				return false;
 			else if (__isset.login_username && !(login_username == rhs.login_username))
+				return false;
+			if (__isset.delete_time != rhs.__isset.delete_time)
+				return false;
+			else if (__isset.delete_time && !(delete_time == rhs.delete_time))
 				return false;
 			return true;
 		}

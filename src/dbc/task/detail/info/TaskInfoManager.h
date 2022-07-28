@@ -61,6 +61,11 @@ public:
             it->second->deleteFromDB(m_db);
             m_task_infos.erase(it);
         }
+        RwMutex::WriteLock wlock2(m_deleted_mtx);
+        std::shared_ptr<dbc::db_task_info> info = it->second->m_db_info;
+        info->__set_delete_time(time(NULL));
+        m_deleted_tasks[task_id] = info;
+        m_deleted_db.write_data(info);
     }
 
     void update(const std::shared_ptr<TaskInfo> &taskinfo_ptr) {
@@ -90,6 +95,26 @@ public:
         return m_running_tasks;
     }
 
+    void update_deleted_tasks() {
+        int64_t cur_time = time(NULL);
+        RwMutex::WriteLock wlock(m_deleted_mtx);
+        for (auto iter = m_deleted_tasks.begin(); iter != m_deleted_tasks.end();) {
+            if (difftime(cur_time, iter->second->delete_time) > 3600 * 24 * 30 * 3) {
+                m_deleted_db.delete_data(iter->first);
+                iter = m_deleted_tasks.erase(iter);
+            } else {
+                iter++;
+            }
+        }
+    }
+
+    std::shared_ptr<dbc::db_task_info> get_deleted_task(const std::string& task_id) {
+        RwMutex::ReadLock rlock(m_deleted_mtx);
+        auto iter = m_deleted_tasks.find(task_id);
+        if (iter != m_deleted_tasks.end()) return iter->second;
+        return nullptr;
+    }
+
 private:
     mutable RwMutex m_mtx;
     TaskInfoDB m_db;
@@ -99,6 +124,10 @@ private:
     mutable RwMutex m_running_mtx;
 	RunningTaskDB m_running_db;
     std::vector<std::string> m_running_tasks;
+
+    mutable RwMutex m_deleted_mtx;
+    TaskInfoDB m_deleted_db;
+    std::map<std::string, std::shared_ptr<dbc::db_task_info>> m_deleted_tasks;
 };
 
 typedef TaskInfoManager TaskInfoMgr;
