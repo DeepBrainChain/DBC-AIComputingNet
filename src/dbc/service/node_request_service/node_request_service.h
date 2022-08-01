@@ -26,6 +26,7 @@ struct AuthorityParams {
     std::vector<dbc::multisig_sign_item> multisig_signs;
     std::string session_id;
     std::string session_id_sign;
+    std::string machine_id;
 };
 
 enum HitNodeType {

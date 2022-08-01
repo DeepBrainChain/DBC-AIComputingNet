@@ -476,7 +476,8 @@ std::tuple<std::string, std::string> node_request_service::parse_wallet(const Au
 
 
 void node_request_service::check_authority(const AuthorityParams& params, AuthoriseResult& result) {
-    MACHINE_STATUS str_status = HttpDBCChainClient::instance().request_machine_status(ConfManager::instance().GetNodeId());
+    std::string machine_id = params.machine_id.empty() ? ConfManager::instance().GetNodeId() : params.machine_id;
+    MACHINE_STATUS str_status = HttpDBCChainClient::instance().request_machine_status(machine_id);
     if (str_status == MACHINE_STATUS::Unknown) {
         result.success = false;
         result.errmsg = "query machine_status failed";
@@ -496,7 +497,7 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
         }
 
         if (!strMultisigWallet.empty()) {
-            bool ret = HttpDBCChainClient::instance().in_verify_time(ConfManager::instance().GetNodeId(), strMultisigWallet);
+            bool ret = HttpDBCChainClient::instance().in_verify_time(machine_id, strMultisigWallet);
             if (!ret) {
                 result.success = false;
                 result.errmsg = "not in verify time";
@@ -510,7 +511,7 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
         }
 
         if (!result.success && !strWallet.empty()) {
-            bool ret = HttpDBCChainClient::instance().in_verify_time(ConfManager::instance().GetNodeId(), strWallet);
+            bool ret = HttpDBCChainClient::instance().in_verify_time(machine_id, strWallet);
             if (!ret) {
                 result.success = false;
                 result.errmsg = "not in verify time";
@@ -554,7 +555,7 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
             }
 
             if (!strMultisigWallet.empty()) {
-                int64_t rent_end = HttpDBCChainClient::instance().request_rent_end(ConfManager::instance().GetNodeId(), strMultisigWallet);
+                int64_t rent_end = HttpDBCChainClient::instance().request_rent_end(machine_id, strMultisigWallet);
                 if (rent_end > 0) {
                     result.success = true;
                     result.user_role = USER_ROLE::WalletRenter;
@@ -573,7 +574,7 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
             }
 
             if (!result.success && !strWallet.empty()) {
-                int64_t rent_end = HttpDBCChainClient::instance().request_rent_end(ConfManager::instance().GetNodeId(), strWallet);
+                int64_t rent_end = HttpDBCChainClient::instance().request_rent_end(machine_id, strWallet);
                 if (rent_end > 0) {
                     result.success = true;
                     result.user_role = USER_ROLE::WalletRenter;
@@ -587,7 +588,7 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
                 }
             }
         } else {
-            int64_t rent_end = HttpDBCChainClient::instance().request_rent_end(ConfManager::instance().GetNodeId(), rent_wallet);
+            int64_t rent_end = HttpDBCChainClient::instance().request_rent_end(machine_id, rent_wallet);
             if (rent_end > 0) {
                 result.success = true;
                 result.user_role = USER_ROLE::SessionIdRenter;
@@ -4517,6 +4518,7 @@ void node_request_service::on_node_session_id_req(const std::shared_ptr<network:
         params.multisig_wallets = data->multisig_wallets;
         params.multisig_threshold = data->multisig_threshold;
         params.multisig_signs = data->multisig_signs;
+        params.machine_id = data->peer_nodes_list[0];
         AuthoriseResult result;
         check_authority(params, result);
         if (!result.success) {
@@ -5921,6 +5923,7 @@ void node_request_service::on_node_bare_metal_power_req(const std::shared_ptr<ne
         params.multisig_signs = data->multisig_signs;
         params.session_id = data->session_id;
         params.session_id_sign = data->session_id_sign;
+        params.machine_id = data->peer_nodes_list[0];
         AuthoriseResult result;
         check_authority(params, result);
         if (!result.success || result.user_role == USER_ROLE::Unknown || result.user_role == USER_ROLE::Verifier) {
