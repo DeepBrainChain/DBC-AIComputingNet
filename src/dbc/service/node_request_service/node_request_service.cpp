@@ -229,6 +229,7 @@ void node_request_service::init_invoker() {
     reg_msg_handle(NODE_ADD_BARE_METAL_REQ, CALLBACK_1(node_request_service::on_node_add_bare_metal_req, this));
     reg_msg_handle(NODE_DELETE_BARE_METAL_REQ, CALLBACK_1(node_request_service::on_node_delete_bare_metal_req, this));
     reg_msg_handle(NODE_BARE_METAL_POWER_REQ, CALLBACK_1(node_request_service::on_node_bare_metal_power_req, this));
+    reg_msg_handle(NODE_BARE_METAL_BOOTDEV_REQ, CALLBACK_1(node_request_service::on_node_bare_metal_bootdev_req, this));
 }
 
 HitNodeType node_request_service::hit_node(const std::vector<std::string>& peer_node_list, const std::string& node_id) {
@@ -5949,7 +5950,7 @@ void node_request_service::bare_metal_power(
         const std::shared_ptr<dbc::node_bare_metal_power_req_data>& data,
         const AuthoriseResult& result) {
     if (data->additional.empty()) {
-        send_response_error<dbc::node_delete_bare_metal_rsp>(NODE_DELETE_BARE_METAL_RSP, header,
+        send_response_error<dbc::node_bare_metal_power_rsp>(NODE_BARE_METAL_POWER_RSP, header,
             E_DEFAULT, "additional is empty", data->peer_nodes_list[0]);
         return;
     }
@@ -5957,7 +5958,7 @@ void node_request_service::bare_metal_power(
     rapidjson::Document doc;
     doc.Parse(data->additional.c_str());
     if (!doc.IsObject()) {
-        send_response_error<dbc::node_delete_bare_metal_rsp>(NODE_DELETE_BARE_METAL_RSP, header,
+        send_response_error<dbc::node_bare_metal_power_rsp>(NODE_BARE_METAL_POWER_RSP, header,
             E_DEFAULT, "additional parse failed", data->peer_nodes_list[0]);
         return;
     }
@@ -5966,12 +5967,131 @@ void node_request_service::bare_metal_power(
     JSON_PARSE_STRING(doc, "command", command);
 
     if (command != "status" && command != "on" && command != "off" && command != "reset") {
-        send_response_error<dbc::node_delete_bare_metal_rsp>(NODE_DELETE_BARE_METAL_RSP, header,
+        send_response_error<dbc::node_bare_metal_power_rsp>(NODE_BARE_METAL_POWER_RSP, header,
             E_DEFAULT, "invalid command", data->peer_nodes_list[0]);
         return;
     }
 
     auto fret = IpmiToolClient::instance().PowerControl(data->peer_nodes_list[0], command);
     send_response_error<dbc::node_bare_metal_power_rsp>(NODE_BARE_METAL_POWER_RSP, header,
+        fret.errcode == ERR_SUCCESS ? 0 : E_DEFAULT, fret.errmsg, data->peer_nodes_list[0]);
+}
+
+// bare metal boot device order
+void node_request_service::on_node_bare_metal_bootdev_req(const std::shared_ptr<network::message>& msg) {
+    auto node_req_msg = std::dynamic_pointer_cast<dbc::node_bare_metal_bootdev_req>(msg->get_content());
+    if (node_req_msg == nullptr) {
+        return;
+    }
+
+    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
+        return;
+    }
+
+    if (Server::NodeType != NODE_TYPE::ComputeNode && Server::NodeType != NODE_TYPE::BareMetalNode) {
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+        network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+        return;
+    }
+
+    if (!check_req_header(msg)) {
+        LOG_ERROR << "request header check failed";
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+        network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+        return;
+    }
+
+    // decrypt
+    std::string pub_key = node_req_msg->header.exten_info["pub_key"];
+    std::string priv_key = ConfManager::instance().GetPrivKey();
+    if (pub_key.empty() || priv_key.empty()) {
+        LOG_ERROR << "pub_key or priv_key is empty";
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+        network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+        return;
+    }
+
+    std::shared_ptr<dbc::node_bare_metal_bootdev_req_data> data = std::make_shared<dbc::node_bare_metal_bootdev_req_data>();
+    try {
+        std::string ori_message;
+        bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
+        if (!succ || ori_message.empty()) {
+            node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+            network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+            return;
+        }
+
+        std::shared_ptr<byte_buf> buf = std::make_shared<byte_buf>();
+        buf->write_to_byte_buf(ori_message.c_str(), ori_message.size());
+        network::binary_protocol proto(buf.get());
+        data->read(&proto);
+    } catch (std::exception &e) {
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+        network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+        return;
+    }
+
+    std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
+    HitNodeType hit_self = hit_node(req_peer_nodes, ConfManager::instance().GetNodeId());
+    if (hit_self == HitBareMetal) {
+        AuthorityParams params;
+        params.wallet = data->wallet;
+        params.nonce = data->nonce;
+        params.sign = data->sign;
+        params.multisig_wallets = data->multisig_wallets;
+        params.multisig_threshold = data->multisig_threshold;
+        params.multisig_signs = data->multisig_signs;
+        params.session_id = data->session_id;
+        params.session_id_sign = data->session_id_sign;
+        params.machine_id = data->peer_nodes_list[0];
+        AuthoriseResult result;
+        check_authority(params, result);
+        if (!result.success || result.user_role == USER_ROLE::Unknown || result.user_role == USER_ROLE::Verifier) {
+            LOG_ERROR << "check authority failed: " << result.errmsg;
+            send_response_error<dbc::node_bare_metal_bootdev_rsp>(NODE_BARE_METAL_BOOTDEV_RSP,
+                node_req_msg->header, E_DEFAULT, "check authority failed: " + result.errmsg,
+                data->peer_nodes_list[0]);
+            return;
+        }
+
+        bare_metal_bootdev(node_req_msg->header, data, result);
+    } else if (hit_self == HitComputer || hit_self == HitBareMetalManager) {
+        send_response_error<dbc::node_bare_metal_bootdev_rsp>(NODE_BARE_METAL_BOOTDEV_RSP,
+            node_req_msg->header, E_DEFAULT, "Not supported", data->peer_nodes_list[0]);
+    } else {
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+        network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+    }
+}
+
+void node_request_service::bare_metal_bootdev(
+        const network::base_header& header,
+        const std::shared_ptr<dbc::node_bare_metal_bootdev_req_data>& data,
+        const AuthoriseResult& result) {
+    if (data->additional.empty()) {
+        send_response_error<dbc::node_bare_metal_bootdev_rsp>(NODE_BARE_METAL_BOOTDEV_RSP, header,
+            E_DEFAULT, "additional is empty", data->peer_nodes_list[0]);
+        return;
+    }
+
+    rapidjson::Document doc;
+    doc.Parse(data->additional.c_str());
+    if (!doc.IsObject()) {
+        send_response_error<dbc::node_bare_metal_bootdev_rsp>(NODE_BARE_METAL_BOOTDEV_RSP, header,
+            E_DEFAULT, "additional parse failed", data->peer_nodes_list[0]);
+        return;
+    }
+
+    std::string device;
+    JSON_PARSE_STRING(doc, "device", device);
+
+    if (device != "none" && device != "pxe" && device != "cdrom" && device != "disk" && device != "bios") {
+        send_response_error<dbc::node_bare_metal_bootdev_rsp>(NODE_BARE_METAL_BOOTDEV_RSP, header,
+            E_DEFAULT, "invalid device", data->peer_nodes_list[0]);
+        return;
+    }
+
+    auto fret = IpmiToolClient::instance().SetBootDeviceOrder(data->peer_nodes_list[0], device);
+    send_response_error<dbc::node_bare_metal_bootdev_rsp>(NODE_BARE_METAL_BOOTDEV_RSP, header,
         fret.errcode == ERR_SUCCESS ? 0 : E_DEFAULT, fret.errmsg, data->peer_nodes_list[0]);
 }

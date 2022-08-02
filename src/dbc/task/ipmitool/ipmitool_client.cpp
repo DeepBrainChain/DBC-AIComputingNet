@@ -49,6 +49,26 @@ FResult IpmiToolClient::PowerControl(const std::string& node_id, const std::stri
     return fret;
 }
 
+FResult IpmiToolClient::SetBootDeviceOrder(const std::string& node_id, const std::string& device) {
+    std::shared_ptr<dbc::db_bare_metal> bm =
+        BareMetalNodeManager::instance().getBareMetalNode(node_id);
+    if (!bm) return FResult(ERR_ERROR, "node id not existed");
+
+    std::string cmd = "ipmitool -H " + bm->ipmi_hostname +
+        " -U " + bm->ipmi_username +
+        " -P " + bm->ipmi_password +
+        " chassis bootdev " + device;
+    std::string cmd_ret = run_shell(cmd);
+    LOG_INFO << "run shell (" << cmd << ") return :" << cmd_ret;
+    util::replace(cmd_ret, "\n", " <line> ");
+    FResult fret = { ERR_SUCCESS, cmd_ret };
+    if (cmd_ret.find("Error:") != std::string::npos)
+        fret.errcode = ERR_ERROR;
+    if (cmd_ret.find("error:") != std::string::npos)
+        fret.errcode = ERR_ERROR;
+    return fret;
+}
+
 void IpmiToolClient::PruneNode(const std::string& node_id) {
     MACHINE_STATUS machine_status = HttpDBCChainClient::instance().request_machine_status(node_id);
     if (machine_status == MACHINE_STATUS::Unknown) return;

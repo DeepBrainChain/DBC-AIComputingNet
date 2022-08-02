@@ -15,6 +15,8 @@ public:
 
     FResult PowerControl(const std::string& node_id, const std::string& command);
 
+    FResult SetBootDeviceOrder(const std::string& node_id, const std::string& device);
+
     void PruneNode(const std::string& node_id);
 
     void PruneNodes();

@@ -234,6 +234,11 @@ protected:
 
     void bare_metal_power(const network::base_header& header, const std::shared_ptr<dbc::node_bare_metal_power_req_data>& data, const AuthoriseResult& result);
 
+    // bare metal boot device order
+    void on_node_bare_metal_bootdev_req(const std::shared_ptr<network::message>& msg);
+
+    void bare_metal_bootdev(const network::base_header& header, const std::shared_ptr<dbc::node_bare_metal_bootdev_req_data>& data, const AuthoriseResult& result);
+
 private:
     bool check_req_header(const std::shared_ptr<network::message> &msg);
 

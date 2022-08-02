@@ -210,6 +210,11 @@
 #define NODE_BARE_METAL_POWER_RSP      "node_bare_metal_power_rsp"
 #define NODE_BARE_METAL_POWER_TIMER    "node_bare_metal_power_timer"
 
+// bare metal boot device order
+#define NODE_BARE_METAL_BOOTDEV_REQ      "node_bare_metal_bootdev_req"
+#define NODE_BARE_METAL_BOOTDEV_RSP      "node_bare_metal_bootdev_rsp"
+#define NODE_BARE_METAL_BOOTDEV_TIMER    "node_bare_metal_bootdev_timer"
+
 // service broadcast
 #define SERVICE_BROADCAST_REQ    "service_broadcast_req"
 

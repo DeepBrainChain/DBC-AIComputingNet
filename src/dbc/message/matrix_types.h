@@ -411,6 +411,16 @@ namespace dbc {
 
 	class node_bare_metal_power_rsp;
 
+	class node_bare_metal_bootdev_req_data;
+
+	class node_bare_metal_bootdev_req_body;
+
+	class node_bare_metal_bootdev_req;
+
+	class node_bare_metal_bootdev_rsp_body;
+
+	class node_bare_metal_bootdev_rsp;
+
 
 	class empty : public virtual ::apache::thrift::TBase {
 	public:
@@ -9938,6 +9948,243 @@ namespace dbc {
 	void swap(node_bare_metal_power_rsp &a, node_bare_metal_power_rsp &b);
 
 	std::ostream& operator<<(std::ostream& out, const node_bare_metal_power_rsp& obj);
+
+
+	class node_bare_metal_bootdev_req_data : public virtual ::apache::thrift::TBase {
+	public:
+
+		node_bare_metal_bootdev_req_data(const node_bare_metal_bootdev_req_data&);
+		node_bare_metal_bootdev_req_data& operator=(const node_bare_metal_bootdev_req_data&);
+		node_bare_metal_bootdev_req_data() : additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign() {
+		}
+
+		virtual ~node_bare_metal_bootdev_req_data() throw();
+		std::vector<std::string>  peer_nodes_list;
+		std::string additional;
+		std::string wallet;
+		std::string nonce;
+		std::string sign;
+		std::vector<std::string>  multisig_wallets;
+		int32_t multisig_threshold;
+		std::vector<multisig_sign_item>  multisig_signs;
+		std::string session_id;
+		std::string session_id_sign;
+
+		void __set_peer_nodes_list(const std::vector<std::string> & val);
+
+		void __set_additional(const std::string& val);
+
+		void __set_wallet(const std::string& val);
+
+		void __set_nonce(const std::string& val);
+
+		void __set_sign(const std::string& val);
+
+		void __set_multisig_wallets(const std::vector<std::string> & val);
+
+		void __set_multisig_threshold(const int32_t val);
+
+		void __set_multisig_signs(const std::vector<multisig_sign_item> & val);
+
+		void __set_session_id(const std::string& val);
+
+		void __set_session_id_sign(const std::string& val);
+
+		bool operator == (const node_bare_metal_bootdev_req_data & rhs) const
+		{
+			if (!(peer_nodes_list == rhs.peer_nodes_list))
+				return false;
+			if (!(additional == rhs.additional))
+				return false;
+			if (!(wallet == rhs.wallet))
+				return false;
+			if (!(nonce == rhs.nonce))
+				return false;
+			if (!(sign == rhs.sign))
+				return false;
+			if (!(multisig_wallets == rhs.multisig_wallets))
+				return false;
+			if (!(multisig_threshold == rhs.multisig_threshold))
+				return false;
+			if (!(multisig_signs == rhs.multisig_signs))
+				return false;
+			if (!(session_id == rhs.session_id))
+				return false;
+			if (!(session_id_sign == rhs.session_id_sign))
+				return false;
+			return true;
+		}
+		bool operator != (const node_bare_metal_bootdev_req_data &rhs) const {
+			return !(*this == rhs);
+		}
+
+		bool operator < (const node_bare_metal_bootdev_req_data & ) const;
+
+		uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+		uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+		virtual void printTo(std::ostream& out) const;
+	};
+
+	void swap(node_bare_metal_bootdev_req_data &a, node_bare_metal_bootdev_req_data &b);
+
+	std::ostream& operator<<(std::ostream& out, const node_bare_metal_bootdev_req_data& obj);
+
+
+	class node_bare_metal_bootdev_req_body : public virtual ::apache::thrift::TBase {
+	public:
+
+		node_bare_metal_bootdev_req_body(const node_bare_metal_bootdev_req_body&);
+		node_bare_metal_bootdev_req_body& operator=(const node_bare_metal_bootdev_req_body&);
+		node_bare_metal_bootdev_req_body() : data() {
+		}
+
+		virtual ~node_bare_metal_bootdev_req_body() throw();
+		std::string data;
+
+		void __set_data(const std::string& val);
+
+		bool operator == (const node_bare_metal_bootdev_req_body & rhs) const
+		{
+			if (!(data == rhs.data))
+				return false;
+			return true;
+		}
+		bool operator != (const node_bare_metal_bootdev_req_body &rhs) const {
+			return !(*this == rhs);
+		}
+
+		bool operator < (const node_bare_metal_bootdev_req_body & ) const;
+
+		uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+		uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+		virtual void printTo(std::ostream& out) const;
+	};
+
+	void swap(node_bare_metal_bootdev_req_body &a, node_bare_metal_bootdev_req_body &b);
+
+	std::ostream& operator<<(std::ostream& out, const node_bare_metal_bootdev_req_body& obj);
+
+	typedef struct _node_bare_metal_bootdev_req__isset {
+		_node_bare_metal_bootdev_req__isset() : body(false) {}
+		bool body :1;
+	} _node_bare_metal_bootdev_req__isset;
+
+	class node_bare_metal_bootdev_req : public virtual ::apache::thrift::TMsgBase {
+	public:
+
+		node_bare_metal_bootdev_req(const node_bare_metal_bootdev_req&);
+		node_bare_metal_bootdev_req& operator=(const node_bare_metal_bootdev_req&);
+		node_bare_metal_bootdev_req() {
+		}
+
+		virtual ~node_bare_metal_bootdev_req() throw();
+		node_bare_metal_bootdev_req_body body;
+
+		_node_bare_metal_bootdev_req__isset __isset;
+
+		void __set_body(const node_bare_metal_bootdev_req_body& val);
+
+		bool operator == (const node_bare_metal_bootdev_req & rhs) const
+		{
+			if (!(body == rhs.body))
+				return false;
+			return true;
+		}
+		bool operator != (const node_bare_metal_bootdev_req &rhs) const {
+			return !(*this == rhs);
+		}
+
+		bool operator < (const node_bare_metal_bootdev_req & ) const;
+
+		uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+		uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+		virtual void printTo(std::ostream& out) const;
+	};
+
+	void swap(node_bare_metal_bootdev_req &a, node_bare_metal_bootdev_req &b);
+
+	std::ostream& operator<<(std::ostream& out, const node_bare_metal_bootdev_req& obj);
+
+
+	class node_bare_metal_bootdev_rsp_body : public virtual ::apache::thrift::TBase {
+	public:
+
+		node_bare_metal_bootdev_rsp_body(const node_bare_metal_bootdev_rsp_body&);
+		node_bare_metal_bootdev_rsp_body& operator=(const node_bare_metal_bootdev_rsp_body&);
+		node_bare_metal_bootdev_rsp_body() : data() {
+		}
+
+		virtual ~node_bare_metal_bootdev_rsp_body() throw();
+		std::string data;
+
+		void __set_data(const std::string& val);
+
+		bool operator == (const node_bare_metal_bootdev_rsp_body & rhs) const
+		{
+			if (!(data == rhs.data))
+				return false;
+			return true;
+		}
+		bool operator != (const node_bare_metal_bootdev_rsp_body &rhs) const {
+			return !(*this == rhs);
+		}
+
+		bool operator < (const node_bare_metal_bootdev_rsp_body & ) const;
+
+		uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+		uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+		virtual void printTo(std::ostream& out) const;
+	};
+
+	void swap(node_bare_metal_bootdev_rsp_body &a, node_bare_metal_bootdev_rsp_body &b);
+
+	std::ostream& operator<<(std::ostream& out, const node_bare_metal_bootdev_rsp_body& obj);
+
+	typedef struct _node_bare_metal_bootdev_rsp__isset {
+		_node_bare_metal_bootdev_rsp__isset() : body(false) {}
+		bool body :1;
+	} _node_bare_metal_bootdev_rsp__isset;
+
+	class node_bare_metal_bootdev_rsp : public virtual ::apache::thrift::TMsgBase {
+	public:
+
+		node_bare_metal_bootdev_rsp(const node_bare_metal_bootdev_rsp&);
+		node_bare_metal_bootdev_rsp& operator=(const node_bare_metal_bootdev_rsp&);
+		node_bare_metal_bootdev_rsp() {
+		}
+
+		virtual ~node_bare_metal_bootdev_rsp() throw();
+		node_bare_metal_bootdev_rsp_body body;
+
+		_node_bare_metal_bootdev_rsp__isset __isset;
+
+		void __set_body(const node_bare_metal_bootdev_rsp_body& val);
+
+		bool operator == (const node_bare_metal_bootdev_rsp & rhs) const
+		{
+			if (!(body == rhs.body))
+				return false;
+			return true;
+		}
+		bool operator != (const node_bare_metal_bootdev_rsp &rhs) const {
+			return !(*this == rhs);
+		}
+
+		bool operator < (const node_bare_metal_bootdev_rsp & ) const;
+
+		uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+		uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+		virtual void printTo(std::ostream& out) const;
+	};
+
+	void swap(node_bare_metal_bootdev_rsp &a, node_bare_metal_bootdev_rsp &b);
+
+	std::ostream& operator<<(std::ostream& out, const node_bare_metal_bootdev_rsp& obj);
 
 } // namespace
 

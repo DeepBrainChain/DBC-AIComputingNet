@@ -60,8 +60,6 @@ struct req_body {
 
     // bare metal node id
     std::string node_id;
-    // bare metal power command
-    std::string command;
 };
 
 class rsp_peer_node_info {
@@ -561,6 +559,17 @@ public:
                                       const std::shared_ptr<network::message> &rsp_msg);
 
     void on_node_bare_metal_power_timer(const std::shared_ptr<core_timer> &timer);
+
+    // bare metal boot device order pxe/disk/cdrom
+    void rest_bare_metal_bootdev(const std::shared_ptr<network::http_request> &httpReq, const std::string &path);
+
+    std::shared_ptr<network::message> create_node_bare_metal_bootdev_req_msg(const std::string &head_session_id,
+                                                                           const req_body &body);
+
+    void on_node_bare_metal_bootdev_rsp(const std::shared_ptr<network::http_request_context> &hreq_context,
+                                      const std::shared_ptr<network::message> &rsp_msg);
+
+    void on_node_bare_metal_bootdev_timer(const std::shared_ptr<core_timer> &timer);
 
 protected:
     void init_timer() override;
