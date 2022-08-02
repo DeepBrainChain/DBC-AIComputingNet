@@ -763,6 +763,10 @@ FResult VmClient::OpenConnect() {
         return FResult(ERR_ERROR, "set libvirt keepalive failed");
     }
 
+    if (virConnectGetLibVersion(m_connPtr, &m_libvirt_version) == 0) {
+        LOG_INFO << "get libvirt version " << m_libvirt_version;
+    }
+
     StartEventLoop();
 
     LOG_INFO << "open connect with libvirt successfully";
@@ -791,6 +795,10 @@ void VmClient::ConnectCloseCb() {
         // virConnectClose(m_connPtr);
         m_connPtr = nullptr;
     }
+}
+
+unsigned long VmClient::GetLibvirtVersion() const {
+    return m_libvirt_version;
 }
 
 int32_t VmClient::CreateDomain(const std::shared_ptr<TaskInfo>& taskinfo) {

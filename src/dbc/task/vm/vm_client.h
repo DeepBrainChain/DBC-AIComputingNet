@@ -56,6 +56,8 @@ public:
     // libvirt connect close callback
     void ConnectCloseCb();
 
+    unsigned long GetLibvirtVersion() const;
+
     // domain
 	bool IsExistDomain(const std::string& domain_name);
 
@@ -136,6 +138,8 @@ private:
     int m_event_loop_run = 0;
 
     std::thread * m_thread_event_loop = nullptr;
+
+    unsigned long m_libvirt_version = 0;
 };
 
 #endif // !DBC_VM_CLIENT_H

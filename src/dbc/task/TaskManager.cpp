@@ -977,6 +977,13 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     
     // password
     login_password = vnc_password = genpwd();
+    // 从libvirt 8.0 开始，VNC密码限制最长8位
+    // https://github.com/libvirt/libvirt/commit/27c1d06b5bd68bdce55efff0a50a15a30cb2a96b
+    if (VmClient::instance().GetLibvirtVersion() >= 8000000) {
+        if (vnc_password.length() > 8) {
+            vnc_password = vnc_password.substr(0, 8);
+        }
+    }
     
 	// return params
 	params.task_id = task_id;

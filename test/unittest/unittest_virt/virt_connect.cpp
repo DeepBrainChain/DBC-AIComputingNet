@@ -62,6 +62,15 @@ BOOST_FIXTURE_TEST_SUITE(vir_connect, assign_fixture)
 BOOST_AUTO_TEST_CASE(testCase1) {
     virHelper vir_helper(true);
     vir_helper.openConnect(qemu_url);
+    unsigned long libVer = 0;
+    BOOST_REQUIRE(vir_helper.getVersion(&libVer, NULL, NULL) == 0);
+    std::cout << "getVersion libVer = " << libVer << std::endl;
+    libVer = 0;
+    BOOST_REQUIRE(vir_helper.getConnectVersion(&libVer) == 0);
+    std::cout << "getConnectVersion hypervisor version = " << libVer << std::endl;
+    libVer = 0;
+    BOOST_REQUIRE(vir_helper.getConnectLibVersion(&libVer) == 0);
+    std::cout << "getConnectLibVersion libvirt version = " << libVer << std::endl;
     sleep(1);
 }
 
