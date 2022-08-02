@@ -1,5 +1,5 @@
 #!/bin/bash
-  
+
 workpath=$(cd $(dirname $0) && pwd)
 cd $workpath
 
