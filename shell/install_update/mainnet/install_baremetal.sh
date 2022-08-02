@@ -21,6 +21,12 @@ if [ "$(ls -A $install_dir)" ]; then
   exit 0
 fi
 
+ipmitool -V > /dev/null 2>&1
+if [ $? -ne 0 ]; then
+  echo "must install ipmitool"
+  sudo apt install ipmitool -y
+fi
+
 function close_ufw()
 {
   is_ufw_enable=$(systemctl is-enabled ufw.service)
