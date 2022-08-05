@@ -245,16 +245,17 @@ void SystemInfo::update_cpu_info() {
             if (p3) {
                 info.cpu_name = std::string(p3 + 1);
 
-                auto pos1 = info.cpu_name.find("Hz");
-                auto pos2 = info.cpu_name.rfind(' ', pos1);
-                std::string mhz = info.cpu_name.substr(pos2 + 1, pos1 - pos2 - 1);
-                char ch = mhz[mhz.size() - 1];
-                if (ch == 'G') {
-                    mhz = std::to_string(int32_t(atof(mhz.substr(0, mhz.size() - 1).c_str()) * 1000)) + "MHz";
-                } else if (ch == 'M') {
-                    mhz = std::to_string(atof(mhz.substr(0, mhz.size() - 1).c_str()) * 1) + "MHz";
-                }
-                info.mhz = mhz;
+                // AMD CPU 无法使用此方式获取频率 model name	: AMD EPYC 7542 32-Core Processor
+                // auto pos1 = info.cpu_name.find("Hz");
+                // auto pos2 = info.cpu_name.rfind(' ', pos1);
+                // std::string mhz = info.cpu_name.substr(pos2 + 1, pos1 - pos2 - 1);
+                // char ch = mhz[mhz.size() - 1];
+                // if (ch == 'G') {
+                //     mhz = std::to_string(int32_t(atof(mhz.substr(0, mhz.size() - 1).c_str()) * 1000)) + "MHz";
+                // } else if (ch == 'M') {
+                //     mhz = std::to_string(atof(mhz.substr(0, mhz.size() - 1).c_str()) * 1) + "MHz";
+                // }
+                // info.mhz = mhz;
             }
         } else if (strcmp(line, "physical id") == 0) {
             if (p3) {
@@ -277,6 +278,27 @@ void SystemInfo::update_cpu_info() {
     info.physical_cores_per_cpu -= m_reserved_cpu_cores;
     info.logical_cores_per_cpu = info.physical_cores_per_cpu * info.threads_per_cpu;
     info.cores = info.physical_cpus * info.physical_cores_per_cpu * info.threads_per_cpu;
+
+    // 获取CPU基准频率
+    // 方法一: lscpu
+    // 方法二: lshw -c cpu
+    // 方法三: cat /sys/devices/system/cpu/cpufreq/policy0/base_frequency
+    // 方法四: sudo dmidecode -t 4 或者 sudo dmidecode -s processor-frequency
+    std::string mhz = run_shell("sudo dmidecode -s processor-frequency | head -n 1");
+    if (!mhz.empty()) {
+        auto pos1 = mhz.find("Hz");
+        if (pos1 != std::string::npos && pos1 > 1) {
+            float num = atof(mhz.substr(0, pos1 - 1).c_str());
+            char ch = mhz[pos1 - 1];
+            if (ch == 'G') {
+                info.mhz = std::to_string(static_cast<int32_t>(num * 1000)) + "MHz";
+            } else if (ch == 'M') {
+                info.mhz = std::to_string(static_cast<int32_t>(num)) + "MHz";
+            } else if (ch == ' ') {
+                info.mhz = std::to_string(static_cast<int32_t>(num / 1000)) + "MHz";
+            }
+        }
+    }
 
     RwMutex::WriteLock wlock(m_cpu_mtx);
     m_cpuinfo = info;
