@@ -12,6 +12,7 @@
 #include "task/detail/VxlanManager.h"
 #include "task/detail/disk/TaskDiskManager.h"
 #include "task/detail/gpu/TaskGpuManager.h"
+#include "util/system_info.h"
 
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -270,6 +271,14 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
         tinyxml2::XMLElement* cpu_feature = doc.NewElement("feature");
         cpu_feature->SetAttribute("policy", "disable");
         cpu_feature->SetAttribute("name", "hypervisor");
+        cpu_node->LinkEndChild(cpu_feature);
+    }
+    if (SystemInfo::instance().GetCpuInfo().vendor_type == CPU_VENDOR_TYPE::AMD) {
+        // add at 2022.08.11 -- AMD CPU的虚拟机bug
+        // 假设定义sockets='2' cores='4' threads='2' 虚拟机内查询发现是1*16*1
+        tinyxml2::XMLElement* cpu_feature = doc.NewElement("feature");
+        cpu_feature->SetAttribute("policy", "require");
+        cpu_feature->SetAttribute("name", "topoext");
         cpu_node->LinkEndChild(cpu_feature);
     }
     root->LinkEndChild(cpu_node);

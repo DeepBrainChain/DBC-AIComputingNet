@@ -269,6 +269,14 @@ void SystemInfo::update_cpu_info() {
             if (p3) {
                 info.logical_cores_per_cpu = atoi(p3 + 1);
             }
+        } else if (strcmp(line, "vendor_id") == 0) {
+            if (p3 && info.vendor_type == CPU_VENDOR_TYPE::Unknown) {
+                std::string vendor_id = std::string(p3 + 1);
+                if (vendor_id == "GenuineIntel")
+                    info.vendor_type = CPU_VENDOR_TYPE::Intel;
+                else if (vendor_id == "AuthenticAMD")
+                    info.vendor_type = CPU_VENDOR_TYPE::AMD;
+            }
         }
     }
     fclose(fp);

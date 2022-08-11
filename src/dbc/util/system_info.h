@@ -9,6 +9,13 @@ enum OS_TYPE {
     OS_Ubuntu_2004
 };
 
+// cpu vendor
+enum CPU_VENDOR_TYPE {
+    Unknown = 0,
+    Intel,
+    AMD
+};
+
 // memory (KB)
 struct mem_info {
     int64_t total = 0L;
@@ -32,6 +39,7 @@ struct cpu_info {
     int32_t physical_cores_per_cpu = 0;
     int32_t logical_cores_per_cpu = 0;
     int32_t threads_per_cpu = 0;
+    CPU_VENDOR_TYPE vendor_type = CPU_VENDOR_TYPE::Unknown;
 };
 
 // gpu
