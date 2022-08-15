@@ -383,6 +383,16 @@ public:
         m_status = status;
     }
 
+    std::string getInterfaceModelType() const {
+        RwMutex::ReadLock rlock(m_mtx);
+        return m_db_info->interface_model_type;
+    }
+
+    void setInterfaceModelType(const std::string& type) {
+        RwMutex::WriteLock wlock(m_mtx);
+        m_db_info->__set_interface_model_type(type);
+    }
+
     void deleteFromDB(TaskInfoDB& db) {
         RwMutex::WriteLock wlock(m_mtx);
         db.delete_data(m_db_info->task_id);

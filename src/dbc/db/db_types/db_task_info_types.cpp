@@ -98,6 +98,11 @@ namespace dbc {
 		this->delete_time = val;
 		__isset.delete_time = true;
 	}
+
+	void db_task_info::__set_interface_model_type(const std::string& val) {
+		this->interface_model_type = val;
+		__isset.interface_model_type = true;
+	}
 	std::ostream& operator<<(std::ostream& out, const db_task_info& obj)
 	{
 		obj.printTo(out);
@@ -314,6 +319,14 @@ namespace dbc {
 					xfer += iprot->skip(ftype);
 				}
 				break;
+			case 40:
+				if (ftype == ::apache::thrift::protocol::T_STRING) {
+					xfer += iprot->readString(this->interface_model_type);
+					this->__isset.interface_model_type = true;
+				} else {
+					xfer += iprot->skip(ftype);
+				}
+				break;
 			default:
 				xfer += iprot->skip(ftype);
 				break;
@@ -441,6 +454,11 @@ namespace dbc {
 			xfer += oprot->writeI64(this->delete_time);
 			xfer += oprot->writeFieldEnd();
 		}
+		if (this->__isset.interface_model_type) {
+			xfer += oprot->writeFieldBegin("interface_model_type", ::apache::thrift::protocol::T_STRING, 40);
+			xfer += oprot->writeString(this->interface_model_type);
+			xfer += oprot->writeFieldEnd();
+		}
 		xfer += oprot->writeFieldStop();
 		xfer += oprot->writeStructEnd();
 		return xfer;
@@ -465,6 +483,7 @@ namespace dbc {
 		swap(a.nwfilter, b.nwfilter);
 		swap(a.login_username, b.login_username);
 		swap(a.delete_time, b.delete_time);
+		swap(a.interface_model_type, b.interface_model_type);
 		swap(a.__isset, b.__isset);
 	}
 
@@ -486,6 +505,7 @@ namespace dbc {
 		nwfilter = other18.nwfilter;
 		login_username = other18.login_username;
 		delete_time = other18.delete_time;
+		interface_model_type = other18.interface_model_type;
 		__isset = other18.__isset;
 	}
 	db_task_info& db_task_info::operator=(const db_task_info& other19) {
@@ -506,6 +526,7 @@ namespace dbc {
 		nwfilter = other19.nwfilter;
 		login_username = other19.login_username;
 		delete_time = other19.delete_time;
+		interface_model_type = other19.interface_model_type;
 		__isset = other19.__isset;
 		return *this;
 	}
@@ -529,6 +550,7 @@ namespace dbc {
 		out << ", " << "nwfilter="; (__isset.nwfilter ? (out << to_string(nwfilter)) : (out << "<null>"));
 		out << ", " << "login_username="; (__isset.login_username ? (out << to_string(login_username)) : (out << "<null>"));
 		out << ", " << "delete_time="; (__isset.delete_time ? (out << to_string(delete_time)) : (out << "<null>"));
+		out << ", " << "interface_model_type="; (__isset.interface_model_type ? (out << to_string(interface_model_type)) : (out << "<null>"));
 		out << ")";
 	}
 

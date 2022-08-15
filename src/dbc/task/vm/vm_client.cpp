@@ -137,6 +137,7 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
     const std::string& vedio_pci, const std::string& disk_system,
     const std::string& disk_data, int32_t vnc_port, const std::string& vnc_pwd,
     const std::vector<std::string>& multicast, const std::string& bridge_name,
+    const std::string& interface_model_type,
     const std::string& bios_mode, bool is_windows = false)
 {
     tinyxml2::XMLDocument doc;
@@ -468,7 +469,7 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
         bridge_source_node->SetAttribute("mode", "bridge");
 		bridge_node->LinkEndChild(bridge_source_node);
 		tinyxml2::XMLElement* bridge_model_node = doc.NewElement("model");
-		bridge_model_node->SetAttribute("type", "e1000");
+		bridge_model_node->SetAttribute("type", interface_model_type.c_str());
 		bridge_node->LinkEndChild(bridge_model_node);
 		dev_node->LinkEndChild(bridge_node);
     }
@@ -845,6 +846,9 @@ int32_t VmClient::CreateDomain(const std::shared_ptr<TaskInfo>& taskinfo) {
     TASK_LOG_INFO(domain_name, "create domain with vga_pci: " << vga_pci << ", cpu: " << cpuNumTotal
         << ", mem: " << memoryTotal << "KB, uuid: " << buf_uuid);
 
+    TASK_LOG_INFO(domain_name, "bios mode: " << taskinfo->getBiosMode()
+        << ", operation system: " << taskinfo->getOperationSystem());
+
     std::map<std::string, std::shared_ptr<DiskInfo>> mpdisks;
     std::string disk_vda, disk_vdb;
     if (taskinfo->getBiosMode() != "pxe") {
@@ -893,6 +897,7 @@ int32_t VmClient::CreateDomain(const std::shared_ptr<TaskInfo>& taskinfo) {
         vga_pci, disk_vda, disk_vdb,
         taskinfo->getVncPort(), taskinfo->getVncPassword(),
         taskinfo->getMulticast(), bridge_name,
+        taskinfo->getInterfaceModelType(),
         taskinfo->getBiosMode(),
         isWindowsOS(taskinfo->getOperationSystem()));
 

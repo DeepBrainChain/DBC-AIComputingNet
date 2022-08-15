@@ -67,6 +67,9 @@ struct CreateTaskParams {
 	std::string public_ip;
 	//安全组，只有设置了公网ip才会使用
 	std::vector<std::string> nwfilter;
+
+    // interface model type
+    std::string interface_model_type;
 };
 
 class TaskManager : public Singleton<TaskManager> {

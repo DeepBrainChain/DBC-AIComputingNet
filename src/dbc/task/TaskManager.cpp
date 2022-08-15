@@ -588,6 +588,7 @@ FResult TaskManager::createTask(const std::string& wallet,
     taskinfo->setMemSize(create_params.mem_size);
     taskinfo->setVncPort(create_params.vnc_port);
     taskinfo->setVncPassword(create_params.vnc_password);
+    taskinfo->setInterfaceModelType(create_params.interface_model_type);
     taskinfo->setTaskStatus(TaskStatus::TS_Task_Creating);
 	// vda root backfile
 	std::string vda_backfile = "/data/" + create_params.image_name;
@@ -666,7 +667,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
         operation_system, bios_mode,
         s_ssh_port, s_rdp_port, s_vnc_port,
         s_gpu_count, s_cpu_cores, s_mem_size, s_disk_size, data_file_name, 
-        network_name, public_ip;
+        network_name, public_ip, interface_model_type;
     std::vector<std::string> custom_ports, multicast, nwfilter;
 
     std::string task_id;
@@ -974,6 +975,14 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
             }
         }
     }
+
+    // interface model type
+    JSON_PARSE_STRING(doc, "interface_model_type", interface_model_type);
+    if (interface_model_type.empty()) {
+        interface_model_type = "virtio";
+    } else if (interface_model_type != "e1000" && interface_model_type != "rtl8139") {
+        return FResult(ERR_ERROR, "invalid interface model type");
+    }
     
     // password
     login_password = vnc_password = genpwd();
@@ -1008,6 +1017,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     params.network_name = network_name;
     params.public_ip = public_ip;
     params.nwfilter = nwfilter;
+    params.interface_model_type = interface_model_type;
 
     return FResultOk;
 }
