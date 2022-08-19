@@ -39,7 +39,7 @@ struct global_fixture
 
     global_fixture() {
         instance() = this;
-        std::cout << "command format: snapshot_test -- [domain name]" << std::endl;
+        std::cout << "command format: monitor_test -- [domain name]" << std::endl;
         std::cout << "开始准备测试数据------->" << std::endl;
         // BOOST_REQUIRE(vir_helper_.openConnect(qemu_url));
     }
@@ -54,13 +54,14 @@ BOOST_GLOBAL_FIXTURE(global_fixture);
 struct assign_fixture
 {
     assign_fixture() {
-        std::cout << "suit setup\n";
         domain_name_ = default_domain_name;
 
         using namespace boost::unit_test;
         if (framework::master_test_suite().argc > 1) {
             domain_name_ = framework::master_test_suite().argv[1];
         }
+        std::cout << "suit setup of " <<
+            framework::current_test_case().full_name() << std::endl;
     }
     ~assign_fixture() {
         std::cout << "suit teardown\n";

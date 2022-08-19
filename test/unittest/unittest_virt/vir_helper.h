@@ -468,6 +468,45 @@ public:
 
   int getBlockJobInfo(const char *disk, virDomainBlockJobInfoPtr info, unsigned int flags);
 
+  /**
+   * @brief Query the CPU affinity setting of all emulator threads of domain, store it in cpumap.
+   * 
+   * @param cpumap  pointer to a bit map of real CPUs for all emulator threads of this domain (in 8-bit bytes) (OUT)
+   * There is only one cpumap for all emulator threads. Must not be NULL.
+   * @param maplen  the number of bytes in one cpumap, from 1 up to size of CPU map. Must be positive.
+   * @param flags   bitwise-OR of virDomainModificationImpact
+   * Must not be VIR_DOMAIN_AFFECT_LIVE and VIR_DOMAIN_AFFECT_CONFIG concurrently.
+   *
+   * @return 1 in case of success, 0 in case of no emulator threads are pined to pcpus, -1 in case of failure.
+   */
+  int getDomainEmulatorPinInfo(std::vector<unsigned char>& cpumap, int maplen, unsigned int flags);
+
+  int getDomainVcpuPinInfo(std::vector<unsigned char>& cpumaps, unsigned int maplen, unsigned int flags);
+
+  int getDomainVcpus(std::vector<virVcpuInfo>& info, std::vector<unsigned char>& cpumaps, unsigned int maplen);
+
+  int getDomainVcpusFlags(unsigned int flags = virDomainVcpuFlags::VIR_DOMAIN_VCPU_CURRENT);
+
+  int domainPinEmulator(unsigned char* cpumap, int maplen, unsigned int flags);
+
+  int domainPinVcpu(unsigned int vcpu, unsigned char* cpumap, int maplen);
+
+  int domainPinVcpuFlags(unsigned int vcpu, unsigned char* cpumap, int maplen, unsigned int flags);
+
+  /**
+   * @brief Enables/disables individual vcpus described by vcpumap in the hypervisor.
+   * Various hypervisor implementations may limit to operate on just 1 hotpluggable
+   *  entity (which may contain multiple vCPUs on certain platforms).
+   * Note that OSes and hypervisors may require vCPU 0 to stay online.
+   * 
+   * @param vcpumap  text representation of a bitmap of vcpus to set
+   * @param state    0 to disable/1 to enable cpus described by vcpumap
+   * @param flags    bitwise-OR of virDomainModificationImpact
+   *
+   * @return 0 on success, -1 on error.
+   */
+  int setDomainVcpu(const char* vcpumap, int state, unsigned int flags);
+
 protected:
   std::shared_ptr<virDomain> domain_;
 };
@@ -615,6 +654,16 @@ public:
    * @return the number of network filters found or -1 in case of error
    */
   int listAllNWFilters(std::vector<std::shared_ptr<virNWFilterImpl>> &filters, unsigned int flags);
+
+  int getCPUModelNames(const char* arch, std::vector<std::string>& models);
+
+  std::string getCapabilities();
+
+  int getMaxVcpus(const char* type);
+
+  int getNodeInfo(virNodeInfoPtr info);
+
+  int getNodeCPUMap(std::vector<unsigned char>& cpumap, unsigned int& online);
 
 protected:
   void DefaultThreadFunc();

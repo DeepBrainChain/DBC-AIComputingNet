@@ -66,7 +66,7 @@ struct global_fixture
 
     global_fixture() {
         instance() = this;
-        std::cout << "command format: snapshot_test -- [domain name]" << std::endl;
+        std::cout << "command format: nwfilter_test -- [domain name]" << std::endl;
         std::cout << "开始准备测试数据------->" << std::endl;
         // BOOST_REQUIRE(vir_tool_.openConnect(qemu_url));
     }

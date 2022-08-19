@@ -35,3 +35,9 @@ add_executable(virt_connect_test virt_connect.cpp vir_helper.cpp)
 target_link_libraries(virt_connect_test
 ${Boost_LIBRARIES}
         -pthread -ldl -lz -ltinyxml2 -lvirt -lvirt-qemu -luuid)
+
+# virt_vcpu_test
+add_executable(virt_vcpu_test virt_vcpu.cpp vir_helper.cpp)
+target_link_libraries(virt_vcpu_test
+${Boost_LIBRARIES}
+        -pthread -ldl -lz -ltinyxml2 -lvirt -lvirt-qemu -luuid)

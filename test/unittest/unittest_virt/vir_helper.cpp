@@ -899,6 +899,59 @@ int virDomainImpl::getBlockJobInfo(const char *disk, virDomainBlockJobInfoPtr in
   return virDomainGetBlockJobInfo(domain_.get(), disk, info, flags);
 }
 
+int virDomainImpl::getDomainEmulatorPinInfo(std::vector<unsigned char>& cpumap, int maplen, unsigned int flags) {
+  if (!domain_ || maplen <= 0) return -1;
+  cpumap.resize(maplen);
+  return virDomainGetEmulatorPinInfo(domain_.get(), &cpumap[0], maplen, flags);
+}
+
+int virDomainImpl::getDomainVcpuPinInfo(std::vector<unsigned char>& cpumaps, unsigned int maplen, unsigned int flags) {
+  if (!domain_ || maplen <= 0) return -1;
+  int nums = getDomainVcpusFlags(virDomainVcpuFlags::VIR_DOMAIN_VCPU_CURRENT);
+  if (nums <= 0) return nums;
+  cpumaps.resize(nums * maplen);
+  return virDomainGetVcpuPinInfo(domain_.get(), nums, &cpumaps[0], maplen, flags);
+}
+
+int virDomainImpl::getDomainVcpus(std::vector<virVcpuInfo>& info, std::vector<unsigned char>& cpumaps, unsigned int maplen) {
+  if (!domain_ || maplen <= 0) return -1;
+  int nums = getDomainVcpusFlags(virDomainVcpuFlags::VIR_DOMAIN_VCPU_CURRENT);
+  if (nums <= 0) return nums;
+  info.resize(nums);
+  cpumaps.resize(nums * maplen);
+  int ret = virDomainGetVcpus(domain_.get(), &info[0], nums, &cpumaps[0], maplen);
+  return ret;
+}
+
+int virDomainImpl::getDomainVcpusFlags(unsigned int flags) {
+  if (!domain_) return -1;
+  return virDomainGetVcpusFlags(domain_.get(), flags);
+}
+
+int virDomainImpl::domainPinEmulator(unsigned char* cpumap, int maplen, unsigned int flags) {
+  if (!domain_ || !cpumap || maplen <= 0) return -1;
+  return virDomainPinEmulator(domain_.get(), cpumap, maplen, flags);
+}
+
+int virDomainImpl::domainPinVcpu(unsigned int vcpu, unsigned char* cpumap, int maplen) {
+  if (!domain_ || !cpumap || maplen <= 0) return -1;
+  int nums = getDomainVcpusFlags(virDomainVcpuFlags::VIR_DOMAIN_VCPU_CURRENT);
+  if (vcpu >= nums) return -1;
+  return virDomainPinVcpu(domain_.get(), vcpu, cpumap, maplen);
+}
+
+int virDomainImpl::domainPinVcpuFlags(unsigned int vcpu, unsigned char* cpumap, int maplen, unsigned int flags) {
+  if (!domain_ || !cpumap || maplen <= 0) return -1;
+  int nums = getDomainVcpusFlags(virDomainVcpuFlags::VIR_DOMAIN_VCPU_CURRENT);
+  if (vcpu >= nums) return -1;
+  return virDomainPinVcpuFlags(domain_.get(), vcpu, cpumap, maplen, flags);
+}
+
+int virDomainImpl::setDomainVcpu(const char* vcpumap, int state, unsigned int flags) {
+  if (!domain_ || !vcpumap) return -1;
+  return virDomainSetVcpu(domain_.get(), vcpumap, state, flags);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 virHelper::virHelper(bool enableEvent)
@@ -1171,6 +1224,62 @@ cleanup:
   if (nwfilters)
     free(nwfilters);
   return filters_count;
+}
+
+int virHelper::getCPUModelNames(const char* arch, std::vector<std::string>& models) {
+  if (!conn_ || !arch) return -1;
+  int length = virConnectGetCPUModelNames(conn_.get(), arch, NULL, 0);
+  if (length <= 0) return length;
+  char** ms = (char**)malloc(sizeof(char*) * length);
+  if ((length = virConnectGetCPUModelNames(conn_.get(), arch, &ms, 0)) < 0)
+    goto cleanup;
+
+cleanup:
+  if (ms && length > 0) {
+    for (int i = 0; i < length; i++) {
+      models.push_back(ms[i]);
+      free(ms[i]);
+    }
+  }
+  if (ms) free(ms);
+  return length;
+}
+
+std::string virHelper::getCapabilities() {
+  std::string caps;
+  if (!conn_) return caps;
+  char* xml = virConnectGetCapabilities(conn_.get());
+  if (xml) {
+    caps = xml;
+    free(xml);
+  }
+  return caps;
+}
+
+int virHelper::getMaxVcpus(const char* type) {
+  if (!conn_ || !type) return -1;
+  return virConnectGetMaxVcpus(conn_.get(), type);
+}
+
+int virHelper::getNodeInfo(virNodeInfoPtr info) {
+  if (!conn_ || !info) return -1;
+  return virNodeGetInfo(conn_.get(), info);
+}
+
+int virHelper::getNodeCPUMap(std::vector<unsigned char>& cpumap, unsigned int& online) {
+  if (!conn_) return -1;
+  unsigned char* pmap = NULL;
+  int nums = virNodeGetCPUMap(conn_.get(), &pmap, &online, 0);
+  if (pmap && online > 0) {
+    int bytes = VIR_CPU_MAPLEN(online);
+    cpumap.resize(bytes);
+    std::copy(pmap, pmap + bytes, cpumap.begin());
+    // for (int i = 0; i < bytes; i++) {
+    //   cpumap.push_back(pmap[i]);
+    // }
+  }
+  if (pmap) free(pmap);
+  return nums;
 }
 
 void virHelper::DefaultThreadFunc() {
