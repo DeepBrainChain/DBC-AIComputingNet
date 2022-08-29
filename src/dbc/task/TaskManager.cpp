@@ -13,11 +13,17 @@
 #include "util/system_info.h"
 #include "config/conf_manager.h"
 #include "tinyxml2.h"
+#include "detail/cpu/CpuTuneManager.h"
 #include "detail/VxlanManager.h"
 #include "service/peer_request_service/p2p_lan_service.h"
 
 FResult TaskManager::init() {
     FResult fret = VmClient::instance().init();
+    if (fret.errcode != ERR_SUCCESS) {
+        return fret;
+    }
+
+    fret = CpuTuneManager::instance().Init();
     if (fret.errcode != ERR_SUCCESS) {
         return fret;
     }
@@ -196,6 +202,10 @@ void TaskManager::start_task(const std::string &task_id) {
         }
         update_task_iptable(task_id);
 		add_iptable_to_system(task_id);
+        std::vector<unsigned int> cpuset;
+        if (VmClient::instance().GetCpuTune(task_id, cpuset) > 0) {
+            CpuTuneManager::instance().UseCpus(cpuset);
+        }
 		TASK_LOG_INFO(task_id, "start task successful");
     }
 }
@@ -211,6 +221,10 @@ void TaskManager::close_task(const std::string &task_id) {
             TaskInfoManager::instance().update(taskinfo);
         }
 		remove_iptable_from_system(task_id);
+        std::vector<unsigned int> cpuset;
+        if (VmClient::instance().GetCpuTune(task_id, cpuset) > 0) {
+            CpuTuneManager::instance().UnuseCpus(cpuset);
+        }
 		TASK_LOG_INFO(task_id, "close task successful");
     }
 }
@@ -454,6 +468,11 @@ void TaskManager::delete_task(const std::string &task_id) {
     unsigned int undefineFlags = 0;
     int32_t hasNvram = VmClient::instance().IsDomainHasNvram(task_id);
     if (hasNvram > 0) undefineFlags |= VIR_DOMAIN_UNDEFINE_NVRAM;
+
+    // cputune
+    std::vector<unsigned int> cpuset;
+    if (VmClient::instance().GetCpuTune(task_id, cpuset) > 0)
+        CpuTuneManager::instance().UnuseCpus(cpuset);
 
     // undefine task
     VmClient::instance().DestroyAndUndefineDomain(task_id, undefineFlags);
@@ -1186,45 +1205,81 @@ FResult TaskManager::check_multicast(const std::vector<std::string>& multicast) 
             return FResult(ERR_ERROR, "multicast format: ip:port");
         }
 
-        boost::asio::ip::tcp::endpoint ep(boost::asio::ip::address_v4::from_string(vecSplit[0]), atoi(vecSplit[1]));
-        if (!ep.address().is_multicast()) {
+        boost::asio::ip::address addrip = boost::asio::ip::address_v4::from_string(vecSplit[0]);
+        if (!addrip.is_multicast()) {
             return FResult(ERR_ERROR, "address is not a multicast address");
+        }
+
+        port_validator port_vdr;
+        variable_value val_port(vecSplit[1], false);
+        if (!port_vdr.validate(val_port)) {
+            return FResult(ERR_ERROR, "invalid multicast port");
         }
     }
 
     return FResultOk;
 }
 
-bool TaskManager::allocate_cpu(int32_t& total_cores, int32_t& sockets, int32_t& cores_per_socket, int32_t& threads) {
+bool TaskManager::allocate_cpu(int32_t& total_cores, int32_t& sockets,
+        int32_t& cores_per_socket, int32_t& threads, const std::string& exclude_task_id) {
     int32_t nTotalCores = SystemInfo::instance().GetCpuInfo().cores;
     if (total_cores > nTotalCores) return false;
+
+    int32_t nUsedCores = 0;
+    auto taskinfos = TaskInfoMgr::instance().getAllTaskInfos();
+    for (auto& iter : taskinfos) {
+        if (iter.first == exclude_task_id) continue;
+        virDomainState st = VmClient::instance().GetDomainStatus(iter.first);
+        if (st == VIR_DOMAIN_RUNNING) {
+            nUsedCores += iter.second->getTotalCores();
+        }
+    }
+    if (total_cores + nUsedCores > nTotalCores) return false;
 
     int32_t nSockets = SystemInfo::instance().GetCpuInfo().physical_cpus;
     int32_t nCores = SystemInfo::instance().GetCpuInfo().physical_cores_per_cpu;
     int32_t nThreads = SystemInfo::instance().GetCpuInfo().threads_per_cpu;
-    int32_t ret_total_cores = total_cores;
-    threads = nThreads;
 
-    for (int n = 1; n <= nSockets; n++) {
-        int32_t tmp_cores = total_cores;
-        while (tmp_cores % (n * threads) != 0)
-            tmp_cores += 1;
-
-        if (tmp_cores / (n * threads) <= nCores) {
-            sockets = n;
-            cores_per_socket = tmp_cores / (n * threads);
-            ret_total_cores = tmp_cores;
-            break;
-        }
+    if (total_cores % (nThreads * nSockets) == 0 && total_cores > nCores * nThreads) {
+        sockets = nSockets;
+        threads = nThreads;
+    } else {
+        sockets = 1;
     }
 
-    if (ret_total_cores == sockets * cores_per_socket * threads) {
-        total_cores = ret_total_cores;
+    if (total_cores % (sockets * nThreads) == 0) {
+        threads = nThreads;
+    } else {
+        threads = 1;
+    }
+
+    cores_per_socket = total_cores / (sockets * threads);
+    if (sockets * cores_per_socket * threads == total_cores)
         return true;
-    }
-    else {
-        return false;
-    }
+    return false;
+    // int32_t ret_total_cores = total_cores;
+    // threads = nThreads;
+
+    // for (int n = 1; n <= nSockets; n++) {
+    //     int32_t tmp_cores = total_cores;
+    //     while (tmp_cores % (n * threads) != 0)
+    //         tmp_cores += 1;
+
+    //     if (tmp_cores / (n * threads) <= nCores) {
+    //         sockets = n;
+    //         cores_per_socket = tmp_cores / (n * threads);
+    //         ret_total_cores = tmp_cores;
+    //         break;
+    //     }
+    // }
+
+    // if (ret_total_cores == sockets * cores_per_socket * threads) {
+    //     total_cores = ret_total_cores;
+    //     return true;
+    // }
+    // else {
+    //     return false;
+    // }
 }
 
 bool TaskManager::allocate_mem(int64_t mem_size_k) {
@@ -1299,13 +1354,36 @@ FResult TaskManager::startTask(const std::string& wallet, const std::string &tas
     }
 }
 
-FResult TaskManager::check_cpu(int32_t sockets, int32_t cores, int32_t threads) {
+FResult TaskManager::check_cpu(int32_t sockets, int32_t cores, int32_t threads,
+        const std::string& task_id) {
     int32_t cpu_cores = sockets * cores * threads;
     if (cpu_cores <= 0 || cpu_cores > SystemInfo::instance().GetCpuInfo().cores ||
         sockets > SystemInfo::instance().GetCpuInfo().physical_cpus ||
         cores > SystemInfo::instance().GetCpuInfo().physical_cores_per_cpu ||
         threads > SystemInfo::instance().GetCpuInfo().threads_per_cpu) {
         return FResult(ERR_ERROR, "check cpu failed");
+    }
+
+    std::vector<unsigned char> cpumap;
+    cpumap.resize(CpuTuneManager::instance().GetCpuMapLength());
+    auto taskinfos = TaskInfoMgr::instance().getAllTaskInfos();
+    for (auto& iter : taskinfos) {
+        if (iter.first == task_id) continue;
+        virDomainState st = VmClient::instance().GetDomainStatus(iter.first);
+        if (st == VIR_DOMAIN_RUNNING) {
+            std::vector<unsigned int> cpuset;
+            VmClient::instance().GetCpuTune(iter.first, cpuset);
+            for (const auto& cpu : cpuset) {
+                VIR_USE_CPU(&cpumap[0], cpu);
+            }
+        }
+    }
+
+    std::vector<unsigned int> cpuset;
+    VmClient::instance().GetCpuTune(task_id, cpuset);
+    for (const auto& cpu : cpuset) {
+        if (VIR_CPU_USED(&cpumap[0], cpu))
+            return FResult(ERR_ERROR, "check cpu tune failed");
     }
 
     return FResultOk;
@@ -1367,9 +1445,9 @@ FResult TaskManager::check_resource(const std::shared_ptr<TaskInfo>& taskinfo) {
 
     // cpu
     FResult fret = check_cpu(taskinfo->getCpuSockets(), taskinfo->getCpuCoresPerSocket(),
-        taskinfo->getCpuThreadsPerCore());
+        taskinfo->getCpuThreadsPerCore(), taskinfo->getTaskId());
     if (fret.errcode != ERR_SUCCESS) {
-        return FResult(ERR_ERROR, "check cpu failed");
+        return fret;
     }
 
     // gpu
@@ -1775,13 +1853,13 @@ FResult TaskManager::modifyTask(const std::string& wallet,
             }
         }
     }
-    
+
     std::string s_new_cpu_cores;
     JSON_PARSE_STRING(doc, "new_cpu_cores", s_new_cpu_cores);
     if (!s_new_cpu_cores.empty()) {
         int32_t new_cpu_cores = atoi(s_new_cpu_cores);
 		int32_t cpu_sockets = 1, cpu_cores = 1, cpu_threads = 2;
-		if (allocate_cpu(new_cpu_cores, cpu_sockets, cpu_cores, cpu_threads)) {
+		if (allocate_cpu(new_cpu_cores, cpu_sockets, cpu_cores, cpu_threads, task_id)) {
             if (cpu_sockets != taskinfoPtr->getCpuSockets() ||
                 cpu_cores != taskinfoPtr->getCpuCoresPerSocket() ||
                 cpu_threads != taskinfoPtr->getCpuThreadsPerCore()) {
@@ -1790,6 +1868,10 @@ FResult TaskManager::modifyTask(const std::string& wallet,
                 taskinfoPtr->setCpuSockets(cpu_sockets);
                 taskinfoPtr->setCpuCoresPerSocket(cpu_cores);
                 taskinfoPtr->setCpuThreadsPerCore(cpu_threads);
+                std::vector<unsigned int> cpuset;
+                if (VmClient::instance().GetCpuTune(task_id, cpuset) > 0) {
+                    CpuTuneManager::instance().UnuseCpus(cpuset);
+                }
                 TASK_LOG_INFO(task_id, "modify task new cpu cores: " << s_new_cpu_cores
                                         << ", sockets: " << cpu_sockets
                                         << ", cores per socket: " << cpu_cores
@@ -1839,6 +1921,10 @@ FResult TaskManager::modifyTask(const std::string& wallet,
             return fret;
         }
         TaskInfoMgr::instance().update(taskinfoPtr);
+        std::vector<unsigned int> cpuset;
+        if (VmClient::instance().GetCpuTune(task_id, cpuset) > 0) {
+            CpuTuneManager::instance().UseCpus(cpuset);
+        }
         TASK_LOG_INFO(task_id, "redefine task sucessful");
     }
 
@@ -2489,6 +2575,11 @@ void TaskManager::process_create_task(const std::shared_ptr<TaskEvent>& ev) {
 		}
     }
 
+    std::vector<unsigned int> cpuset;
+    if (VmClient::instance().GetCpuTune(ev->task_id, cpuset) > 0) {
+        CpuTuneManager::instance().UseCpus(cpuset);
+    }
+
     if (taskinfo->getTaskStatus() == TaskStatus::TS_Task_Creating) {
         taskinfo->setTaskStatus(TaskStatus::TS_Task_Running);
     }
@@ -2608,6 +2699,12 @@ void TaskManager::process_start_task(const std::shared_ptr<TaskEvent>& ev) {
         }
         update_task_iptable(ev->task_id);
         add_iptable_to_system(ev->task_id);
+
+        std::vector<unsigned int> cpuset;
+        if (VmClient::instance().GetCpuTune(ev->task_id, cpuset) > 0) {
+            CpuTuneManager::instance().UseCpus(cpuset);
+        }
+
         TASK_LOG_INFO(ev->task_id, "start task successful");
     }
 }
@@ -2631,6 +2728,11 @@ void TaskManager::process_shutdown_task(const std::shared_ptr<TaskEvent>& ev) {
         }
         remove_iptable_from_system(ev->task_id);
         TASK_LOG_INFO(ev->task_id, "shutdown task successful");
+
+        std::vector<unsigned int> cpuset;
+        if (VmClient::instance().GetCpuTune(ev->task_id, cpuset) > 0) {
+            CpuTuneManager::instance().UnuseCpus(cpuset);
+        }
 
         std::string bios_mode = taskinfo->getBiosMode();
         if (bios_mode != "pxe") {
@@ -2676,6 +2778,11 @@ void TaskManager::process_poweroff_task(const std::shared_ptr<TaskEvent>& ev) {
 		remove_iptable_from_system(ev->task_id);
 		TASK_LOG_INFO(ev->task_id, "poweroff task successful");
 
+        std::vector<unsigned int> cpuset;
+        if (VmClient::instance().GetCpuTune(ev->task_id, cpuset) > 0) {
+            CpuTuneManager::instance().UnuseCpus(cpuset);
+        }
+
 		std::string bios_mode = taskinfo->getBiosMode();
         if (bios_mode != "pxe") {
             // vda root backfile
@@ -2720,6 +2827,10 @@ void TaskManager::process_restart_task(const std::shared_ptr<TaskEvent>& ev) {
             }
             update_task_iptable(ev->task_id);
             add_iptable_to_system(ev->task_id);
+            std::vector<unsigned int> cpuset;
+            if (VmClient::instance().GetCpuTune(ev->task_id, cpuset) > 0) {
+                CpuTuneManager::instance().UseCpus(cpuset);
+            }
             TASK_LOG_INFO(ev->task_id, "restart task successful");
         }
     } else if (vm_status == VIR_DOMAIN_RUNNING) {
@@ -2735,6 +2846,10 @@ void TaskManager::process_restart_task(const std::shared_ptr<TaskEvent>& ev) {
 			}
             update_task_iptable(ev->task_id);
             add_iptable_to_system(ev->task_id);
+            std::vector<unsigned int> cpuset;
+            if (VmClient::instance().GetCpuTune(ev->task_id, cpuset) > 0) {
+                CpuTuneManager::instance().UseCpus(cpuset);
+            }
             TASK_LOG_INFO(ev->task_id, "restart task successful");
         }
     }
@@ -2761,6 +2876,10 @@ void TaskManager::process_force_reboot_task(const std::shared_ptr<TaskEvent>& ev
             }
             update_task_iptable(ev->task_id);
             add_iptable_to_system(ev->task_id);
+            std::vector<unsigned int> cpuset;
+            if (VmClient::instance().GetCpuTune(ev->task_id, cpuset) > 0) {
+                CpuTuneManager::instance().UseCpus(cpuset);
+            }
             TASK_LOG_INFO(ev->task_id, "restart task successful");
         }
     } else /*if (vm_status == VIR_DOMAIN_RUNNING)*/ {
@@ -2778,6 +2897,10 @@ void TaskManager::process_force_reboot_task(const std::shared_ptr<TaskEvent>& ev
 				}
                 update_task_iptable(ev->task_id);
                 add_iptable_to_system(ev->task_id);
+                std::vector<unsigned int> cpuset;
+                if (VmClient::instance().GetCpuTune(ev->task_id, cpuset) > 0) {
+                    CpuTuneManager::instance().UseCpus(cpuset);
+                }
                 TASK_LOG_INFO(ev->task_id, "restart task successful");
             } else {
 				if (taskinfo->getTaskStatus() == TaskStatus::TS_Task_Restarting) {

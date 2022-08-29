@@ -9,6 +9,7 @@
 #include "message/vm_task_result_types.h"
 #include "util/utils.h"
 #include <libvirt/libvirt-qemu.h>
+#include "task/detail/cpu/CpuTuneManager.h"
 #include "task/detail/VxlanManager.h"
 #include "task/detail/disk/TaskDiskManager.h"
 #include "task/detail/gpu/TaskGpuManager.h"
@@ -172,6 +173,33 @@ static std::string createXmlStr(const std::string& uuid, const std::string& doma
     vcpu_node->SetAttribute("placement", "static");
     vcpu_node->SetText(std::to_string(cpunum).c_str());
     root->LinkEndChild(vcpu_node);
+
+    // cpu tune
+    std::vector<unsigned int> tunable_cpus;
+    if (CpuTuneManager::instance().TunableCpus(cpunum, tunable_cpus)) {
+        tinyxml2::XMLElement* cputune_node = doc.NewElement("cputune");
+        int32_t i = 0, j = 0;
+        std::string first_cpuset;
+        while (i < cpunum && j < tunable_cpus.size()) {
+            std::string cpuset = std::to_string(tunable_cpus[j]);
+            if (CpuTuneManager::instance().IsHyperThreading()) {
+                cpuset.append("," + std::to_string(tunable_cpus[j + 1]));
+                if (i % 2 == 1) j += 2;
+            } else {
+                j++;
+            }
+            if (first_cpuset.empty()) first_cpuset = cpuset;
+            tinyxml2::XMLElement* vcpu_node = doc.NewElement("vcpupin");
+            vcpu_node->SetAttribute("vcpu", std::to_string(i).c_str());
+            vcpu_node->SetAttribute("cpuset", cpuset.c_str());
+            cputune_node->LinkEndChild(vcpu_node);
+            ++i;
+        }
+        tinyxml2::XMLElement* vcpu_emulatorpin = doc.NewElement("emulatorpin");
+        vcpu_emulatorpin->SetAttribute("cpuset", first_cpuset.c_str());
+        cputune_node->LinkEndChild(vcpu_emulatorpin);
+        root->LinkEndChild(cputune_node);
+    }
 
     // <os>
     tinyxml2::XMLElement* os_node = doc.NewElement("os");
@@ -828,23 +856,26 @@ int32_t VmClient::CreateDomain(const std::shared_ptr<TaskInfo>& taskinfo) {
             vga_pci += it2 + "|";
         }
     }
-    LOG_INFO << "vga_pci: " << vga_pci;
+    TASK_LOG_INFO(domain_name, "vga_pci: " << vga_pci);
 
     // cpu
-    long cpuNumTotal = taskinfo->getTotalCores();
-    LOG_INFO << "cpu: " << cpuNumTotal;
+    int32_t vcpus = taskinfo->getTotalCores();
+    int32_t sockets = taskinfo->getCpuSockets();
+    int32_t cores = taskinfo->getCpuCoresPerSocket();
+    int32_t threads = taskinfo->getCpuThreadsPerCore();
+    TASK_LOG_INFO(domain_name, "vcpus: " << vcpus << ", sockets: " << sockets
+        << ", cores: " << cores << ", threads: " << threads);
 
     // mem
     int64_t memoryTotal = taskinfo->getMemSize(); // KB
-    LOG_INFO << "mem: " << memoryTotal << "KB";
+    TASK_LOG_INFO(domain_name, "mem: " << memoryTotal << "KB");
 
     // uuid
     uuid_t uu;
     char buf_uuid[1024] = {0};
     uuid_generate(uu);
     uuid_unparse(uu, buf_uuid);
-    TASK_LOG_INFO(domain_name, "create domain with vga_pci: " << vga_pci << ", cpu: " << cpuNumTotal
-        << ", mem: " << memoryTotal << "KB, uuid: " << buf_uuid);
+    TASK_LOG_INFO(domain_name, "uuid: " << buf_uuid);
 
     TASK_LOG_INFO(domain_name, "bios mode: " << taskinfo->getBiosMode()
         << ", operation system: " << taskinfo->getOperationSystem());
@@ -892,8 +923,7 @@ int32_t VmClient::CreateDomain(const std::shared_ptr<TaskInfo>& taskinfo) {
     TASK_LOG_INFO(domain_name, "vnc port: " << taskinfo->getVncPort() << ", password: " << taskinfo->getVncPassword());
 
     std::string xml_content = createXmlStr(buf_uuid, domain_name,
-        memoryTotal, cpuNumTotal, 
-        taskinfo->getCpuSockets(), taskinfo->getCpuCoresPerSocket(), taskinfo->getCpuThreadsPerCore(),
+        memoryTotal, vcpus, sockets, cores, threads,
         vga_pci, disk_vda, disk_vdb,
         taskinfo->getVncPort(), taskinfo->getVncPassword(),
         taskinfo->getMulticast(), bridge_name,
@@ -1250,6 +1280,7 @@ FResult VmClient::RedefineDomain(const std::shared_ptr<TaskInfo>& taskinfo) {
     int32_t cpuSockets = taskinfo->getCpuSockets();
     int32_t cpuCores = taskinfo->getCpuCoresPerSocket();
     int32_t cpuThreads = taskinfo->getCpuThreadsPerCore();
+    int32_t oldCpuNum = 0;
  
 	// new mem
 	int64_t memoryTotal = taskinfo->getMemSize(); // KB
@@ -1277,8 +1308,39 @@ FResult VmClient::RedefineDomain(const std::shared_ptr<TaskInfo>& taskinfo) {
         // cpu
 		tinyxml2::XMLElement* ele_vcpu = root->FirstChildElement("vcpu");
 		if (ele_vcpu != nullptr) {
+            oldCpuNum = ele_vcpu->UnsignedText();
             ele_vcpu->SetText(cpuNumTotal);
 		}
+        // cpu tune
+        if (cpuNumTotal != oldCpuNum) {
+            tinyxml2::XMLElement* ele_cputune = root->FirstChildElement("cputune");
+            ele_cputune->DeleteChildren();
+
+            std::vector<unsigned int> tunable_cpus;
+            if (CpuTuneManager::instance().TunableCpus(cpuNumTotal, tunable_cpus)) {
+                int32_t i = 0, j = 0;
+                std::string first_cpuset;
+                while (i < cpuNumTotal && j < tunable_cpus.size()) {
+                    std::string cpuset = std::to_string(tunable_cpus[j]);
+                    if (CpuTuneManager::instance().IsHyperThreading()) {
+                        cpuset.append("," + std::to_string(tunable_cpus[j + 1]));
+                        if (i % 2 == 1) j += 2;
+                    } else {
+                        j++;
+                    }
+                    if (first_cpuset.empty()) first_cpuset = cpuset;
+                    tinyxml2::XMLElement* vcpu_node = doc.NewElement("vcpupin");
+                    vcpu_node->SetAttribute("vcpu", std::to_string(i).c_str());
+                    vcpu_node->SetAttribute("cpuset", cpuset.c_str());
+                    ele_cputune->LinkEndChild(vcpu_node);
+                    ++i;
+                }
+                tinyxml2::XMLElement* vcpu_emulatorpin = doc.NewElement("emulatorpin");
+                vcpu_emulatorpin->SetAttribute("cpuset", first_cpuset.c_str());
+                ele_cputune->LinkEndChild(vcpu_emulatorpin);
+            }
+        }
+        // cpu topology
 		tinyxml2::XMLElement* ele_cpu = root->FirstChildElement("cpu");
 		if (ele_cpu != nullptr) {
             tinyxml2::XMLElement* ele_topology = ele_cpu->FirstChildElement("topology");
@@ -1794,6 +1856,71 @@ int32_t VmClient::GetDomainInterfaceAddress(const std::string& domain_name, std:
         virDomainFree(domainPtr);
     }
     return ifaces_count;
+}
+
+FResult VmClient::ListDomainInterface(const std::string& domain_name, std::vector<domainInterface>& interfaces) {
+	FResult ret = FResultOk;
+	virDomainPtr domainPtr = nullptr;
+	do {
+		domainPtr = virDomainLookupByName(m_connPtr, domain_name.c_str());
+		if (domainPtr == nullptr) {
+			ret = FResult(ERR_ERROR, "task not exist");
+			break;
+		}
+
+		char* pContent = virDomainGetXMLDesc(domainPtr, VIR_DOMAIN_XML_SECURE);
+		tinyxml2::XMLDocument doc;
+		tinyxml2::XMLError err = doc.Parse(pContent);
+		if (err != tinyxml2::XML_SUCCESS) {
+			ret = FResult(ERR_ERROR, "task parse domain xml failed");
+			break;
+		}
+		tinyxml2::XMLElement* root = doc.RootElement();
+		tinyxml2::XMLElement* ele_devices = root->FirstChildElement("devices");
+		tinyxml2::XMLElement* ele_interface = ele_devices->LastChildElement("interface");
+        while (ele_interface) {
+            domainInterface domain_interface;
+
+            std::string interface_type = ele_interface->Attribute("type");
+            if (interface_type == "network") {
+                tinyxml2::XMLElement* ele_source = ele_interface->FirstChildElement("source");
+                std::string i_name = ele_source->Attribute("network");
+                
+				tinyxml2::XMLElement* ele_model = ele_interface->FirstChildElement("model");
+				std::string i_type = ele_model->Attribute("type");
+
+				tinyxml2::XMLElement* ele_mac = ele_interface->FirstChildElement("mac");
+				std::string i_mac = ele_mac->Attribute("address");
+
+                domain_interface.name = i_name;
+                domain_interface.type = i_type;
+                domain_interface.mac = i_mac;
+                interfaces.push_back(domain_interface);
+            }
+            else if (interface_type == "bridge") {
+				tinyxml2::XMLElement* ele_source = ele_interface->FirstChildElement("source");
+				std::string i_name = ele_source->Attribute("bridge");
+
+				tinyxml2::XMLElement* ele_model = ele_interface->FirstChildElement("model");
+				std::string i_type = ele_model->Attribute("type");
+
+				tinyxml2::XMLElement* ele_mac = ele_interface->FirstChildElement("mac");
+				std::string i_mac = ele_mac->Attribute("address");
+
+				domain_interface.name = i_name;
+				domain_interface.type = i_type;
+				domain_interface.mac = i_mac;
+                interfaces.push_back(domain_interface);
+            }
+            
+            ele_interface = ele_interface->NextSiblingElement("interface");
+        }
+	} while (0);
+
+	if (domainPtr != nullptr)
+		virDomainFree(domainPtr);
+
+	return ret;
 }
 
 FResult VmClient::SetDomainUserPassword(const std::string &domain_name, const std::string &username, const std::string &pwd, int max_retry_count) {
@@ -2342,69 +2469,104 @@ int32_t VmClient::UndefineNWFilter(const std::string& nwfilter_name) {
     return ret;
 }
 
-FResult VmClient::ListDomainInterface(const std::string& domain_name, std::vector<domainInterface>& interfaces) {
-	FResult ret = FResultOk;
-	virDomainPtr domainPtr = nullptr;
-	do {
-		domainPtr = virDomainLookupByName(m_connPtr, domain_name.c_str());
-		if (domainPtr == nullptr) {
-			ret = FResult(ERR_ERROR, "task not exist");
-			break;
-		}
+std::string VmClient::GetCapabilities() {
+    std::string xml;
+    if (m_connPtr == nullptr) {
+        LOG_ERROR << " connPtr is nullptr";
+        return xml;
+    }
 
-		char* pContent = virDomainGetXMLDesc(domainPtr, VIR_DOMAIN_XML_SECURE);
-		tinyxml2::XMLDocument doc;
-		tinyxml2::XMLError err = doc.Parse(pContent);
-		if (err != tinyxml2::XML_SUCCESS) {
-			ret = FResult(ERR_ERROR, "task parse domain xml failed");
-			break;
-		}
-		tinyxml2::XMLElement* root = doc.RootElement();
-		tinyxml2::XMLElement* ele_devices = root->FirstChildElement("devices");
-		tinyxml2::XMLElement* ele_interface = ele_devices->LastChildElement("interface");
-        while (ele_interface) {
-            domainInterface domain_interface;
+    char* content = virConnectGetCapabilities(m_connPtr);
+    if (!content) {
+        LOG_ERROR << "connect get capabilities error";
+        return xml;
+    }
 
-            std::string interface_type = ele_interface->Attribute("type");
-            if (interface_type == "network") {
-                tinyxml2::XMLElement* ele_source = ele_interface->FirstChildElement("source");
-                std::string i_name = ele_source->Attribute("network");
-                
-				tinyxml2::XMLElement* ele_model = ele_interface->FirstChildElement("model");
-				std::string i_type = ele_model->Attribute("type");
+    xml = content;
+    free(content);
+    return xml;
+}
 
-				tinyxml2::XMLElement* ele_mac = ele_interface->FirstChildElement("mac");
-				std::string i_mac = ele_mac->Attribute("address");
+int32_t VmClient::GetCpuTune(const std::string& domain_name, std::vector<unsigned int>& cpuset) {
+    int32_t iRet = -1;
+    cpuset.clear();
+    // 方法一：使用virDomainGetVcpuPinInfo查询cpu的绑定拓扑结构
+    // if (m_connPtr == nullptr) {
+    //     LOG_ERROR << " connPtr is nullptr";
+    //     return iRet;
+    // }
 
-                domain_interface.name = i_name;
-                domain_interface.type = i_type;
-                domain_interface.mac = i_mac;
-                interfaces.push_back(domain_interface);
-            }
-            else if (interface_type == "bridge") {
-				tinyxml2::XMLElement* ele_source = ele_interface->FirstChildElement("source");
-				std::string i_name = ele_source->Attribute("bridge");
+    // virDomainPtr domain_ptr = nullptr;
+    // do {
+    //     domain_ptr = virDomainLookupByName(m_connPtr, domain_name.c_str());
+    //     if (domain_ptr == nullptr) {
+    //         LOG_ERROR << " lookup domain:" << domain_name << " is nullptr";
+    //         break;
+    //     }
 
-				tinyxml2::XMLElement* ele_model = ele_interface->FirstChildElement("model");
-				std::string i_type = ele_model->Attribute("type");
+    //     int nums = virDomainGetVcpusFlags(domain_ptr, virDomainVcpuFlags::VIR_DOMAIN_VCPU_CURRENT);
+    //     if (nums <= 0) {
+    //         iRet = nums;
+    //         TASK_LOG_ERROR(domain_name, " get domain vcpus flags failed " << nums);
+    //         break;
+    //     }
 
-				tinyxml2::XMLElement* ele_mac = ele_interface->FirstChildElement("mac");
-				std::string i_mac = ele_mac->Attribute("address");
+    //     unsigned int maplen = CpuTuneManager::instance().GetCpuMapLength();
+    //     if (maplen <= 0) {
+    //         iRet = -1;
+    //         TASK_LOG_ERROR(domain_name, " get cpu map length failed");
+    //         break;
+    //     }
 
-				domain_interface.name = i_name;
-				domain_interface.type = i_type;
-				domain_interface.mac = i_mac;
-                interfaces.push_back(domain_interface);
-            }
-            
-            ele_interface = ele_interface->NextSiblingElement("interface");
+    //     std::vector<unsigned char> cpumaps;
+    //     cpumaps.resize(nums * maplen);
+    //     memset(&cpumaps[0], 0, nums * maplen);
+    //     unsigned int flags = virDomainModificationImpact::VIR_DOMAIN_AFFECT_CURRENT;
+    //     if (virDomainIsActive(domain_ptr))
+    //         flags |= virDomainModificationImpact::VIR_DOMAIN_AFFECT_LIVE;
+
+    //     iRet = virDomainGetVcpuPinInfo(domain_ptr, nums, &cpumaps[0], maplen, flags);
+    //     for (int i = 0; i < nums; i++) {
+    //         unsigned char* cpumap = VIR_GET_CPUMAP(&cpumaps[0], maplen, i);
+    //     }
+    // } while (0);
+
+    // if (domain_ptr) {
+    //     virDomainFree(domain_ptr);
+    // }
+
+    // 方法二：查询虚拟机的定义
+    std::string xml = GetDomainXML(domain_name);
+    if (xml.empty()) {
+        TASK_LOG_ERROR(domain_name, "get domain xml failed");
+        return iRet;
+    }
+
+    tinyxml2::XMLDocument doc;
+    tinyxml2::XMLError err = doc.Parse(xml.c_str());
+    if (err != tinyxml2::XML_SUCCESS) {
+        TASK_LOG_ERROR(domain_name, "parse domain xml failed");
+        return iRet;
+    }
+
+    tinyxml2::XMLElement* root = doc.RootElement();
+    // cputune
+    tinyxml2::XMLElement* ele_cputune = root->FirstChildElement("cputune");
+    if (!ele_cputune) {
+        TASK_LOG_ERROR(domain_name, "can not find cputune node in domain xml");
+        return iRet;
+    }
+
+    tinyxml2::XMLElement* ele_vcpupin = ele_cputune->FirstChildElement("vcpupin");
+    while (ele_vcpupin) {
+        std::string vcpuset = ele_vcpupin->Attribute("cpuset");
+        std::vector<std::string> split = util::split(vcpuset, ",");
+        for (const auto& cpu : split) {
+            cpuset.push_back(atoi(cpu.c_str()));
         }
-	} while (0);
-
-	if (domainPtr != nullptr)
-		virDomainFree(domainPtr);
-
-	return ret;
+        ele_vcpupin = ele_vcpupin->NextSiblingElement("vcpupin");
+    }
+    return cpuset.size();
 }
 
 void VmClient::DefaultEventThreadFunc() {

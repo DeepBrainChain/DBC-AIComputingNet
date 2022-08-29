@@ -202,7 +202,9 @@ protected:
 
     FResult check_multicast(const std::vector<std::string>& multicast);
 
-    bool allocate_cpu(int32_t& total_cores, int32_t& sockets, int32_t& cores_per_socket, int32_t& threads);
+    bool allocate_cpu(int32_t& total_cores, int32_t& sockets,
+        int32_t& cores_per_socket, int32_t& threads,
+        const std::string& exclude_task_id = "");
 
     bool allocate_mem(int64_t mem_size_k);
 
@@ -212,7 +214,8 @@ protected:
     bool allocate_disk(int64_t disk_size_k);
 
     // 启动task时，检查资源
-    FResult check_cpu(int32_t sockets, int32_t cores, int32_t threads);
+    FResult check_cpu(int32_t sockets, int32_t cores, int32_t threads,
+        const std::string& task_id);
 
     FResult check_mem(int64_t mem_size_k);
 

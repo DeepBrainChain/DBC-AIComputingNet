@@ -99,10 +99,10 @@ public:
     std::string GetDomainLocalIP(const std::string &domain_name);
 
     int32_t GetDomainInterfaceAddress(const std::string& domain_name, std::vector<dbc::virDomainInterface> &difaces, unsigned int source = 0);
-    
-    int32_t IsDomainHasNvram(const std::string& domain_name);
 
     FResult ListDomainInterface(const std::string& domain_name, std::vector<domainInterface>& interfaces);
+
+    int32_t IsDomainHasNvram(const std::string& domain_name);
 
     // xml
     std::string GetDomainXML(const std::string& domain_name);
@@ -124,6 +124,11 @@ public:
     int32_t DefineNWFilter(const std::string& nwfilter_name, const std::vector<std::string>& nwfilters);
 
     int32_t UndefineNWFilter(const std::string& nwfilter_name);
+
+    // capabilities
+    std::string GetCapabilities();
+
+    int32_t GetCpuTune(const std::string& domain_name, std::vector<unsigned int>& cpuset);
 
 protected:
     void DefaultEventThreadFunc();
