@@ -6,6 +6,10 @@
 #include "util/httplib.h"
 #include "network/utils/net_address.h"
 
+namespace dbc {
+class db_rent_order;
+}
+
 struct CommitteeUploadInfo {
     std::string machine_id;
     std::string gpu_type;
@@ -46,11 +50,18 @@ public:
 
     bool in_verify_time(const std::string& node_id, const std::string& wallet);
 
-    int64_t request_rent_end(const std::string& node_id, const std::string &wallet);
+    // int64_t request_rent_end(const std::string& node_id, const std::string &wallet);
 
     void request_cur_renter(const std::string& node_id, std::string& renter, int64_t& rent_end);
 
     bool getCommitteeUploadInfo(const std::string& node_id, CommitteeUploadInfo& info);
+
+    std::shared_ptr<dbc::db_rent_order> getRentOrder(const std::string& node_id, const std::string& rent_order);
+
+    // 旧的整机租用方式不支持此接口，返回false。以此区别是否单卡租用
+    bool getRentOrderList(const std::string& node_id, std::set<std::string>& orders);
+
+    bool isMachineRenter(const std::string& node_id, const std::string& wallet);
 
 protected:
     chainScore getChainScore(const network::net_address& addr, int delta) const;

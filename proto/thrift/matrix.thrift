@@ -52,7 +52,8 @@ struct node_list_task_req_data {
   8: required i32 multisig_threshold,
   9: required list<multisig_sign_item> multisig_signs,
   10: required string session_id,
-  11: required string session_id_sign
+  11: required string session_id_sign,
+  12: optional string rent_order
 }
 
 struct node_list_task_req_body {
@@ -83,7 +84,8 @@ struct node_create_task_req_data {
   7: required i32 multisig_threshold,
   8: required list<multisig_sign_item> multisig_signs,
   9: required string session_id,
-  10: required string session_id_sign
+  10: required string session_id_sign,
+  11: optional string rent_order
 }
 
 struct node_create_task_req_body {
@@ -115,7 +117,8 @@ struct node_start_task_req_data {
   8: required i32 multisig_threshold,
   9: required list<multisig_sign_item> multisig_signs,
   10: required string session_id,
-  11: required string session_id_sign
+  11: required string session_id_sign,
+  12: optional string rent_order
 }
 
 struct node_start_task_req_body {
@@ -147,7 +150,8 @@ struct node_shutdown_task_req_data {
   8: required i32 multisig_threshold,
   9: required list<multisig_sign_item> multisig_signs,
   10: required string session_id,
-  11: required string session_id_sign
+  11: required string session_id_sign,
+  12: optional string rent_order
 }
 
 struct node_shutdown_task_req_body {
@@ -179,7 +183,8 @@ struct node_poweroff_task_req_data {
   8: required i32 multisig_threshold,
   9: required list<multisig_sign_item> multisig_signs,
   10: required string session_id,
-  11: required string session_id_sign
+  11: required string session_id_sign,
+  12: optional string rent_order
 }
 
 struct node_poweroff_task_req_body {
@@ -211,7 +216,8 @@ struct node_stop_task_req_data {
   8: required i32 multisig_threshold,
   9: required list<multisig_sign_item> multisig_signs,
   10: required string session_id,
-  11: required string session_id_sign
+  11: required string session_id_sign,
+  12: optional string rent_order
 }
 
 struct node_stop_task_req_body {
@@ -244,7 +250,8 @@ struct node_restart_task_req_data {
   9: required list<multisig_sign_item> multisig_signs,
   10: required string session_id,
   11: required string session_id_sign,
-  12: optional i16 force_reboot
+  12: optional i16 force_reboot,
+  13: optional string rent_order
 }
 
 struct node_restart_task_req_body {
@@ -276,7 +283,8 @@ struct node_reset_task_req_data {
   8: required i32 multisig_threshold,
   9: required list<multisig_sign_item> multisig_signs,
   10: required string session_id,
-  11: required string session_id_sign
+  11: required string session_id_sign,
+  12: optional string rent_order
 }
 
 struct node_reset_task_req_body {
@@ -308,7 +316,8 @@ struct node_delete_task_req_data {
   8: required i32 multisig_threshold,
   9: required list<multisig_sign_item> multisig_signs,
   10: required string session_id,
-  11: required string session_id_sign
+  11: required string session_id_sign,
+  12: optional string rent_order
 }
 
 struct node_delete_task_req_body {
@@ -342,7 +351,8 @@ struct node_task_logs_req_data {
   10: required i32 multisig_threshold,
   11: required list<multisig_sign_item> multisig_signs,
   12: required string session_id,
-  13: required string session_id_sign
+  13: required string session_id_sign,
+  14: optional string rent_order
 }
 
 struct node_task_logs_req_body {
@@ -374,7 +384,8 @@ struct node_modify_task_req_data {
   8: required i32 multisig_threshold,
   9: required list<multisig_sign_item> multisig_signs,
   10: required string session_id,
-  11: required string session_id_sign
+  11: required string session_id_sign,
+  12: optional string rent_order
 }
 
 struct node_modify_task_req_body {
@@ -406,7 +417,8 @@ struct node_passwd_task_req_data {
   8: required i32 multisig_threshold,
   9: required list<multisig_sign_item> multisig_signs,
   10: required string session_id,
-  11: required string session_id_sign
+  11: required string session_id_sign,
+  12: optional string rent_order
 }
 
 struct node_passwd_task_req_body {
@@ -690,7 +702,8 @@ struct node_list_snapshot_req_data {
   9: required i32 multisig_threshold,
   10: required list<multisig_sign_item> multisig_signs,
   11: required string session_id,
-  12: required string session_id_sign
+  12: required string session_id_sign,
+  13: optional string rent_order
 }
 
 struct node_list_snapshot_req_body {
@@ -724,7 +737,8 @@ struct node_create_snapshot_req_data {
   9: required list<multisig_sign_item> multisig_signs,
   10: required string session_id,
   11: required string session_id_sign,
-  12: optional string image_server
+  12: optional string image_server,
+  13: optional string rent_order
 }
 
 struct node_create_snapshot_req_body {
@@ -758,7 +772,8 @@ struct node_delete_snapshot_req_data {
   9: required i32 multisig_threshold,
   10: required list<multisig_sign_item> multisig_signs,
   11: required string session_id,
-  12: required string session_id_sign
+  12: required string session_id_sign,
+  13: optional string rent_order
 }
 
 struct node_delete_snapshot_req_body {
@@ -920,7 +935,8 @@ struct node_session_id_req_data {
   5: required string sign,
   6: required list<string> multisig_wallets,
   7: required i32 multisig_threshold,
-  8: required list<multisig_sign_item> multisig_signs
+  8: required list<multisig_sign_item> multisig_signs,
+  9: optional string rent_order
 }
 
 struct node_session_id_req_body {

@@ -71,7 +71,6 @@ struct AuthoriseResult {
     MACHINE_STATUS machine_status = MACHINE_STATUS::Unknown;
     USER_ROLE user_role = USER_ROLE::Unknown;
     std::string rent_wallet;
-    int64_t rent_end = 0;
 };
 
 std::string vm_status_string(virDomainState status);

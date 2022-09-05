@@ -27,6 +27,7 @@ struct AuthorityParams {
     std::string session_id;
     std::string session_id_sign;
     std::string machine_id;
+    std::string rent_order;
 };
 
 enum HitNodeType {

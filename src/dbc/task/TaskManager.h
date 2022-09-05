@@ -88,7 +88,7 @@ public:
     
     // task
     FResult createTask(const std::string& wallet, const std::shared_ptr<dbc::node_create_task_req_data>& data,
-                       int64_t rent_end, USER_ROLE role, std::string& task_id);
+                       USER_ROLE role, std::string& task_id);
 
     FResult startTask(const std::string& wallet, const std::string &task_id);
 
@@ -180,7 +180,8 @@ protected:
     void clear_task_public_ip(const std::string& task_id);
 
     // 创建task
-    FResult parse_create_params(const std::string &additional, USER_ROLE role, CreateTaskParams& params);
+    FResult parse_create_params(const std::string& additional, USER_ROLE role,
+        CreateTaskParams& params, const std::string& wallet, const std::string& rent_order);
 
     FResult check_task_id(const std::string& task_id);
 
@@ -204,9 +205,11 @@ protected:
 
     bool allocate_cpu(int32_t& total_cores, int32_t& sockets,
         int32_t& cores_per_socket, int32_t& threads,
-        const std::string& exclude_task_id = "");
+        const std::string& exclude_task_id = "",
+        float percent = 1.0f);
 
-    bool allocate_mem(int64_t mem_size_k);
+    bool allocate_mem(int64_t mem_size_k, const std::string& exclude_task_id = "",
+        float percent = 1.0f);
 
     bool allocate_gpu(int32_t gpu_count, std::map<std::string, std::list<std::string>>& gpus,
         const std::string& exclude_task_id = "");

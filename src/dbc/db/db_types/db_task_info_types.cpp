@@ -103,6 +103,11 @@ namespace dbc {
 		this->interface_model_type = val;
 		__isset.interface_model_type = true;
 	}
+
+	void db_task_info::__set_order_id(const std::string& val) {
+		this->order_id = val;
+		__isset.order_id = true;
+	}
 	std::ostream& operator<<(std::ostream& out, const db_task_info& obj)
 	{
 		obj.printTo(out);
@@ -327,6 +332,14 @@ namespace dbc {
 					xfer += iprot->skip(ftype);
 				}
 				break;
+			case 41:
+				if (ftype == ::apache::thrift::protocol::T_STRING) {
+					xfer += iprot->readString(this->order_id);
+					this->__isset.order_id = true;
+				} else {
+					xfer += iprot->skip(ftype);
+				}
+				break;
 			default:
 				xfer += iprot->skip(ftype);
 				break;
@@ -459,6 +472,11 @@ namespace dbc {
 			xfer += oprot->writeString(this->interface_model_type);
 			xfer += oprot->writeFieldEnd();
 		}
+		if (this->__isset.order_id) {
+			xfer += oprot->writeFieldBegin("order_id", ::apache::thrift::protocol::T_STRING, 41);
+			xfer += oprot->writeString(this->order_id);
+			xfer += oprot->writeFieldEnd();
+		}
 		xfer += oprot->writeFieldStop();
 		xfer += oprot->writeStructEnd();
 		return xfer;
@@ -484,6 +502,7 @@ namespace dbc {
 		swap(a.login_username, b.login_username);
 		swap(a.delete_time, b.delete_time);
 		swap(a.interface_model_type, b.interface_model_type);
+		swap(a.order_id, b.order_id);
 		swap(a.__isset, b.__isset);
 	}
 
@@ -506,6 +525,7 @@ namespace dbc {
 		login_username = other18.login_username;
 		delete_time = other18.delete_time;
 		interface_model_type = other18.interface_model_type;
+		order_id = other18.order_id;
 		__isset = other18.__isset;
 	}
 	db_task_info& db_task_info::operator=(const db_task_info& other19) {
@@ -527,6 +547,7 @@ namespace dbc {
 		login_username = other19.login_username;
 		delete_time = other19.delete_time;
 		interface_model_type = other19.interface_model_type;
+		order_id = other19.order_id;
 		__isset = other19.__isset;
 		return *this;
 	}
@@ -551,6 +572,7 @@ namespace dbc {
 		out << ", " << "login_username="; (__isset.login_username ? (out << to_string(login_username)) : (out << "<null>"));
 		out << ", " << "delete_time="; (__isset.delete_time ? (out << to_string(delete_time)) : (out << "<null>"));
 		out << ", " << "interface_model_type="; (__isset.interface_model_type ? (out << to_string(interface_model_type)) : (out << "<null>"));
+		out << ", " << "order_id="; (__isset.order_id ? (out << to_string(order_id)) : (out << "<null>"));
 		out << ")";
 	}
 

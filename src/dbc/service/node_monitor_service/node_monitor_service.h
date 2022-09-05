@@ -84,6 +84,10 @@ private:
 
     // 当前租用人的钱包地址
     std::string m_cur_renter_wallet;
+    // 是否单卡租用
+    bool m_is_order;
+    // 租用订单列表
+    std::set<std::string> m_orders;
 
     struct monitor_param {
         monitor_server server;

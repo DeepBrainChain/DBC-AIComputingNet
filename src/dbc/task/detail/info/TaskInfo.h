@@ -393,6 +393,16 @@ public:
         m_db_info->__set_interface_model_type(type);
     }
 
+    std::string getOrderId() const {
+        RwMutex::ReadLock rlock(m_mtx);
+        return m_db_info->order_id;
+    }
+
+    void setOrderId(const std::string& order_id) {
+        RwMutex::WriteLock wlock(m_mtx);
+        m_db_info->__set_order_id(order_id);
+    }
+
     void deleteFromDB(TaskInfoDB& db) {
         RwMutex::WriteLock wlock(m_mtx);
         db.delete_data(m_db_info->task_id);

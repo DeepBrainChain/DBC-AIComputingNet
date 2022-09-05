@@ -277,7 +277,7 @@ void node_monitor_service::on_monitor_data_sender_task_timer(const std::shared_p
     auto renttasks = WalletRentTaskMgr::instance().getAllWalletRentTasks();
     for (const auto& rentlist : renttasks) {
         auto monitor_servers = m_wallet_monitors.find(rentlist.first);
-        if (rentlist.first == m_cur_renter_wallet) {
+        if (rentlist.first == m_cur_renter_wallet && !m_cur_renter_wallet.empty()) {
             hmData.vmCount = rentlist.second->getTaskIds().size();
         }
 
@@ -286,7 +286,10 @@ void node_monitor_service::on_monitor_data_sender_task_timer(const std::shared_p
             if (task_id.find("vm_check_") != std::string::npos) continue;
             auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
             if (!taskinfo) continue;
-            if (rentlist.first == m_cur_renter_wallet) {
+            bool in_order = m_orders.count(taskinfo->getOrderId()) > 0;
+            if (in_order) hmData.vmCount++;
+
+            if (in_order || rentlist.first == m_cur_renter_wallet) {
                 if (taskinfo && taskinfo->getTaskStatus() == TaskStatus::TS_Task_Running) {
                     hmData.gpuUsed += TaskGpuMgr::instance().getTaskGpusCount(task_id);
                     hmData.vmRunning++;
@@ -314,7 +317,7 @@ void node_monitor_service::on_monitor_data_sender_task_timer(const std::shared_p
                 m_monitor_datas[task_id] = dmData;
             }
 
-            if (rentlist.first == m_cur_renter_wallet && taskinfo 
+            if ((in_order || rentlist.first == m_cur_renter_wallet) && taskinfo 
                 && taskinfo->getTaskStatus() == TaskStatus::TS_Task_Running) {
                 for (const auto& gpuStat : dmData.gpuStats) {
                     hmData.gpuStats[gpuStat.first] = gpuStat.second;
@@ -337,7 +340,7 @@ void node_monitor_service::on_monitor_data_sender_task_timer(const std::shared_p
             // add_monitor_send_queue(m_dbc_monitor_server, dmData.domainName, dmData.toZabbixString());
         }
     }
-    
+
     auto task_list = TaskInfoMgr::instance().getAllTaskInfos();
     for (auto iter = m_monitor_datas.begin(); iter != m_monitor_datas.end();) {
         if (task_list.find(iter->first) == task_list.end()) {
@@ -384,15 +387,17 @@ void node_monitor_service::on_monitor_data_sender_task_timer(const std::shared_p
 }
 
 void node_monitor_service::on_update_cur_renter_wallet_timer(const std::shared_ptr<core_timer>& timer) {
+    std::set<std::string> orders;
+    m_is_order = HttpDBCChainClient::instance().getRentOrderList(
+        ConfManager::instance().GetNodeId(), orders);
+    m_orders.swap(orders);
     std::string cur_renter_wallet;
-    auto wallets = WalletRentTaskMgr::instance().getAllWalletRentTasks();
-    for (auto& it : wallets) {
-        int64_t rent_end = HttpDBCChainClient::instance().request_rent_end(
-            ConfManager::instance().GetNodeId(), it.first);
-        if (rent_end > 0) {
-            cur_renter_wallet = it.first;
-            break;
-        }
+    if (!m_is_order) {
+        int64_t cur_rent_end = 0;
+        HttpDBCChainClient::instance().request_cur_renter(
+            ConfManager::instance().GetNodeId(), cur_renter_wallet, cur_rent_end);
+        if (cur_rent_end == 0)
+            cur_renter_wallet.clear();
     }
     m_cur_renter_wallet = cur_renter_wallet;
 }

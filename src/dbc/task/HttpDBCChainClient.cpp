@@ -1,6 +1,8 @@
 #include "HttpDBCChainClient.h"
 #include "log/log.h"
 #include "config/conf_manager.h"
+#include "db/db_types/db_rent_order_types.h"
+#include "util/system_info.h"
 
 bool chainScore::operator<(const chainScore& other) const {
     if (block == other.block) return time < other.time;
@@ -179,45 +181,45 @@ bool HttpDBCChainClient::in_verify_time(const std::string& node_id, const std::s
     return in_time;
 }
 
-int64_t HttpDBCChainClient::request_rent_end(const std::string& node_id, const std::string &wallet) {
-    int64_t rent_end = 0;
+// int64_t HttpDBCChainClient::request_rent_end(const std::string& node_id, const std::string &wallet) {
+//     int64_t rent_end = 0;
 
-    RwMutex::ReadLock rlock(m_mtx);
-    for (auto& it : m_addrs) {
-        httplib::SSLClient cli(it.second.get_ip(), it.second.get_port());
-        cli.set_timeout_sec(5);
-        cli.set_read_timeout(10, 0);
+//     RwMutex::ReadLock rlock(m_mtx);
+//     for (auto& it : m_addrs) {
+//         httplib::SSLClient cli(it.second.get_ip(), it.second.get_port());
+//         cli.set_timeout_sec(5);
+//         cli.set_read_timeout(10, 0);
 
-        std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"rentMachine_getRentOrder", "params": [")"
-            + node_id + R"("]})";
-        std::shared_ptr<httplib::Response> resp = cli.Post("/", str_send, "application/json");
-        if (resp != nullptr) {
-            rapidjson::Document doc;
-            doc.Parse(resp->body.c_str());
-            if (!doc.IsObject()) break;
+//         std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"rentMachine_getRentOrder", "params": [")"
+//             + node_id + R"("]})";
+//         std::shared_ptr<httplib::Response> resp = cli.Post("/", str_send, "application/json");
+//         if (resp != nullptr) {
+//             rapidjson::Document doc;
+//             doc.Parse(resp->body.c_str());
+//             if (!doc.IsObject()) break;
 
-            if (!doc.HasMember("result")) break;
-            const rapidjson::Value& v_result = doc["result"];
-            if (!v_result.IsObject()) break;
+//             if (!doc.HasMember("result")) break;
+//             const rapidjson::Value& v_result = doc["result"];
+//             if (!v_result.IsObject()) break;
 
-            if (!v_result.HasMember("renter")) break;
-            const rapidjson::Value& v_renter = v_result["renter"];
-            if (!v_renter.IsString()) break;
-            std::string str_renter = v_renter.GetString();
-            if (str_renter != wallet) break;
+//             if (!v_result.HasMember("renter")) break;
+//             const rapidjson::Value& v_renter = v_result["renter"];
+//             if (!v_renter.IsString()) break;
+//             std::string str_renter = v_renter.GetString();
+//             if (str_renter != wallet) break;
 
-            if (!v_result.HasMember("rentEnd")) break;
-            const rapidjson::Value& v_rentEnd = v_result["rentEnd"];
-            if (!v_rentEnd.IsNumber()) break;
+//             if (!v_result.HasMember("rentEnd")) break;
+//             const rapidjson::Value& v_rentEnd = v_result["rentEnd"];
+//             if (!v_rentEnd.IsNumber()) break;
 
-            int64_t ret = v_rentEnd.GetInt64();
-            rent_end = ret;
-            break;
-        }
-    }
+//             int64_t ret = v_rentEnd.GetInt64();
+//             rent_end = ret;
+//             break;
+//         }
+//     }
 
-    return rent_end;
-}
+//     return rent_end;
+// }
 
 void HttpDBCChainClient::request_cur_renter(const std::string& node_id, std::string& renter, int64_t& rent_end) {
     RwMutex::ReadLock rlock(m_mtx);
@@ -427,4 +429,146 @@ chainScore HttpDBCChainClient::getChainScore(const network::net_address& addr, i
     } while (0);
 
     return {cur_block, time};
+}
+
+std::shared_ptr<dbc::db_rent_order> HttpDBCChainClient::getRentOrder(const std::string& node_id, const std::string& rent_order) {
+    bool is_order = !rent_order.empty();
+    RwMutex::ReadLock rlock(m_mtx);
+    for (auto& it : m_addrs) {
+        httplib::SSLClient cli(it.second.get_ip(), it.second.get_port());
+        cli.set_timeout_sec(5);
+        cli.set_read_timeout(10, 0);
+
+        std::string params = rent_order;
+        if (!is_order) params = "\"" + node_id + "\"";
+
+        std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"rentMachine_getRentOrder", "params": [)"
+            + params + R"(]})";
+        std::shared_ptr<httplib::Response> resp = cli.Post("/", str_send, "application/json");
+        if (resp != nullptr) {
+            rapidjson::Document doc;
+            doc.Parse(resp->body.c_str());
+            if (!doc.IsObject()) break;
+
+            if (!doc.HasMember("result")) break;
+            const rapidjson::Value& v_result = doc["result"];
+            if (!v_result.IsObject()) break;
+
+            if (!v_result.HasMember("renter")) break;
+            const rapidjson::Value& v_renter = v_result["renter"];
+            if (!v_renter.IsString()) break;
+            std::string renter = v_renter.GetString();
+
+            if (!v_result.HasMember("rentEnd")) break;
+            const rapidjson::Value& v_rentEnd = v_result["rentEnd"];
+            if (!v_rentEnd.IsNumber()) break;
+            uint64_t rent_end = v_rentEnd.GetUint64();
+
+            if (!v_result.HasMember("rentStatus")) break;
+            const rapidjson::Value& v_rentStatus = v_result["rentStatus"];
+            if (!v_rentStatus.IsString()) break;
+            std::string rent_status = v_rentStatus.GetString();
+
+            std::shared_ptr<dbc::db_rent_order> pro =
+                std::make_shared<dbc::db_rent_order>();
+            pro->__set_id(is_order ? rent_order : renter);
+            pro->__set_renter(renter);
+            pro->__set_rent_end(rent_end);
+            pro->__set_rent_status(rent_status);
+
+            std::vector<int32_t> gpus;
+            if (is_order) {
+                if (!v_result.HasMember("gpuNum")) break;
+                const rapidjson::Value& v_gpuNum = v_result["gpuNum"];
+                if (!v_gpuNum.IsNumber()) break;
+                int32_t gpu_num = v_gpuNum.GetInt();
+                // if (gpu_num <= 0) break;
+                pro->__set_gpu_num(gpu_num);
+
+                if (!v_result.HasMember("gpuIndex")) break;
+                const rapidjson::Value& v_gpuIndex = v_result["gpuIndex"];
+                if (!v_gpuIndex.IsArray()) break;
+                for (const auto& v_index : v_gpuIndex.GetArray()) {
+                    if (v_index.IsInt()) gpus.push_back(v_index.GetInt());
+                    else break;
+                }
+                // if (gpus.empty()) break;
+                pro->__set_gpu_index(gpus);
+            } else {
+                int gpu_count = SystemInfo::instance().GetGpuInfo().size();
+                pro->__set_gpu_num(gpu_count);
+                for (int i = 0; i < gpu_count; i++)
+                    gpus.push_back(i);
+                pro->__set_gpu_index(gpus);
+            }
+
+            return std::move(pro);
+        }
+    }
+    return nullptr;
+}
+
+bool HttpDBCChainClient::getRentOrderList(const std::string& node_id, std::set<std::string>& orders) {
+    bool bret = false;
+    RwMutex::ReadLock rlock(m_mtx);
+    for (auto& it : m_addrs) {
+        orders.clear();
+
+        httplib::SSLClient cli(it.second.get_ip(), it.second.get_port());
+        cli.set_timeout_sec(5);
+        cli.set_read_timeout(10, 0);
+
+        std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"rentMachine_getMachineRentId", "params": [")"
+            + node_id + R"("]})";
+        std::shared_ptr<httplib::Response> resp = cli.Post("/", str_send, "application/json");
+        if (resp != nullptr) {
+            rapidjson::Document doc;
+            doc.Parse(resp->body.c_str());
+            if (!doc.IsObject()) break;
+
+            if (!doc.HasMember("result")) break;
+            const rapidjson::Value& v_result = doc["result"];
+            if (!v_result.IsObject()) break;
+
+            if (!v_result.HasMember("rentOrder")) break;
+            const rapidjson::Value& v_rentOrder = v_result["rentOrder"];
+            if (!v_rentOrder.IsArray()) break;
+
+            for (const auto& v_order : v_rentOrder.GetArray()) {
+                if (v_order.IsUint64())
+                    orders.insert(std::to_string(v_order.GetUint64()));
+                else break;
+            }
+            bret = true;
+            break;
+        }
+    }
+    return bret;
+}
+
+bool HttpDBCChainClient::isMachineRenter(const std::string& node_id, const std::string& wallet) {
+    bool bret = false;
+
+    RwMutex::ReadLock rlock(m_mtx);
+    for (auto& it : m_addrs) {
+        httplib::SSLClient cli(it.second.get_ip(), it.second.get_port());
+        cli.set_timeout_sec(5);
+        cli.set_read_timeout(10, 0);
+
+        std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"rentMachine_isMachineRenter", "params": [")"
+            + node_id + R"(",")" + wallet + R"("]})";
+        std::shared_ptr<httplib::Response> resp = cli.Post("/", str_send, "application/json");
+        if (resp != nullptr) {
+            rapidjson::Document doc;
+            doc.Parse(resp->body.c_str());
+            if (!doc.IsObject()) break;
+
+            if (!doc.HasMember("result")) break;
+            if (!doc["result"].IsBool()) break;
+            bret = doc["result"].GetBool();
+            break;
+        }
+    }
+
+    return bret;
 }

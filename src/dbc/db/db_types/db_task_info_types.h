@@ -17,7 +17,7 @@ namespace dbc {
 	class db_task_info;
 
 	typedef struct _db_task_info__isset {
-		_db_task_info__isset() : image_name(false), login_password(false), ssh_port(false), create_time(false), operation_system(false), bios_mode(false), rdp_port(false), custom_port(false), multicast(false), desc(false), vda_rootbackfile(false), network_name(false), public_ip(false), nwfilter(false), login_username(false), delete_time(false), interface_model_type(false) {}
+		_db_task_info__isset() : image_name(false), login_password(false), ssh_port(false), create_time(false), operation_system(false), bios_mode(false), rdp_port(false), custom_port(false), multicast(false), desc(false), vda_rootbackfile(false), network_name(false), public_ip(false), nwfilter(false), login_username(false), delete_time(false), interface_model_type(false), order_id(false) {}
 		bool image_name : 1;
 		bool login_password : 1;
 		bool ssh_port : 1;
@@ -35,6 +35,7 @@ namespace dbc {
 		bool login_username : 1;
 		bool delete_time : 1;
 		bool interface_model_type : 1;
+		bool order_id : 1;
 	} _db_task_info__isset;
 
 	class db_task_info : public virtual ::apache::thrift::TBase {
@@ -42,7 +43,7 @@ namespace dbc {
 
 		db_task_info(const db_task_info&);
 		db_task_info& operator=(const db_task_info&);
-		db_task_info() : task_id(), image_name(), login_password(), ssh_port(), create_time(0), operation_system(), bios_mode(), rdp_port(), desc(), vda_rootbackfile(), network_name(), public_ip(), login_username(), delete_time(0), interface_model_type() {
+		db_task_info() : task_id(), image_name(), login_password(), ssh_port(), create_time(0), operation_system(), bios_mode(), rdp_port(), desc(), vda_rootbackfile(), network_name(), public_ip(), login_username(), delete_time(0), interface_model_type(), order_id() {
 		}
 
 		virtual ~db_task_info() throw();
@@ -64,6 +65,7 @@ namespace dbc {
 		std::string login_username;
 		int64_t delete_time;
 		std::string interface_model_type;
+		std::string order_id;
 
 		_db_task_info__isset __isset;
 
@@ -102,6 +104,8 @@ namespace dbc {
 		void __set_delete_time(const int64_t val);
 
 		void __set_interface_model_type(const std::string& val);
+
+		void __set_order_id(const std::string& val);
 
 		bool operator == (const db_task_info& rhs) const
 		{
@@ -174,6 +178,10 @@ namespace dbc {
 			if (__isset.interface_model_type != rhs.__isset.interface_model_type)
 				return false;
 			else if (__isset.interface_model_type && !(interface_model_type == rhs.interface_model_type))
+				return false;
+			if (__isset.order_id != rhs.__isset.order_id)
+				return false;
+			else if (__isset.order_id && !(order_id == rhs.order_id))
 				return false;
 			return true;
 		}

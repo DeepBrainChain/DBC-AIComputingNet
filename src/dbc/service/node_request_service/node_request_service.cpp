@@ -20,6 +20,7 @@
 #include "config/BareMetalNodeManager.h"
 #include "task/ipmitool/ipmitool_client.h"
 #include "task/detail/wallet_session_id/WalletSessionIDManager.h"
+#include "task/detail/rent_order/RentOrderManager.h"
 
 #define AI_TRAINING_TASK_TIMER      "training_task"
 #define AI_PRUNE_TASK_TIMER         "prune_task"
@@ -477,14 +478,17 @@ std::tuple<std::string, std::string> node_request_service::parse_wallet(const Au
 
 
 void node_request_service::check_authority(const AuthorityParams& params, AuthoriseResult& result) {
-    std::string machine_id = params.machine_id.empty() ? ConfManager::instance().GetNodeId() : params.machine_id;
+    std::string machine_id = params.machine_id.empty() ?
+        ConfManager::instance().GetNodeId() : params.machine_id;
     MACHINE_STATUS str_status = HttpDBCChainClient::instance().request_machine_status(machine_id);
+    RentOrderManager::instance().UpdateRentOrder(machine_id, params.rent_order);
+
     if (str_status == MACHINE_STATUS::Unknown) {
         result.success = false;
         result.errmsg = "query machine_status failed";
         return;
     }
-    
+
     // 验证中
     if (str_status == MACHINE_STATUS::Verify) {
         result.machine_status = MACHINE_STATUS::Verify;
@@ -541,7 +545,8 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
         result.machine_status = MACHINE_STATUS::Rented;
         TaskMgr::instance().deleteAllCheckTasks();
 
-        std::string rent_wallet = WalletSessionIDMgr::instance().checkSessionId(params.session_id, params.session_id_sign);
+        std::string rent_wallet = WalletSessionIDMgr::instance().checkSessionId(
+            params.session_id, params.session_id_sign);
         if (rent_wallet.empty()) {
             auto wallets = parse_wallet(params);
             std::string strWallet = std::get<0>(wallets);
@@ -556,12 +561,12 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
             }
 
             if (!strMultisigWallet.empty()) {
-                int64_t rent_end = HttpDBCChainClient::instance().request_rent_end(machine_id, strMultisigWallet);
-                if (rent_end > 0) {
+                // 后续可以考虑换成HttpDBCChainClient::isMachineRenter
+                if (RentOrderManager::instance().GetRentStatus(params.rent_order,
+                        strMultisigWallet) == RentOrder::RentStatus::Renting) {
                     result.success = true;
                     result.user_role = USER_ROLE::WalletRenter;
                     result.rent_wallet = strMultisigWallet;
-                    result.rent_end = rent_end;
 
                     std::vector<std::string> vec;
                     for (auto& it : params.multisig_wallets) {
@@ -575,12 +580,11 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
             }
 
             if (!result.success && !strWallet.empty()) {
-                int64_t rent_end = HttpDBCChainClient::instance().request_rent_end(machine_id, strWallet);
-                if (rent_end > 0) {
+                if (RentOrderManager::instance().GetRentStatus(params.rent_order,
+                        strWallet) == RentOrder::RentStatus::Renting) {
                     result.success = true;
                     result.user_role = USER_ROLE::WalletRenter;
                     result.rent_wallet = strWallet;
-                    result.rent_end = rent_end;
 
                     WalletSessionIDMgr::instance().createSessionId(strWallet);
                 } else {
@@ -589,12 +593,11 @@ void node_request_service::check_authority(const AuthorityParams& params, Author
                 }
             }
         } else {
-            int64_t rent_end = HttpDBCChainClient::instance().request_rent_end(machine_id, rent_wallet);
-            if (rent_end > 0) {
+            if (RentOrderManager::instance().GetRentStatus(params.rent_order,
+                    rent_wallet) == RentOrder::RentStatus::Renting) {
                 result.success = true;
                 result.user_role = USER_ROLE::SessionIdRenter;
                 result.rent_wallet = rent_wallet;
-                result.rent_end = rent_end;
             } else {
                 result.success = false;
                 result.errmsg = "machine has already expired";
@@ -721,6 +724,7 @@ void node_request_service::on_node_list_task_req(const std::shared_ptr<network::
         params.multisig_signs = data->multisig_signs;
         params.session_id = data->session_id;
         params.session_id_sign = data->session_id_sign;
+        params.rent_order = data->rent_order;
         AuthoriseResult result;
         check_authority(params, result);
         if (!result.success) {
@@ -818,6 +822,9 @@ void node_request_service::task_list(const network::base_header& header,
             ss_tasks << ", \"desc\":" << "\"" << taskinfo->getDesc() << "\"";
             ss_tasks << ", \"status\":" << "\"" 
                 << task_status_string(TaskMgr::instance().queryTaskStatus(taskinfo->getTaskId())) << "\"";
+            std::string task_order = taskinfo->getOrderId();
+            if (!task_order.empty())
+                ss_tasks << ", \"rent_order\":" << "\"" << task_order << "\"";
 
             if (!taskinfo->getMulticast().empty() || !network_name.empty()) {
                 std::vector<std::tuple<std::string, std::string>> address;
@@ -984,6 +991,7 @@ void node_request_service::on_node_create_task_req(const std::shared_ptr<network
         params.multisig_signs = data->multisig_signs;
         params.session_id = data->session_id;
         params.session_id_sign = data->session_id_sign;
+        params.rent_order = data->rent_order;
         AuthoriseResult result;
         check_authority(params, result);
         if (!result.success) {
@@ -1016,7 +1024,7 @@ void node_request_service::task_create(const network::base_header& header,
     std::string ret_msg = "ok";
 
     std::string task_id;
-    auto fresult = TaskMgr::instance().createTask(result.rent_wallet, data, result.rent_end,
+    auto fresult = TaskMgr::instance().createTask(result.rent_wallet, data,
                                                result.user_role, task_id);
     ret_code = fresult.errcode;
     ret_msg = fresult.errmsg;
@@ -1131,6 +1139,7 @@ void node_request_service::on_node_start_task_req(const std::shared_ptr<network:
         params.multisig_signs = data->multisig_signs;
         params.session_id = data->session_id;
         params.session_id_sign = data->session_id_sign;
+        params.rent_order = data->rent_order;
         AuthoriseResult result;
         check_authority(params, result);
         if (!result.success) {
@@ -1239,6 +1248,7 @@ void node_request_service::on_node_shutdown_task_req(const std::shared_ptr<netwo
         params.multisig_signs = data->multisig_signs;
         params.session_id = data->session_id;
         params.session_id_sign = data->session_id_sign;
+        params.rent_order = data->rent_order;
         AuthoriseResult result;
         check_authority(params, result);
         if (!result.success) {
@@ -1340,6 +1350,7 @@ void node_request_service::on_node_poweroff_task_req(const std::shared_ptr<netwo
 		params.multisig_signs = data->multisig_signs;
 		params.session_id = data->session_id;
 		params.session_id_sign = data->session_id_sign;
+        params.rent_order = data->rent_order;
 		AuthoriseResult result;
 		check_authority(params, result);
 		if (!result.success) {
@@ -1442,6 +1453,7 @@ void node_request_service::on_node_stop_task_req(const std::shared_ptr<network::
 		params.multisig_signs = data->multisig_signs;
 		params.session_id = data->session_id;
 		params.session_id_sign = data->session_id_sign;
+        params.rent_order = data->rent_order;
 		AuthoriseResult result;
 		check_authority(params, result);
 		if (!result.success) {
@@ -1543,6 +1555,7 @@ void node_request_service::on_node_restart_task_req(const std::shared_ptr<networ
         params.multisig_signs = data->multisig_signs;
         params.session_id = data->session_id;
         params.session_id_sign = data->session_id_sign;
+        params.rent_order = data->rent_order;
         AuthoriseResult result;
         check_authority(params, result);
         if (!result.success) {
@@ -1649,6 +1662,7 @@ void node_request_service::on_node_reset_task_req(const std::shared_ptr<network:
         params.multisig_signs = data->multisig_signs;
         params.session_id = data->session_id;
         params.session_id_sign = data->session_id_sign;
+        params.rent_order = data->rent_order;
         AuthoriseResult result;
         check_authority(params, result);
         if (!result.success) {
@@ -1749,6 +1763,7 @@ void node_request_service::on_node_delete_task_req(const std::shared_ptr<network
         params.multisig_signs = data->multisig_signs;
         params.session_id = data->session_id;
         params.session_id_sign = data->session_id_sign;
+        params.rent_order = data->rent_order;
         AuthoriseResult result;
         check_authority(params, result);
         if (!result.success) {
@@ -1849,6 +1864,7 @@ void node_request_service::on_node_task_logs_req(const std::shared_ptr<network::
         params.multisig_signs = data->multisig_signs;
         params.session_id = data->session_id;
         params.session_id_sign = data->session_id_sign;
+        params.rent_order = data->rent_order;
         AuthoriseResult result;
         check_authority(params, result);
         if (!result.success) {
@@ -1992,6 +2008,7 @@ void node_request_service::on_node_modify_task_req(const std::shared_ptr<network
 		params.multisig_signs = data->multisig_signs;
 		params.session_id = data->session_id;
 		params.session_id_sign = data->session_id_sign;
+        params.rent_order = data->rent_order;
 		AuthoriseResult result;
 		check_authority(params, result);
 		if (!result.success) {
@@ -2086,6 +2103,7 @@ void node_request_service::on_node_passwd_task_req(const std::shared_ptr<network
 		params.multisig_signs = data->multisig_signs;
 		params.session_id = data->session_id;
 		params.session_id_sign = data->session_id_sign;
+        params.rent_order = data->rent_order;
 		AuthoriseResult result;
 		check_authority(params, result);
 		if (!result.success) {
@@ -3120,6 +3138,7 @@ void node_request_service::on_node_list_snapshot_req(const std::shared_ptr<netwo
         params.multisig_signs = data->multisig_signs;
         params.session_id = data->session_id;
         params.session_id_sign = data->session_id_sign;
+        params.rent_order = data->rent_order;
         AuthoriseResult result;
         check_authority(params, result);
         if (!result.success) {
@@ -3307,6 +3326,7 @@ void node_request_service::on_node_create_snapshot_req(const std::shared_ptr<net
         params.multisig_signs = data->multisig_signs;
         params.session_id = data->session_id;
         params.session_id_sign = data->session_id_sign;
+        params.rent_order = data->rent_order;
         AuthoriseResult result;
         check_authority(params, result);
         if (!result.success || result.user_role == USER_ROLE::Unknown || result.user_role == USER_ROLE::Verifier) {
@@ -3458,6 +3478,7 @@ void node_request_service::on_node_delete_snapshot_req(const std::shared_ptr<net
         params.multisig_signs = data->multisig_signs;
         params.session_id = data->session_id;
         params.session_id_sign = data->session_id_sign;
+        params.rent_order = data->rent_order;
         AuthoriseResult result;
         check_authority(params, result);
         if (!result.success || result.user_role == USER_ROLE::Unknown || result.user_role == USER_ROLE::Verifier) {
@@ -4333,6 +4354,31 @@ void node_request_service::query_node_info(const network::base_header& header,
         ss << "}";
     }
     ss << "]";
+
+    // rent order 测试用
+    ss << ",\"rent order\":" << "[";
+    int order_count = 0;
+    auto rent_orders = RentOrderManager::instance().GetRentOrders();
+    for (const auto& iter : rent_orders) {
+        if (order_count > 0) ss << ",";
+        ss << "{";
+        ss << "\"id\":" << "\"" << iter.first << "\"";
+        ss << ",\"renter\":" << "\"" << iter.second->renter << "\"";
+        ss << ",\"rent_end\":" << "\"" << iter.second->rent_end << "\"";
+        ss << ",\"rent_status\":" << "\"" << iter.second->rent_status << "\"";
+        ss << ",\"gpu_nums\":" << "\"" << iter.second->gpu_num << "\"";
+        int gpu_aaa = 0;
+        ss << ",\"gpu_index\":[";
+        for (const auto& index : iter.second->gpu_index) {
+            if (gpu_aaa > 0) ss << ",";
+            ss << index;
+            gpu_aaa++;
+        }
+        ss << "]";
+        ss << "}";
+        order_count++;
+    }
+    ss << "]";
     /*
     int32_t count = TaskMgr::instance().GetRunningTaskSize();
     std::string state;
@@ -4520,6 +4566,7 @@ void node_request_service::on_node_session_id_req(const std::shared_ptr<network:
         params.multisig_threshold = data->multisig_threshold;
         params.multisig_signs = data->multisig_signs;
         params.machine_id = data->peer_nodes_list[0];
+        params.rent_order = data->rent_order;
         AuthoriseResult result;
         check_authority(params, result);
         if (!result.success) {

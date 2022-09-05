@@ -623,13 +623,17 @@ namespace dbc {
 
 	std::ostream& operator<<(std::ostream& out, const multisig_sign_item& obj);
 
+	typedef struct _node_list_task_req_data__isset {
+		_node_list_task_req_data__isset() : rent_order(false) {}
+		bool rent_order : 1;
+	} _node_list_task_req_data__isset;
 
 	class node_list_task_req_data : public virtual ::apache::thrift::TBase {
 	public:
 
 		node_list_task_req_data(const node_list_task_req_data&);
 		node_list_task_req_data& operator=(const node_list_task_req_data&);
-		node_list_task_req_data() : task_id(), additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign() {
+		node_list_task_req_data() : task_id(), additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign(), rent_order() {
 		}
 
 		virtual ~node_list_task_req_data() throw();
@@ -644,6 +648,9 @@ namespace dbc {
 		std::vector<multisig_sign_item>  multisig_signs;
 		std::string session_id;
 		std::string session_id_sign;
+  		std::string rent_order;
+
+  		_node_list_task_req_data__isset __isset;
 
 		void __set_task_id(const std::string& val);
 
@@ -666,6 +673,8 @@ namespace dbc {
 		void __set_session_id(const std::string& val);
 
 		void __set_session_id_sign(const std::string& val);
+
+		void __set_rent_order(const std::string& val);
 
 		bool operator == (const node_list_task_req_data& rhs) const
 		{
@@ -690,6 +699,10 @@ namespace dbc {
 			if (!(session_id == rhs.session_id))
 				return false;
 			if (!(session_id_sign == rhs.session_id_sign))
+				return false;
+			if (__isset.rent_order != rhs.__isset.rent_order)
+				return false;
+			else if (__isset.rent_order && !(rent_order == rhs.rent_order))
 				return false;
 			return true;
 		}
@@ -865,13 +878,17 @@ namespace dbc {
 
 	std::ostream& operator<<(std::ostream& out, const node_list_task_rsp& obj);
 
+	typedef struct _node_create_task_req_data__isset {
+		_node_create_task_req_data__isset() : rent_order(false) {}
+		bool rent_order : 1;
+	} _node_create_task_req_data__isset;
 
 	class node_create_task_req_data : public virtual ::apache::thrift::TBase {
 	public:
 
 		node_create_task_req_data(const node_create_task_req_data&);
 		node_create_task_req_data& operator=(const node_create_task_req_data&);
-		node_create_task_req_data() : additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign() {
+		node_create_task_req_data() : additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign(), rent_order() {
 		}
 
 		virtual ~node_create_task_req_data() throw();
@@ -885,6 +902,9 @@ namespace dbc {
 		std::vector<multisig_sign_item>  multisig_signs;
 		std::string session_id;
 		std::string session_id_sign;
+		std::string rent_order;
+
+		_node_create_task_req_data__isset __isset;
 
 		void __set_peer_nodes_list(const std::vector<std::string>& val);
 
@@ -905,6 +925,8 @@ namespace dbc {
 		void __set_session_id(const std::string& val);
 
 		void __set_session_id_sign(const std::string& val);
+
+		void __set_rent_order(const std::string& val);
 
 		bool operator == (const node_create_task_req_data& rhs) const
 		{
@@ -927,6 +949,10 @@ namespace dbc {
 			if (!(session_id == rhs.session_id))
 				return false;
 			if (!(session_id_sign == rhs.session_id_sign))
+				return false;
+			if (__isset.rent_order != rhs.__isset.rent_order)
+				return false;
+			else if (__isset.rent_order && !(rent_order == rhs.rent_order))
 				return false;
 			return true;
 		}
@@ -1102,13 +1128,17 @@ namespace dbc {
 
 	std::ostream& operator<<(std::ostream& out, const node_create_task_rsp& obj);
 
+	typedef struct _node_start_task_req_data__isset {
+		_node_start_task_req_data__isset() : rent_order(false) {}
+		bool rent_order : 1;
+	} _node_start_task_req_data__isset;
 
 	class node_start_task_req_data : public virtual ::apache::thrift::TBase {
 	public:
 
 		node_start_task_req_data(const node_start_task_req_data&);
 		node_start_task_req_data& operator=(const node_start_task_req_data&);
-		node_start_task_req_data() : task_id(), additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign() {
+		node_start_task_req_data() : task_id(), additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign(), rent_order() {
 		}
 
 		virtual ~node_start_task_req_data() throw();
@@ -1123,6 +1153,9 @@ namespace dbc {
 		std::vector<multisig_sign_item>  multisig_signs;
 		std::string session_id;
 		std::string session_id_sign;
+  		std::string rent_order;
+
+  		_node_start_task_req_data__isset __isset;
 
 		void __set_task_id(const std::string& val);
 
@@ -1145,6 +1178,8 @@ namespace dbc {
 		void __set_session_id(const std::string& val);
 
 		void __set_session_id_sign(const std::string& val);
+
+		void __set_rent_order(const std::string& val);
 
 		bool operator == (const node_start_task_req_data& rhs) const
 		{
@@ -1169,6 +1204,10 @@ namespace dbc {
 			if (!(session_id == rhs.session_id))
 				return false;
 			if (!(session_id_sign == rhs.session_id_sign))
+				return false;
+			if (__isset.rent_order != rhs.__isset.rent_order)
+				return false;
+			else if (__isset.rent_order && !(rent_order == rhs.rent_order))
 				return false;
 			return true;
 		}
@@ -1344,13 +1383,17 @@ namespace dbc {
 
 	std::ostream& operator<<(std::ostream& out, const node_start_task_rsp& obj);
 
+	typedef struct _node_shutdown_task_req_data__isset {
+		_node_shutdown_task_req_data__isset() : rent_order(false) {}
+		bool rent_order : 1;
+	} _node_shutdown_task_req_data__isset;
 
 	class node_shutdown_task_req_data : public virtual ::apache::thrift::TBase {
 	public:
 
 		node_shutdown_task_req_data(const node_shutdown_task_req_data&);
 		node_shutdown_task_req_data& operator=(const node_shutdown_task_req_data&);
-		node_shutdown_task_req_data() : task_id(), additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign() {
+		node_shutdown_task_req_data() : task_id(), additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign(), rent_order() {
 		}
 
 		virtual ~node_shutdown_task_req_data() throw();
@@ -1365,6 +1408,9 @@ namespace dbc {
 		std::vector<multisig_sign_item>  multisig_signs;
 		std::string session_id;
 		std::string session_id_sign;
+  		std::string rent_order;
+
+  		_node_shutdown_task_req_data__isset __isset;
 
 		void __set_task_id(const std::string& val);
 
@@ -1387,6 +1433,8 @@ namespace dbc {
 		void __set_session_id(const std::string& val);
 
 		void __set_session_id_sign(const std::string& val);
+
+		void __set_rent_order(const std::string& val);
 
 		bool operator == (const node_shutdown_task_req_data& rhs) const
 		{
@@ -1411,6 +1459,10 @@ namespace dbc {
 			if (!(session_id == rhs.session_id))
 				return false;
 			if (!(session_id_sign == rhs.session_id_sign))
+				return false;
+			if (__isset.rent_order != rhs.__isset.rent_order)
+				return false;
+			else if (__isset.rent_order && !(rent_order == rhs.rent_order))
 				return false;
 			return true;
 		}
@@ -1586,13 +1638,17 @@ namespace dbc {
 
 	std::ostream& operator<<(std::ostream& out, const node_shutdown_task_rsp& obj);
 
+	typedef struct _node_poweroff_task_req_data__isset {
+		_node_poweroff_task_req_data__isset() : rent_order(false) {}
+		bool rent_order : 1;
+	} _node_poweroff_task_req_data__isset;
 
 	class node_poweroff_task_req_data : public virtual ::apache::thrift::TBase {
 	public:
 
 		node_poweroff_task_req_data(const node_poweroff_task_req_data&);
 		node_poweroff_task_req_data& operator=(const node_poweroff_task_req_data&);
-		node_poweroff_task_req_data() : task_id(), additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign() {
+		node_poweroff_task_req_data() : task_id(), additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign(), rent_order() {
 		}
 
 		virtual ~node_poweroff_task_req_data() throw();
@@ -1607,6 +1663,9 @@ namespace dbc {
 		std::vector<multisig_sign_item>  multisig_signs;
 		std::string session_id;
 		std::string session_id_sign;
+  		std::string rent_order;
+
+  		_node_poweroff_task_req_data__isset __isset;
 
 		void __set_task_id(const std::string& val);
 
@@ -1629,6 +1688,8 @@ namespace dbc {
 		void __set_session_id(const std::string& val);
 
 		void __set_session_id_sign(const std::string& val);
+
+		void __set_rent_order(const std::string& val);
 
 		bool operator == (const node_poweroff_task_req_data& rhs) const
 		{
@@ -1653,6 +1714,10 @@ namespace dbc {
 			if (!(session_id == rhs.session_id))
 				return false;
 			if (!(session_id_sign == rhs.session_id_sign))
+				return false;
+			if (__isset.rent_order != rhs.__isset.rent_order)
+				return false;
+			else if (__isset.rent_order && !(rent_order == rhs.rent_order))
 				return false;
 			return true;
 		}
@@ -1828,13 +1893,17 @@ namespace dbc {
 
 	std::ostream& operator<<(std::ostream& out, const node_poweroff_task_rsp& obj);
 
+	typedef struct _node_stop_task_req_data__isset {
+		_node_stop_task_req_data__isset() : rent_order(false) {}
+		bool rent_order : 1;
+	} _node_stop_task_req_data__isset;
 
 	class node_stop_task_req_data : public virtual ::apache::thrift::TBase {
 	public:
 
 		node_stop_task_req_data(const node_stop_task_req_data&);
 		node_stop_task_req_data& operator=(const node_stop_task_req_data&);
-		node_stop_task_req_data() : task_id(), additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign() {
+		node_stop_task_req_data() : task_id(), additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign(), rent_order() {
 		}
 
 		virtual ~node_stop_task_req_data() throw();
@@ -1849,6 +1918,9 @@ namespace dbc {
 		std::vector<multisig_sign_item>  multisig_signs;
 		std::string session_id;
 		std::string session_id_sign;
+  		std::string rent_order;
+
+  		_node_stop_task_req_data__isset __isset;
 
 		void __set_task_id(const std::string& val);
 
@@ -1871,6 +1943,8 @@ namespace dbc {
 		void __set_session_id(const std::string& val);
 
 		void __set_session_id_sign(const std::string& val);
+
+		void __set_rent_order(const std::string& val);
 
 		bool operator == (const node_stop_task_req_data& rhs) const
 		{
@@ -1895,6 +1969,10 @@ namespace dbc {
 			if (!(session_id == rhs.session_id))
 				return false;
 			if (!(session_id_sign == rhs.session_id_sign))
+				return false;
+			if (__isset.rent_order != rhs.__isset.rent_order)
+				return false;
+			else if (__isset.rent_order && !(rent_order == rhs.rent_order))
 				return false;
 			return true;
 		}
@@ -2071,8 +2149,9 @@ namespace dbc {
 	std::ostream& operator<<(std::ostream& out, const node_stop_task_rsp& obj);
 
 	typedef struct _node_restart_task_req_data__isset {
-		_node_restart_task_req_data__isset() : force_reboot(false) {}
+		_node_restart_task_req_data__isset() : force_reboot(false), rent_order(false) {}
 		bool force_reboot : 1;
+  		bool rent_order : 1;
 	} _node_restart_task_req_data__isset;
 
 	class node_restart_task_req_data : public virtual ::apache::thrift::TBase {
@@ -2080,7 +2159,7 @@ namespace dbc {
 
 		node_restart_task_req_data(const node_restart_task_req_data&);
 		node_restart_task_req_data& operator=(const node_restart_task_req_data&);
-		node_restart_task_req_data() : task_id(), additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign(), force_reboot(0) {
+		node_restart_task_req_data() : task_id(), additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign(), force_reboot(0), rent_order() {
 		}
 
 		virtual ~node_restart_task_req_data() throw();
@@ -2096,6 +2175,7 @@ namespace dbc {
 		std::string session_id;
 		std::string session_id_sign;
 		int16_t force_reboot;
+  		std::string rent_order;
 
 		_node_restart_task_req_data__isset __isset;
 
@@ -2122,6 +2202,8 @@ namespace dbc {
 		void __set_session_id_sign(const std::string& val);
 
 		void __set_force_reboot(const int16_t val);
+
+		void __set_rent_order(const std::string& val);
 
 		bool operator == (const node_restart_task_req_data& rhs) const
 		{
@@ -2150,6 +2232,10 @@ namespace dbc {
 			if (__isset.force_reboot != rhs.__isset.force_reboot)
 				return false;
 			else if (__isset.force_reboot && !(force_reboot == rhs.force_reboot))
+				return false;
+			if (__isset.rent_order != rhs.__isset.rent_order)
+				return false;
+			else if (__isset.rent_order && !(rent_order == rhs.rent_order))
 				return false;
 			return true;
 		}
@@ -2325,13 +2411,17 @@ namespace dbc {
 
 	std::ostream& operator<<(std::ostream& out, const node_restart_task_rsp& obj);
 
+	typedef struct _node_reset_task_req_data__isset {
+		_node_reset_task_req_data__isset() : rent_order(false) {}
+		bool rent_order : 1;
+	} _node_reset_task_req_data__isset;
 
 	class node_reset_task_req_data : public virtual ::apache::thrift::TBase {
 	public:
 
 		node_reset_task_req_data(const node_reset_task_req_data&);
 		node_reset_task_req_data& operator=(const node_reset_task_req_data&);
-		node_reset_task_req_data() : task_id(), additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign() {
+		node_reset_task_req_data() : task_id(), additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign(), rent_order() {
 		}
 
 		virtual ~node_reset_task_req_data() throw();
@@ -2346,6 +2436,9 @@ namespace dbc {
 		std::vector<multisig_sign_item>  multisig_signs;
 		std::string session_id;
 		std::string session_id_sign;
+  		std::string rent_order;
+
+  		_node_reset_task_req_data__isset __isset;
 
 		void __set_task_id(const std::string& val);
 
@@ -2368,6 +2461,8 @@ namespace dbc {
 		void __set_session_id(const std::string& val);
 
 		void __set_session_id_sign(const std::string& val);
+
+		void __set_rent_order(const std::string& val);
 
 		bool operator == (const node_reset_task_req_data& rhs) const
 		{
@@ -2392,6 +2487,10 @@ namespace dbc {
 			if (!(session_id == rhs.session_id))
 				return false;
 			if (!(session_id_sign == rhs.session_id_sign))
+				return false;
+			if (__isset.rent_order != rhs.__isset.rent_order)
+				return false;
+			else if (__isset.rent_order && !(rent_order == rhs.rent_order))
 				return false;
 			return true;
 		}
@@ -2567,13 +2666,17 @@ namespace dbc {
 
 	std::ostream& operator<<(std::ostream& out, const node_reset_task_rsp& obj);
 
+	typedef struct _node_delete_task_req_data__isset {
+		_node_delete_task_req_data__isset() : rent_order(false) {}
+		bool rent_order : 1;
+	} _node_delete_task_req_data__isset;
 
 	class node_delete_task_req_data : public virtual ::apache::thrift::TBase {
 	public:
 
 		node_delete_task_req_data(const node_delete_task_req_data&);
 		node_delete_task_req_data& operator=(const node_delete_task_req_data&);
-		node_delete_task_req_data() : task_id(), additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign() {
+		node_delete_task_req_data() : task_id(), additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign(), rent_order() {
 		}
 
 		virtual ~node_delete_task_req_data() throw();
@@ -2588,6 +2691,9 @@ namespace dbc {
 		std::vector<multisig_sign_item>  multisig_signs;
 		std::string session_id;
 		std::string session_id_sign;
+  		std::string rent_order;
+
+  		_node_delete_task_req_data__isset __isset;
 
 		void __set_task_id(const std::string& val);
 
@@ -2610,6 +2716,8 @@ namespace dbc {
 		void __set_session_id(const std::string& val);
 
 		void __set_session_id_sign(const std::string& val);
+
+		void __set_rent_order(const std::string& val);
 
 		bool operator == (const node_delete_task_req_data& rhs) const
 		{
@@ -2634,6 +2742,10 @@ namespace dbc {
 			if (!(session_id == rhs.session_id))
 				return false;
 			if (!(session_id_sign == rhs.session_id_sign))
+				return false;
+			if (__isset.rent_order != rhs.__isset.rent_order)
+				return false;
+			else if (__isset.rent_order && !(rent_order == rhs.rent_order))
 				return false;
 			return true;
 		}
@@ -2809,13 +2921,17 @@ namespace dbc {
 
 	std::ostream& operator<<(std::ostream& out, const node_delete_task_rsp& obj);
 
+	typedef struct _node_task_logs_req_data__isset {
+		_node_task_logs_req_data__isset() : rent_order(false) {}
+		bool rent_order : 1;
+	} _node_task_logs_req_data__isset;
 
 	class node_task_logs_req_data : public virtual ::apache::thrift::TBase {
 	public:
 
 		node_task_logs_req_data(const node_task_logs_req_data&);
 		node_task_logs_req_data& operator=(const node_task_logs_req_data&);
-		node_task_logs_req_data() : task_id(), head_or_tail(0), number_of_lines(0), additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign() {
+		node_task_logs_req_data() : task_id(), head_or_tail(0), number_of_lines(0), additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign(), rent_order() {
 		}
 
 		virtual ~node_task_logs_req_data() throw();
@@ -2832,6 +2948,9 @@ namespace dbc {
 		std::vector<multisig_sign_item>  multisig_signs;
 		std::string session_id;
 		std::string session_id_sign;
+  		std::string rent_order;
+
+  		_node_task_logs_req_data__isset __isset;
 
 		void __set_task_id(const std::string& val);
 
@@ -2858,6 +2977,8 @@ namespace dbc {
 		void __set_session_id(const std::string& val);
 
 		void __set_session_id_sign(const std::string& val);
+
+		void __set_rent_order(const std::string& val);
 
 		bool operator == (const node_task_logs_req_data& rhs) const
 		{
@@ -2886,6 +3007,10 @@ namespace dbc {
 			if (!(session_id == rhs.session_id))
 				return false;
 			if (!(session_id_sign == rhs.session_id_sign))
+				return false;
+			if (__isset.rent_order != rhs.__isset.rent_order)
+				return false;
+			else if (__isset.rent_order && !(rent_order == rhs.rent_order))
 				return false;
 			return true;
 		}
@@ -3061,13 +3186,17 @@ namespace dbc {
 
 	std::ostream& operator<<(std::ostream& out, const node_task_logs_rsp& obj);
 
+	typedef struct _node_modify_task_req_data__isset {
+		_node_modify_task_req_data__isset() : rent_order(false) {}
+		bool rent_order : 1;
+	} _node_modify_task_req_data__isset;
 
 	class node_modify_task_req_data : public virtual ::apache::thrift::TBase {
 	public:
 
 		node_modify_task_req_data(const node_modify_task_req_data&);
 		node_modify_task_req_data& operator=(const node_modify_task_req_data&);
-		node_modify_task_req_data() : task_id(), additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign() {
+		node_modify_task_req_data() : task_id(), additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign(), rent_order() {
 		}
 
 		virtual ~node_modify_task_req_data() throw();
@@ -3082,6 +3211,9 @@ namespace dbc {
 		std::vector<multisig_sign_item>  multisig_signs;
 		std::string session_id;
 		std::string session_id_sign;
+  		std::string rent_order;
+
+  		_node_modify_task_req_data__isset __isset;
 
 		void __set_task_id(const std::string& val);
 
@@ -3104,6 +3236,8 @@ namespace dbc {
 		void __set_session_id(const std::string& val);
 
 		void __set_session_id_sign(const std::string& val);
+
+		void __set_rent_order(const std::string& val);
 
 		bool operator == (const node_modify_task_req_data& rhs) const
 		{
@@ -3128,6 +3262,10 @@ namespace dbc {
 			if (!(session_id == rhs.session_id))
 				return false;
 			if (!(session_id_sign == rhs.session_id_sign))
+				return false;
+			if (__isset.rent_order != rhs.__isset.rent_order)
+				return false;
+			else if (__isset.rent_order && !(rent_order == rhs.rent_order))
 				return false;
 			return true;
 		}
@@ -3303,13 +3441,17 @@ namespace dbc {
 
 	std::ostream& operator<<(std::ostream& out, const node_modify_task_rsp& obj);
 
+	typedef struct _node_passwd_task_req_data__isset {
+  		_node_passwd_task_req_data__isset() : rent_order(false) {}
+  		bool rent_order : 1;
+	} _node_passwd_task_req_data__isset;
 
 	class node_passwd_task_req_data : public virtual ::apache::thrift::TBase {
 	public:
 
 		node_passwd_task_req_data(const node_passwd_task_req_data&);
 		node_passwd_task_req_data& operator=(const node_passwd_task_req_data&);
-		node_passwd_task_req_data() : task_id(), additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign() {
+		node_passwd_task_req_data() : task_id(), additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign(), rent_order() {
 		}
 
 		virtual ~node_passwd_task_req_data() throw();
@@ -3324,6 +3466,9 @@ namespace dbc {
 		std::vector<multisig_sign_item>  multisig_signs;
 		std::string session_id;
 		std::string session_id_sign;
+  		std::string rent_order;
+
+  		_node_passwd_task_req_data__isset __isset;
 
 		void __set_task_id(const std::string& val);
 
@@ -3346,6 +3491,8 @@ namespace dbc {
 		void __set_session_id(const std::string& val);
 
 		void __set_session_id_sign(const std::string& val);
+
+		void __set_rent_order(const std::string& val);
 
 		bool operator == (const node_passwd_task_req_data& rhs) const
 		{
@@ -3370,6 +3517,10 @@ namespace dbc {
 			if (!(session_id == rhs.session_id))
 				return false;
 			if (!(session_id_sign == rhs.session_id_sign))
+				return false;
+			if (__isset.rent_order != rhs.__isset.rent_order)
+				return false;
+			else if (__isset.rent_order && !(rent_order == rhs.rent_order))
 				return false;
 			return true;
 		}
@@ -5480,13 +5631,17 @@ namespace dbc {
 
 	std::ostream& operator<<(std::ostream& out, const node_delete_image_rsp& obj);
 
+	typedef struct _node_list_snapshot_req_data__isset {
+		_node_list_snapshot_req_data__isset() : rent_order(false) {}
+		bool rent_order : 1;
+	} _node_list_snapshot_req_data__isset;
 
 	class node_list_snapshot_req_data : public virtual ::apache::thrift::TBase {
 	public:
 
 		node_list_snapshot_req_data(const node_list_snapshot_req_data&);
 		node_list_snapshot_req_data& operator=(const node_list_snapshot_req_data&);
-		node_list_snapshot_req_data() : task_id(), snapshot_name(), additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign() {
+		node_list_snapshot_req_data() : task_id(), snapshot_name(), additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign(), rent_order() {
 		}
 
 		virtual ~node_list_snapshot_req_data() throw();
@@ -5502,6 +5657,9 @@ namespace dbc {
 		std::vector<multisig_sign_item>  multisig_signs;
 		std::string session_id;
 		std::string session_id_sign;
+  		std::string rent_order;
+
+  		_node_list_snapshot_req_data__isset __isset;
 
 		void __set_task_id(const std::string& val);
 
@@ -5526,6 +5684,8 @@ namespace dbc {
 		void __set_session_id(const std::string& val);
 
 		void __set_session_id_sign(const std::string& val);
+
+		void __set_rent_order(const std::string& val);
 
 		bool operator == (const node_list_snapshot_req_data& rhs) const
 		{
@@ -5552,6 +5712,10 @@ namespace dbc {
 			if (!(session_id == rhs.session_id))
 				return false;
 			if (!(session_id_sign == rhs.session_id_sign))
+				return false;
+			if (__isset.rent_order != rhs.__isset.rent_order)
+				return false;
+			else if (__isset.rent_order && !(rent_order == rhs.rent_order))
 				return false;
 			return true;
 		}
@@ -5728,8 +5892,9 @@ namespace dbc {
 	std::ostream& operator<<(std::ostream& out, const node_list_snapshot_rsp& obj);
 
 	typedef struct _node_create_snapshot_req_data__isset {
-		_node_create_snapshot_req_data__isset() : image_server(false) {}
+		_node_create_snapshot_req_data__isset() : image_server(false), rent_order(false) {}
 		bool image_server : 1;
+		bool rent_order : 1;
 	} _node_create_snapshot_req_data__isset;
 
 	class node_create_snapshot_req_data : public virtual ::apache::thrift::TBase {
@@ -5737,7 +5902,7 @@ namespace dbc {
 
 		node_create_snapshot_req_data(const node_create_snapshot_req_data&);
 		node_create_snapshot_req_data& operator=(const node_create_snapshot_req_data&);
-		node_create_snapshot_req_data() : task_id(), additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign(), image_server() {
+		node_create_snapshot_req_data() : task_id(), additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign(), image_server(), rent_order() {
 		}
 
 		virtual ~node_create_snapshot_req_data() throw();
@@ -5753,6 +5918,7 @@ namespace dbc {
 		std::string session_id;
 		std::string session_id_sign;
 		std::string image_server;
+  		std::string rent_order;
 
 		_node_create_snapshot_req_data__isset __isset;
 
@@ -5779,6 +5945,8 @@ namespace dbc {
 		void __set_session_id_sign(const std::string& val);
 
 		void __set_image_server(const std::string& val);
+
+		void __set_rent_order(const std::string& val);
 
 		bool operator == (const node_create_snapshot_req_data& rhs) const
 		{
@@ -5807,6 +5975,10 @@ namespace dbc {
 			if (__isset.image_server != rhs.__isset.image_server)
 				return false;
 			else if (__isset.image_server && !(image_server == rhs.image_server))
+				return false;
+			if (__isset.rent_order != rhs.__isset.rent_order)
+				return false;
+			else if (__isset.rent_order && !(rent_order == rhs.rent_order))
 				return false;
 			return true;
 		}
@@ -5982,13 +6154,17 @@ namespace dbc {
 
 	std::ostream& operator<<(std::ostream& out, const node_create_snapshot_rsp& obj);
 
+	typedef struct _node_delete_snapshot_req_data__isset {
+		_node_delete_snapshot_req_data__isset() : rent_order(false) {}
+		bool rent_order : 1;
+	} _node_delete_snapshot_req_data__isset;
 
 	class node_delete_snapshot_req_data : public virtual ::apache::thrift::TBase {
 	public:
 
 		node_delete_snapshot_req_data(const node_delete_snapshot_req_data&);
 		node_delete_snapshot_req_data& operator=(const node_delete_snapshot_req_data&);
-		node_delete_snapshot_req_data() : task_id(), snapshot_name(), additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign() {
+		node_delete_snapshot_req_data() : task_id(), snapshot_name(), additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign(), rent_order() {
 		}
 
 		virtual ~node_delete_snapshot_req_data() throw();
@@ -6004,6 +6180,9 @@ namespace dbc {
 		std::vector<multisig_sign_item>  multisig_signs;
 		std::string session_id;
 		std::string session_id_sign;
+  		std::string rent_order;
+
+  		_node_delete_snapshot_req_data__isset __isset;
 
 		void __set_task_id(const std::string& val);
 
@@ -6028,6 +6207,8 @@ namespace dbc {
 		void __set_session_id(const std::string& val);
 
 		void __set_session_id_sign(const std::string& val);
+
+		void __set_rent_order(const std::string& val);
 
 		bool operator == (const node_delete_snapshot_req_data& rhs) const
 		{
@@ -6054,6 +6235,10 @@ namespace dbc {
 			if (!(session_id == rhs.session_id))
 				return false;
 			if (!(session_id_sign == rhs.session_id_sign))
+				return false;
+			if (__isset.rent_order != rhs.__isset.rent_order)
+				return false;
+			else if (__isset.rent_order && !(rent_order == rhs.rent_order))
 				return false;
 			return true;
 		}
@@ -7197,13 +7382,17 @@ namespace dbc {
 
 	std::ostream& operator<<(std::ostream& out, const node_delete_disk_rsp& obj);
 
+	typedef struct _node_session_id_req_data__isset {
+		_node_session_id_req_data__isset() : rent_order(false) {}
+		bool rent_order : 1;
+	} _node_session_id_req_data__isset;
 
 	class node_session_id_req_data : public virtual ::apache::thrift::TBase {
 	public:
 
 		node_session_id_req_data(const node_session_id_req_data&);
 		node_session_id_req_data& operator=(const node_session_id_req_data&);
-		node_session_id_req_data() : additional(), wallet(), nonce(), sign(), multisig_threshold(0) {
+		node_session_id_req_data() : additional(), wallet(), nonce(), sign(), multisig_threshold(0), rent_order() {
 		}
 
 		virtual ~node_session_id_req_data() throw();
@@ -7215,6 +7404,9 @@ namespace dbc {
 		std::vector<std::string>  multisig_wallets;
 		int32_t multisig_threshold;
 		std::vector<multisig_sign_item>  multisig_signs;
+  		std::string rent_order;
+
+  		_node_session_id_req_data__isset __isset;
 
 		void __set_peer_nodes_list(const std::vector<std::string>& val);
 
@@ -7231,6 +7423,8 @@ namespace dbc {
 		void __set_multisig_threshold(const int32_t val);
 
 		void __set_multisig_signs(const std::vector<multisig_sign_item>& val);
+
+		void __set_rent_order(const std::string& val);
 
 		bool operator == (const node_session_id_req_data& rhs) const
 		{
@@ -7249,6 +7443,10 @@ namespace dbc {
 			if (!(multisig_threshold == rhs.multisig_threshold))
 				return false;
 			if (!(multisig_signs == rhs.multisig_signs))
+				return false;
+			if (__isset.rent_order != rhs.__isset.rent_order)
+				return false;
+			else if (__isset.rent_order && !(rent_order == rhs.rent_order))
 				return false;
 			return true;
 		}

@@ -60,6 +60,9 @@ struct req_body {
 
     // bare metal node id
     std::string node_id;
+
+    // rent order id
+    std::string rent_order;
 };
 
 class rsp_peer_node_info {

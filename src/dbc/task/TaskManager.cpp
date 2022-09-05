@@ -14,6 +14,7 @@
 #include "config/conf_manager.h"
 #include "tinyxml2.h"
 #include "detail/cpu/CpuTuneManager.h"
+#include "detail/rent_order/RentOrderManager.h"
 #include "detail/VxlanManager.h"
 #include "service/peer_request_service/p2p_lan_service.h"
 
@@ -56,7 +57,12 @@ FResult TaskManager::init() {
 
     fret = WalletRentTaskMgr::instance().init();
 	if (fret.errcode != ERR_SUCCESS) {
-		return FResult(ERR_ERROR, "wallet_renttask manager init failed;");
+		return FResult(ERR_ERROR, "wallet_renttask manager init failed");
+	}
+
+    fret = RentOrderManager::instance().Init();
+	if (fret.errcode != ERR_SUCCESS) {
+		return FResult(ERR_ERROR, "rent order manager init failed");
 	}
 
     // 重启时恢复running_tasks、初始化task状态
@@ -572,9 +578,9 @@ std::shared_ptr<TaskInfo> TaskManager::findTask(const std::string& wallet, const
 // 创建task
 FResult TaskManager::createTask(const std::string& wallet, 
                                 const std::shared_ptr<dbc::node_create_task_req_data>& data,
-                                int64_t rent_end, USER_ROLE role, std::string& task_id) {
+                                USER_ROLE role, std::string& task_id) {
     CreateTaskParams create_params;
-    FResult fret = parse_create_params(data->additional, role, create_params);
+    FResult fret = parse_create_params(data->additional, role, create_params, wallet, data->rent_order);
     if (fret.errcode != ERR_SUCCESS) {
         return fret;
     }
@@ -608,6 +614,7 @@ FResult TaskManager::createTask(const std::string& wallet,
     taskinfo->setVncPort(create_params.vnc_port);
     taskinfo->setVncPassword(create_params.vnc_password);
     taskinfo->setInterfaceModelType(create_params.interface_model_type);
+    taskinfo->setOrderId(data->rent_order);
     taskinfo->setTaskStatus(TaskStatus::TS_Task_Creating);
 	// vda root backfile
 	std::string vda_backfile = "/data/" + create_params.image_name;
@@ -656,13 +663,14 @@ FResult TaskManager::createTask(const std::string& wallet,
         }
         TaskGpuMgr::instance().add(task_id, gpuinfo);
     }
-    
+
     // add wallet_renttask
+    int64_t rent_end = RentOrderManager::instance().GetRentEnd(data->rent_order, wallet);
     WalletRentTaskMgr::instance().add(wallet, task_id, rent_end);
 
     // send join network request
     p2p_lan_service::instance().send_network_join_request(create_params.network_name, task_id);
-    
+
     // push event
     auto ev = std::make_shared<CreateTaskEvent>(task_id);
     ev->bios_mode = create_params.bios_mode;
@@ -671,7 +679,8 @@ FResult TaskManager::createTask(const std::string& wallet,
     return FResultOk;
 }
 
-FResult TaskManager::parse_create_params(const std::string &additional, USER_ROLE role, CreateTaskParams& params) {
+FResult TaskManager::parse_create_params(const std::string& additional, USER_ROLE role,
+        CreateTaskParams& params, const std::string& wallet, const std::string& rent_order) {
     if (additional.empty()) {
         return FResult(ERR_ERROR, "additional is empty");
     }
@@ -710,6 +719,18 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
     }
     if (role == USER_ROLE::Verifier) {
         task_id = "vm_check_" + std::to_string(time(nullptr));
+    }
+
+    // rent order id
+    bool in_order = !rent_order.empty();
+    std::vector<int32_t> order_gpu_index = RentOrderManager::instance().GetRentedGpuIndex(
+        rent_order, wallet);
+    float percent = 1.0f;
+    if (in_order) {
+        size_t gpu_count = SystemInfo::instance().GetGpuInfo().size();
+        if (gpu_count < 1) return FResult(ERR_ERROR, "get gpu info failed");
+        if (order_gpu_index.empty()) return FResult(ERR_ERROR, "order gpu index is empty");
+        percent = (float)order_gpu_index.size() / gpu_count;
     }
 
     // "desc"
@@ -850,7 +871,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
 		cpu_cores = SystemInfo::instance().GetCpuInfo().cores;
 
     // 分配资源
-    if (!allocate_cpu(cpu_cores, sockets, cores, threads)) {
+    if (!allocate_cpu(cpu_cores, sockets, cores, threads, "", percent)) {
         return FResult(ERR_ERROR, "allocate cpu failed");
     }
 
@@ -865,10 +886,10 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
 		mem_size_k = SystemInfo::instance().GetMemInfo().free;
 
     // 分配资源
-    if (!allocate_mem(mem_size_k)) {
+    if (!allocate_mem(mem_size_k, "", percent)) {
         run_shell("echo 3 > /proc/sys/vm/drop_caches");
 
-        if (!allocate_mem(mem_size_k)) {
+        if (!allocate_mem(mem_size_k, "", percent)) {
             return FResult(ERR_ERROR, "allocate mem failed");
         }
     }
@@ -884,7 +905,7 @@ FResult TaskManager::parse_create_params(const std::string &additional, USER_ROL
         gpu_count = SystemInfo::instance().GetGpuInfo().size();
 
     // 分配资源
-    if (!allocate_gpu(gpu_count, gpus)) {
+    if (gpu_count > order_gpu_index.size() || !allocate_gpu(gpu_count, gpus)) {
         return FResult(ERR_ERROR, "allocate gpu failed");
     }
 
@@ -1221,9 +1242,10 @@ FResult TaskManager::check_multicast(const std::vector<std::string>& multicast) 
 }
 
 bool TaskManager::allocate_cpu(int32_t& total_cores, int32_t& sockets,
-        int32_t& cores_per_socket, int32_t& threads, const std::string& exclude_task_id) {
+        int32_t& cores_per_socket, int32_t& threads,
+        const std::string& exclude_task_id, float percent) {
     int32_t nTotalCores = SystemInfo::instance().GetCpuInfo().cores;
-    if (total_cores > nTotalCores) return false;
+    if (total_cores > floor(nTotalCores * percent)) return false;
 
     int32_t nUsedCores = 0;
     auto taskinfos = TaskInfoMgr::instance().getAllTaskInfos();
@@ -1282,8 +1304,22 @@ bool TaskManager::allocate_cpu(int32_t& total_cores, int32_t& sockets,
     // }
 }
 
-bool TaskManager::allocate_mem(int64_t mem_size_k) {
-    return mem_size_k > 0 && mem_size_k <= SystemInfo::instance().GetMemInfo().free;
+bool TaskManager::allocate_mem(int64_t mem_size_k, const std::string& exclude_task_id, float percent) {
+    if (mem_size_k <= 0) return false;
+    auto meminfo = SystemInfo::instance().GetMemInfo();
+    if (mem_size_k > meminfo.free) return false;
+    if (mem_size_k > floor(meminfo.total * percent)) return false;
+    int64_t mem_used = 0;
+    auto taskinfos = TaskInfoMgr::instance().getAllTaskInfos();
+    for (auto& iter : taskinfos) {
+        if (iter.first == exclude_task_id) continue;
+        virDomainState st = VmClient::instance().GetDomainStatus(iter.first);
+        if (st == VIR_DOMAIN_RUNNING) {
+            mem_used += iter.second->getMemSize();
+        }
+    }
+    if (mem_size_k + mem_used > meminfo.total) return false;
+    return true;
 }
 
 bool TaskManager::allocate_gpu(int32_t gpu_count, std::map<std::string, std::list<std::string>>& gpus,
@@ -1827,6 +1863,8 @@ FResult TaskManager::modifyTask(const std::string& wallet,
     std::map<std::string, std::list<std::string>> new_gpus;
     JSON_PARSE_STRING(doc, "new_gpu_count", new_gpu_count);
     if (!new_gpu_count.empty()) {
+        if (!taskinfoPtr->getOrderId().empty())
+            return FResult(ERR_ERROR, "can not modify gpu count");
 		int count = (uint16_t) atoi(new_gpu_count.c_str());
         if (count < 0) return FResult(ERR_ERROR, "new gpu count is invalid");
         int old_gpu_count = TaskGpuMgr::instance().getTaskGpusCount(task_id);
@@ -1857,6 +1895,8 @@ FResult TaskManager::modifyTask(const std::string& wallet,
     std::string s_new_cpu_cores;
     JSON_PARSE_STRING(doc, "new_cpu_cores", s_new_cpu_cores);
     if (!s_new_cpu_cores.empty()) {
+        if (!taskinfoPtr->getOrderId().empty())
+            return FResult(ERR_ERROR, "can not modify cpu cores");
         int32_t new_cpu_cores = atoi(s_new_cpu_cores);
 		int32_t cpu_sockets = 1, cpu_cores = 1, cpu_threads = 2;
 		if (allocate_cpu(new_cpu_cores, cpu_sockets, cpu_cores, cpu_threads, task_id)) {
@@ -1886,8 +1926,10 @@ FResult TaskManager::modifyTask(const std::string& wallet,
     std::string new_mem_size;
     JSON_PARSE_STRING(doc, "new_mem_size", new_mem_size);
     if (!new_mem_size.empty()) {
+        if (!taskinfoPtr->getOrderId().empty())
+            return FResult(ERR_ERROR, "can not modify mem size");
         int64_t ksize = atoi(new_mem_size.c_str()) * 1024L * 1024L;
-        if (allocate_mem(ksize)) {
+        if (allocate_mem(ksize, task_id)) {
             if (ksize != taskinfoPtr->getMemSize()) {
                 need_reboot_vm = true;
                 need_redefine_vm = true;
@@ -1899,7 +1941,7 @@ FResult TaskManager::modifyTask(const std::string& wallet,
         else {
             run_shell("echo 3 > /proc/sys/vm/drop_caches");
 
-            if (allocate_mem(ksize)) {
+            if (allocate_mem(ksize, task_id)) {
                 if (ksize != taskinfoPtr->getMemSize()) {
                     need_reboot_vm = true;
                     need_redefine_vm = true;
@@ -2976,10 +3018,33 @@ void TaskManager::prune_task_thread_func() {
             ConfManager::instance().GetNodeId());
         if (machine_status == MACHINE_STATUS::Unknown) continue;
 
+        // 判断是否单卡租用，如果是，更新订单信息。
+        std::set<std::string> orders;
+        bool is_order = HttpDBCChainClient::instance().getRentOrderList(
+            ConfManager::instance().GetNodeId(), orders);
+        if (is_order && !orders.empty()) {
+            for (const auto& order : orders) {
+                RentOrderManager::instance().UpdateRentOrder(
+                    ConfManager::instance().GetNodeId(), order);
+            }
+        }
+        // RentOrderManager::instance().UpdateRentOrders(ConfManager::instance().GetNodeId());
+        std::set<std::string> renting_orders = RentOrderManager::instance().GetRentingOrders();
+        if (is_order && !renting_orders.empty()) {
+            for (const auto& order : renting_orders) {
+                if (orders.count(order) > 0) continue;
+                RentOrderManager::instance().UpdateRentOrder(
+                    ConfManager::instance().GetNodeId(), order);
+            }
+        }
+
         std::string cur_renter;
         int64_t cur_rent_end = 0;
         HttpDBCChainClient::instance().request_cur_renter(ConfManager::instance().GetNodeId(), cur_renter, cur_rent_end);
         int64_t cur_block = HttpDBCChainClient::instance().request_cur_block();
+
+        // clear expired rent order
+        RentOrderManager::instance().ClearExpiredRentOrder(cur_block);
 
         auto wallet_renttasks = WalletRentTaskMgr::instance().getAllWalletRentTasks();
         for (auto &it: wallet_renttasks) {
@@ -3015,7 +3080,42 @@ void TaskManager::prune_task_thread_func() {
             }
 
             if (machine_status == MACHINE_STATUS::Online || machine_status == MACHINE_STATUS::Rented) {
-                if (it.first != cur_renter) {
+                if (is_order) {
+                    for (const auto& task_id : it.second->getTaskIds()) {
+                        auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
+                        if (taskinfo->getOrderId().empty()) {
+                            TASK_LOG_INFO(task_id, "order id is empty while dbc chain need");
+                            close_task(task_id);
+                            int64_t wallet_rent_end = it.second->getRentEnd();
+                            int64_t reserve_end = wallet_rent_end + 120 * 24 * 10; //保留10天
+                            if (cur_block > 0 && reserve_end < cur_block) {
+                                TASK_LOG_INFO(task_id, "order id is empty too long while dbc chain need");
+                                delete_task(task_id);
+                            }
+                        } else {
+                            uint64_t order_rent_end = RentOrderManager::instance().GetRentEnd(
+                                taskinfo->getOrderId(), it.first);
+                            if (order_rent_end > 0) {
+                                if (cur_block > order_rent_end + 120 * 24 * 3) {
+                                    delete_task(task_id);
+                                    TASK_LOG_INFO(task_id,
+                                        "stop task and machine status:" << (int32_t) machine_status <<
+                                        ", order id:" << taskinfo->getOrderId() <<
+                                        ", cur block:" << cur_block <<
+                                        ", task rent end:" << order_rent_end);
+                                } else if (cur_block > order_rent_end) {
+                                    close_task(task_id);
+                                    TASK_LOG_INFO(task_id,
+                                        "stop task and machine status:" << (int32_t) machine_status <<
+                                        ", order id:" << taskinfo->getOrderId() <<
+                                        ", cur block:" << cur_block <<
+                                        ", task rent end:" << order_rent_end);
+                                }
+                            }
+                        }
+                    }
+                }
+                if (it.first != cur_renter && !cur_renter.empty()) {
                     std::vector<std::string> ids = it.second->getTaskIds();
                     for (auto &task_id: ids) {
                         if (VIR_DOMAIN_SHUTOFF != VmClient::instance().GetDomainStatus(task_id)) {
@@ -3030,7 +3130,7 @@ void TaskManager::prune_task_thread_func() {
                     // 1小时出120个块
                     int64_t wallet_rent_end = it.second->getRentEnd();
                     int64_t reserve_end = wallet_rent_end + 120 * 24 * 10; //保留10天
-                    if (cur_block > 0 && reserve_end < cur_block) {
+                    if (cur_block > 0 && wallet_rent_end > 0 && reserve_end < cur_block) {
                         ids = it.second->getTaskIds();
                         for (auto &task_id: ids) {
                             TASK_LOG_INFO(task_id, "delete task and machine status: " << (int32_t) machine_status 
@@ -3050,6 +3150,16 @@ void TaskManager::prune_task_thread_func() {
             }
         }
 
+        if (is_order) {
+            auto alltasks = TaskInfoMgr::instance().getAllTaskInfos();
+            for (const auto& taskptr : alltasks) {
+                if (taskptr.second->getOrderId().empty()) {
+                    close_task(taskptr.first);
+                    TASK_LOG_INFO(taskptr.first, "order id is empty while dbc chain need");
+                }
+            }
+        }
+
         TaskInfoMgr::instance().update_running_tasks();
         TaskInfoMgr::instance().update_deleted_tasks();
 
@@ -3058,7 +3168,7 @@ void TaskManager::prune_task_thread_func() {
             run_shell("echo 3 > /proc/sys/vm/drop_caches");
         }
 
-        if (cur_rent_end <= 0) {
+        if (cur_rent_end <= 0 && orders.empty()) {
             broadcast_message("empty");
         }
         else {
