@@ -315,6 +315,16 @@ namespace dbc {
 
 	class node_query_node_info_rsp;
 
+	class query_node_rent_orders_req_data;
+
+	class query_node_rent_orders_req_body;
+
+	class query_node_rent_orders_req;
+
+	class query_node_rent_orders_rsp_body;
+
+	class query_node_rent_orders_rsp;
+
 	class node_free_memory_req_data;
 
 	class node_free_memory_req_body;
@@ -7871,6 +7881,256 @@ namespace dbc {
 	void swap(node_query_node_info_rsp& a, node_query_node_info_rsp& b);
 
 	std::ostream& operator<<(std::ostream& out, const node_query_node_info_rsp& obj);
+
+	typedef struct _query_node_rent_orders_req_data__isset {
+		_query_node_rent_orders_req_data__isset() : rent_order(false) {}
+		bool rent_order : 1;
+	} _query_node_rent_orders_req_data__isset;
+
+	class query_node_rent_orders_req_data : public virtual ::apache::thrift::TBase {
+	public:
+
+		query_node_rent_orders_req_data(const query_node_rent_orders_req_data&);
+		query_node_rent_orders_req_data& operator=(const query_node_rent_orders_req_data&);
+		query_node_rent_orders_req_data() : additional(), wallet(), nonce(), sign(), multisig_threshold(0), session_id(), session_id_sign(), rent_order() {
+		}
+
+		virtual ~query_node_rent_orders_req_data() throw();
+		std::vector<std::string>  peer_nodes_list;
+		std::string additional;
+		std::string wallet;
+		std::string nonce;
+		std::string sign;
+		std::vector<std::string>  multisig_wallets;
+		int32_t multisig_threshold;
+		std::vector<multisig_sign_item>  multisig_signs;
+		std::string session_id;
+		std::string session_id_sign;
+		std::string rent_order;
+
+		_query_node_rent_orders_req_data__isset __isset;
+
+		void __set_peer_nodes_list(const std::vector<std::string> & val);
+
+		void __set_additional(const std::string& val);
+
+		void __set_wallet(const std::string& val);
+
+		void __set_nonce(const std::string& val);
+
+		void __set_sign(const std::string& val);
+
+		void __set_multisig_wallets(const std::vector<std::string> & val);
+
+		void __set_multisig_threshold(const int32_t val);
+
+		void __set_multisig_signs(const std::vector<multisig_sign_item> & val);
+
+		void __set_session_id(const std::string& val);
+
+		void __set_session_id_sign(const std::string& val);
+
+		void __set_rent_order(const std::string& val);
+
+		bool operator == (const query_node_rent_orders_req_data & rhs) const
+		{
+			if (!(peer_nodes_list == rhs.peer_nodes_list))
+				return false;
+			if (!(additional == rhs.additional))
+				return false;
+			if (!(wallet == rhs.wallet))
+				return false;
+			if (!(nonce == rhs.nonce))
+				return false;
+			if (!(sign == rhs.sign))
+				return false;
+			if (!(multisig_wallets == rhs.multisig_wallets))
+				return false;
+			if (!(multisig_threshold == rhs.multisig_threshold))
+				return false;
+			if (!(multisig_signs == rhs.multisig_signs))
+				return false;
+			if (!(session_id == rhs.session_id))
+				return false;
+			if (!(session_id_sign == rhs.session_id_sign))
+				return false;
+			if (__isset.rent_order != rhs.__isset.rent_order)
+				return false;
+			else if (__isset.rent_order && !(rent_order == rhs.rent_order))
+				return false;
+			return true;
+		}
+		bool operator != (const query_node_rent_orders_req_data &rhs) const {
+			return !(*this == rhs);
+		}
+
+		bool operator < (const query_node_rent_orders_req_data & ) const;
+
+		uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+		uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+		virtual void printTo(std::ostream& out) const;
+	};
+
+	void swap(query_node_rent_orders_req_data &a, query_node_rent_orders_req_data &b);
+
+	std::ostream& operator<<(std::ostream& out, const query_node_rent_orders_req_data& obj);
+
+
+	class query_node_rent_orders_req_body : public virtual ::apache::thrift::TBase {
+	public:
+
+		query_node_rent_orders_req_body(const query_node_rent_orders_req_body&);
+		query_node_rent_orders_req_body& operator=(const query_node_rent_orders_req_body&);
+		query_node_rent_orders_req_body() : data() {
+		}
+
+		virtual ~query_node_rent_orders_req_body() throw();
+		std::string data;
+
+		void __set_data(const std::string& val);
+
+		bool operator == (const query_node_rent_orders_req_body & rhs) const
+		{
+			if (!(data == rhs.data))
+				return false;
+			return true;
+		}
+		bool operator != (const query_node_rent_orders_req_body &rhs) const {
+			return !(*this == rhs);
+		}
+
+		bool operator < (const query_node_rent_orders_req_body & ) const;
+
+		uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+		uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+		virtual void printTo(std::ostream& out) const;
+	};
+
+	void swap(query_node_rent_orders_req_body &a, query_node_rent_orders_req_body &b);
+
+	std::ostream& operator<<(std::ostream& out, const query_node_rent_orders_req_body& obj);
+
+	typedef struct _query_node_rent_orders_req__isset {
+		_query_node_rent_orders_req__isset() : body(false) {}
+		bool body : 1;
+	} _query_node_rent_orders_req__isset;
+
+	class query_node_rent_orders_req : public virtual ::apache::thrift::TMsgBase {
+	public:
+
+		query_node_rent_orders_req(const query_node_rent_orders_req&);
+		query_node_rent_orders_req& operator=(const query_node_rent_orders_req&);
+		query_node_rent_orders_req() {
+		}
+
+		virtual ~query_node_rent_orders_req() throw();
+		query_node_rent_orders_req_body body;
+
+		_query_node_rent_orders_req__isset __isset;
+
+		void __set_body(const query_node_rent_orders_req_body& val);
+
+		bool operator == (const query_node_rent_orders_req & rhs) const
+		{
+			if (!(body == rhs.body))
+				return false;
+			return true;
+		}
+		bool operator != (const query_node_rent_orders_req &rhs) const {
+			return !(*this == rhs);
+		}
+
+		bool operator < (const query_node_rent_orders_req & ) const;
+
+		uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+		uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+		virtual void printTo(std::ostream& out) const;
+	};
+
+	void swap(query_node_rent_orders_req &a, query_node_rent_orders_req &b);
+
+	std::ostream& operator<<(std::ostream& out, const query_node_rent_orders_req& obj);
+
+
+	class query_node_rent_orders_rsp_body : public virtual ::apache::thrift::TBase {
+	public:
+
+		query_node_rent_orders_rsp_body(const query_node_rent_orders_rsp_body&);
+		query_node_rent_orders_rsp_body& operator=(const query_node_rent_orders_rsp_body&);
+		query_node_rent_orders_rsp_body() : data() {
+		}
+
+		virtual ~query_node_rent_orders_rsp_body() throw();
+		std::string data;
+
+		void __set_data(const std::string& val);
+
+		bool operator == (const query_node_rent_orders_rsp_body & rhs) const
+		{
+			if (!(data == rhs.data))
+				return false;
+			return true;
+		}
+		bool operator != (const query_node_rent_orders_rsp_body &rhs) const {
+			return !(*this == rhs);
+		}
+
+		bool operator < (const query_node_rent_orders_rsp_body & ) const;
+
+		uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+		uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+		virtual void printTo(std::ostream& out) const;
+	};
+
+	void swap(query_node_rent_orders_rsp_body &a, query_node_rent_orders_rsp_body &b);
+
+	std::ostream& operator<<(std::ostream& out, const query_node_rent_orders_rsp_body& obj);
+
+	typedef struct _query_node_rent_orders_rsp__isset {
+		_query_node_rent_orders_rsp__isset() : body(false) {}
+		bool body : 1;
+	} _query_node_rent_orders_rsp__isset;
+
+	class query_node_rent_orders_rsp : public virtual ::apache::thrift::TMsgBase {
+	public:
+
+		query_node_rent_orders_rsp(const query_node_rent_orders_rsp&);
+		query_node_rent_orders_rsp& operator=(const query_node_rent_orders_rsp&);
+		query_node_rent_orders_rsp() {
+		}
+
+		virtual ~query_node_rent_orders_rsp() throw();
+		query_node_rent_orders_rsp_body body;
+
+		_query_node_rent_orders_rsp__isset __isset;
+
+		void __set_body(const query_node_rent_orders_rsp_body& val);
+
+		bool operator == (const query_node_rent_orders_rsp & rhs) const
+		{
+			if (!(body == rhs.body))
+				return false;
+			return true;
+		}
+		bool operator != (const query_node_rent_orders_rsp &rhs) const {
+			return !(*this == rhs);
+		}
+
+		bool operator < (const query_node_rent_orders_rsp & ) const;
+
+		uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
+		uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;
+
+		virtual void printTo(std::ostream& out) const;
+	};
+
+	void swap(query_node_rent_orders_rsp &a, query_node_rent_orders_rsp &b);
+
+	std::ostream& operator<<(std::ostream& out, const query_node_rent_orders_rsp& obj);
 
 
 	class node_free_memory_req_data : public virtual ::apache::thrift::TBase {

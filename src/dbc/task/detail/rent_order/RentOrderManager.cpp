@@ -20,7 +20,7 @@ void RentOrderManager::Exit() {
 
 }
 
-const RentOrderManager::RentOrderMap RentOrderManager::GetRentOrders() const {
+const RentOrder::RentOrderMap RentOrderManager::GetRentOrders() const {
     RwMutex::ReadLock rlock(mutex_);
     return rent_orders_;
 }

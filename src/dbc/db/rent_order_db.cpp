@@ -3,6 +3,22 @@
 #include "util/memory/byte_buf.h"
 #include "network/protocol/thrift_binary.h"
 
+namespace RentOrder {
+
+// 订单ID全是数字，查到的其实是uint64类型
+// 订单ID在钱包地址的前面
+// 订单ID按数字从大到小排列
+bool Compare::operator() (const std::string& key1, const std::string& key2) const {
+    if (key1.length() == 48 && key2.length() == 48) return key1 < key2;
+    else if (key1.length() == 48) return false;
+    else if (key2.length() == 48) return true;
+    int64_t num1 = atoll(key1.c_str());
+    int64_t num2 = atoll(key2.c_str());
+    return num1 > num2;
+}
+
+}  // namespace RentOrder
+
 bool RentOrderDB::init_db(boost::filesystem::path db_path, std::string db_name) {
     leveldb::DB* db = nullptr;
     leveldb::Options  options;
@@ -34,7 +50,7 @@ bool RentOrderDB::init_db(boost::filesystem::path db_path, std::string db_name) 
     return true;
 }
 
-void RentOrderDB::load_datas(std::map<std::string, std::shared_ptr<dbc::db_rent_order>>& orders) {
+void RentOrderDB::load_datas(RentOrder::RentOrderMap& orders) {
     std::unique_ptr<leveldb::Iterator> it;
     it.reset(m_db->NewIterator(leveldb::ReadOptions()));
     for (it->SeekToFirst(); it->Valid(); it->Next())

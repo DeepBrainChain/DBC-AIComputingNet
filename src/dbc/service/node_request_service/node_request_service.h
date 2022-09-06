@@ -173,6 +173,11 @@ protected:
 
     void query_bare_metal_node_info(const network::base_header& header, const std::shared_ptr<dbc::node_query_node_info_req_data>& data);
 
+    // query node rent orders
+    void on_query_node_rent_orders_req(const std::shared_ptr<network::message>& msg);
+
+    void query_node_rent_orders(const network::base_header& header, const std::shared_ptr<dbc::query_node_rent_orders_req_data>& data);
+
     void on_node_session_id_req(const std::shared_ptr<network::message>& msg);
 
     void node_session_id(const network::base_header& header, const std::shared_ptr<dbc::node_session_id_req_data>& data, const AuthoriseResult& result);

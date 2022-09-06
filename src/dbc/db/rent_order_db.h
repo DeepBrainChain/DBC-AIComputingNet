@@ -6,6 +6,16 @@
 #include <boost/filesystem.hpp>
 #include "db_types/db_rent_order_types.h"
 
+namespace RentOrder {
+
+struct Compare {
+    bool operator() (const std::string& key1, const std::string& key2) const;
+};
+
+typedef std::map<std::string, std::shared_ptr<dbc::db_rent_order>, RentOrder::Compare> RentOrderMap;
+
+}  // namespace RentOrder
+
 class RentOrderDB final
 {
 public:
@@ -14,7 +24,7 @@ public:
 
     bool init_db(boost::filesystem::path db_path, std::string db_name);
 
-    void load_datas(std::map<std::string, std::shared_ptr<dbc::db_rent_order>>& orders);
+    void load_datas(RentOrder::RentOrderMap& orders);
 
     std::shared_ptr<dbc::db_rent_order> read_data(const std::string& order_id);
 

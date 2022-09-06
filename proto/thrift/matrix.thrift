@@ -987,6 +987,38 @@ struct node_query_node_info_rsp {
   1: node_query_node_info_rsp_body body
 }
 //////////////////////////////////////////////////////////////////////////
+// query node rent orders
+// request
+struct query_node_rent_orders_req_data {
+  1: required list<string> peer_nodes_list,
+  2: required string additional,
+  3: required string wallet,
+  4: required string nonce,
+  5: required string sign,
+  6: required list<string> multisig_wallets,
+  7: required i32 multisig_threshold,
+  8: required list<multisig_sign_item> multisig_signs,
+  9: required string session_id,
+  10: required string session_id_sign,
+  11: optional string rent_order
+}
+
+struct query_node_rent_orders_req_body {
+  1: required string data
+}
+
+struct query_node_rent_orders_req {
+  1: query_node_rent_orders_req_body body
+}
+// response
+struct query_node_rent_orders_rsp_body {
+  1: required string data
+}
+
+struct query_node_rent_orders_rsp {
+  1: query_node_rent_orders_rsp_body body
+}
+//////////////////////////////////////////////////////////////////////////
 // free memory
 // request
 struct node_free_memory_req_data {

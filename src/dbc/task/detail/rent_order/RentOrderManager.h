@@ -19,13 +19,11 @@ public:
     RentOrderManager();
     virtual ~RentOrderManager();
 
-    typedef std::map<std::string, std::shared_ptr<dbc::db_rent_order>> RentOrderMap;
-
     FResult Init();
 
     void Exit();
 
-    const RentOrderMap GetRentOrders() const;
+    const RentOrder::RentOrderMap GetRentOrders() const;
 
     void UpdateRentOrder(const std::string& machine_id, const std::string& rent_order);
 
@@ -45,7 +43,7 @@ public:
 
 private:
     mutable RwMutex mutex_;
-    RentOrderMap rent_orders_;
+    RentOrder::RentOrderMap rent_orders_;
     RentOrderDB db_;
 };
 

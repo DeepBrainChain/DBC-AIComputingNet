@@ -384,6 +384,19 @@ public:
 
     void on_node_query_node_info_timer(const std::shared_ptr<core_timer> &timer);
 
+    // query node rent orders
+    void rest_rent_orders(const std::shared_ptr<network::http_request> &httpReq, const std::string &path);
+
+    void rest_query_node_rent_orders(const std::shared_ptr<network::http_request> &httpReq, const std::string &path);
+
+    std::shared_ptr<network::message> create_query_node_rent_orders_req_msg(const std::string &head_session_id,
+                                                                          const req_body &body);
+
+    void on_query_node_rent_orders_rsp(const std::shared_ptr<network::http_request_context> &hreq_context,
+                                     const std::shared_ptr<network::message> &rsp_msg);
+
+    void on_query_node_rent_orders_timer(const std::shared_ptr<core_timer> &timer);
+
 	// free memory
 	void rest_free_memory(const std::shared_ptr<network::http_request>& httpReq, const std::string& path);
 

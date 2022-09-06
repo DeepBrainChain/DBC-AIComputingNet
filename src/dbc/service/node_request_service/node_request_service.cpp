@@ -215,6 +215,7 @@ void node_request_service::init_invoker() {
 	reg_msg_handle(NODE_DELETE_DISK_REQ, CALLBACK_1(node_request_service::on_node_delete_disk_req, this));
 
     reg_msg_handle(NODE_QUERY_NODE_INFO_REQ, CALLBACK_1(node_request_service::on_node_query_node_info_req, this));
+    reg_msg_handle(QUERY_NODE_RENT_ORDERS_REQ, CALLBACK_1(node_request_service::on_query_node_rent_orders_req, this));
     reg_msg_handle(SERVICE_BROADCAST_REQ, CALLBACK_1(node_request_service::on_net_service_broadcast_req, this));
     reg_msg_handle(NODE_SESSION_ID_REQ, CALLBACK_1(node_request_service::on_node_session_id_req, this));
 	reg_msg_handle(NODE_FREE_MEMORY_REQ, CALLBACK_1(node_request_service::on_node_free_memory_req, this));
@@ -4355,30 +4356,6 @@ void node_request_service::query_node_info(const network::base_header& header,
     }
     ss << "]";
 
-    // rent order 测试用
-    ss << ",\"rent order\":" << "[";
-    int order_count = 0;
-    auto rent_orders = RentOrderManager::instance().GetRentOrders();
-    for (const auto& iter : rent_orders) {
-        if (order_count > 0) ss << ",";
-        ss << "{";
-        ss << "\"id\":" << "\"" << iter.first << "\"";
-        ss << ",\"renter\":" << "\"" << iter.second->renter << "\"";
-        ss << ",\"rent_end\":" << "\"" << iter.second->rent_end << "\"";
-        ss << ",\"rent_status\":" << "\"" << iter.second->rent_status << "\"";
-        ss << ",\"gpu_nums\":" << "\"" << iter.second->gpu_num << "\"";
-        int gpu_aaa = 0;
-        ss << ",\"gpu_index\":[";
-        for (const auto& index : iter.second->gpu_index) {
-            if (gpu_aaa > 0) ss << ",";
-            ss << index;
-            gpu_aaa++;
-        }
-        ss << "]";
-        ss << "}";
-        order_count++;
-    }
-    ss << "]";
     /*
     int32_t count = TaskMgr::instance().GetRunningTaskSize();
     std::string state;
@@ -4498,6 +4475,131 @@ void node_request_service::query_bare_metal_node_info(const network::base_header
     else {
         LOG_ERROR << "request no pub_key";
         send_response_error<dbc::node_query_node_info_rsp>(NODE_QUERY_NODE_INFO_RSP, header, E_DEFAULT, "request no pub_key", data->peer_nodes_list[0]);
+    }
+}
+
+// query node rent orders
+void node_request_service::on_query_node_rent_orders_req(const std::shared_ptr<network::message>& msg) {
+    auto node_req_msg = std::dynamic_pointer_cast<dbc::query_node_rent_orders_req>(msg->get_content());
+    if (node_req_msg == nullptr) {
+        return;
+    }
+
+    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
+        return;
+    }
+
+    if (Server::NodeType != NODE_TYPE::ComputeNode && Server::NodeType != NODE_TYPE::BareMetalNode) {
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+        network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+        return;
+    }
+
+    if (!check_req_header(msg)) {
+        LOG_ERROR << "request header check failed";
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+        network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+        return;
+    }
+
+    // decrypt
+    std::string pub_key = node_req_msg->header.exten_info["pub_key"];
+    std::string priv_key = ConfManager::instance().GetPrivKey();
+    if (pub_key.empty() || priv_key.empty()) {
+        LOG_ERROR << "pub_key or priv_key is empty";
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+        network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+        return;
+    }
+
+    std::shared_ptr<dbc::query_node_rent_orders_req_data> data = std::make_shared<dbc::query_node_rent_orders_req_data>();
+    try {
+        std::string ori_message;
+        bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key, ori_message);
+        if (!succ || ori_message.empty()) {
+            node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+            network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+            return;
+        }
+
+        std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
+        task_buf->write_to_byte_buf(ori_message.c_str(), ori_message.size());
+        network::binary_protocol proto(task_buf.get());
+        data->read(&proto);
+    }
+    catch (std::exception& e) {
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+        network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+        return;
+    }
+
+    std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
+    HitNodeType hit_self = hit_node(req_peer_nodes, ConfManager::instance().GetNodeId());
+    if (hit_self == HitComputer || hit_self == HitBareMetal) {
+        query_node_rent_orders(node_req_msg->header, data);
+    } else if (hit_self == HitBareMetalManager) {
+        send_response_error<dbc::query_node_rent_orders_rsp>(QUERY_NODE_RENT_ORDERS_RSP, node_req_msg->header,
+            E_DEFAULT, "bare metal node has no machine info for now", data->peer_nodes_list[0]);
+    } else {
+        node_req_msg->header.path.push_back(ConfManager::instance().GetNodeId());
+        network::connection_manager::instance().broadcast_message(msg, msg->header.src_sid);
+    }
+}
+
+void node_request_service::query_node_rent_orders(const network::base_header& header,
+        const std::shared_ptr<dbc::query_node_rent_orders_req_data>& data) {
+    std::stringstream ss;
+    ss << "{";
+    ss << "\"errcode\":" << 0;
+    ss << ",\"message\":" << "{";
+
+    // rent order
+    ss << "\"rent_orders\":" << "[";
+    int order_count = 0;
+    auto rent_orders = RentOrderManager::instance().GetRentOrders();
+    for (const auto& iter : rent_orders) {
+        if (order_count > 50) break;
+        if (order_count > 0) ss << ",";
+        ss << "{";
+        ss << "\"id\":" << "\"" << iter.first << "\"";
+        ss << ",\"renter\":" << "\"" << iter.second->renter << "\"";
+        ss << ",\"rent_end\":" << "\"" << iter.second->rent_end << "\"";
+        ss << ",\"rent_status\":" << "\"" << iter.second->rent_status << "\"";
+        ss << ",\"gpu_nums\":" << "\"" << iter.second->gpu_num << "\"";
+        int gpu_aaa = 0;
+        ss << ",\"gpu_index\":[";
+        for (const auto& index : iter.second->gpu_index) {
+            if (gpu_aaa > 0) ss << ",";
+            ss << index;
+            gpu_aaa++;
+        }
+        ss << "]";
+        ss << "}";
+        order_count++;
+    }
+    ss << "]";
+
+    ss << "}";
+    ss << "}";
+
+    const std::map<std::string, std::string>& mp = header.exten_info;
+    auto it = mp.find("pub_key");
+    if (it != mp.end()) {
+        std::string pub_key = it->second;
+        std::string priv_key = ConfManager::instance().GetPrivKey();
+
+        if (!pub_key.empty() && !priv_key.empty()) {
+            std::string s_data = encrypt_data((unsigned char*)ss.str().c_str(), ss.str().size(), pub_key, priv_key);
+            send_response_json<dbc::query_node_rent_orders_rsp>(QUERY_NODE_RENT_ORDERS_RSP, header, s_data, data->peer_nodes_list[0]);
+        }
+        else {
+            LOG_ERROR << "pub_key or priv_key is empty";
+            send_response_error<dbc::query_node_rent_orders_rsp>(QUERY_NODE_RENT_ORDERS_RSP, header, E_DEFAULT, "pub_key or priv_key is empty");
+        }
+    }
+    else {
+        LOG_ERROR << "request no pub_key";
+        send_response_error<dbc::query_node_rent_orders_rsp>(QUERY_NODE_RENT_ORDERS_RSP, header, E_DEFAULT, "request no pub_key");
     }
 }
 

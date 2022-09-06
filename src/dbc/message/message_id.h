@@ -120,6 +120,11 @@
 #define NODE_QUERY_NODE_INFO_RSP       "node_query_node_info_rsp"
 #define NODE_QUERY_NODE_INFO_TIMER     "node_query_node_info_timer"
 
+// query node rent orders
+#define QUERY_NODE_RENT_ORDERS_REQ       "query_node_rent_orders_req"
+#define QUERY_NODE_RENT_ORDERS_RSP       "query_node_rent_orders_rsp"
+#define QUERY_NODE_RENT_ORDERS_TIMER     "query_node_rent_orders_timer"
+
 // free memory
 #define NODE_FREE_MEMORY_REQ       "node_free_memory_req"
 #define NODE_FREE_MEMORY_RSP       "node_free_memory_rsp"

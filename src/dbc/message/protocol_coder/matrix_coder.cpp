@@ -92,6 +92,9 @@ void matrix_coder::init_decode_invoker() {
     BIND_DECODE_INVOKER(node_query_node_info_req);
     BIND_DECODE_INVOKER(node_query_node_info_rsp);
 
+    BIND_DECODE_INVOKER(query_node_rent_orders_req);
+    BIND_DECODE_INVOKER(query_node_rent_orders_rsp);
+
     BIND_DECODE_INVOKER(service_broadcast_req);
 
     BIND_DECODE_INVOKER(node_session_id_req);
@@ -228,6 +231,9 @@ void matrix_coder::init_encode_invoker() {
 
     BIND_ENCODE_INVOKER(node_query_node_info_req);
     BIND_ENCODE_INVOKER(node_query_node_info_rsp);
+
+    BIND_ENCODE_INVOKER(query_node_rent_orders_req);
+    BIND_ENCODE_INVOKER(query_node_rent_orders_rsp);
 
     BIND_ENCODE_INVOKER(service_broadcast_req);
 
