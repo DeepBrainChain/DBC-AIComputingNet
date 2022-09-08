@@ -164,3 +164,10 @@ bool CpuTuneManager::TunableCpus(unsigned int vcpus, std::vector<unsigned int>& 
     }
     return true;
 }
+
+void CpuTuneManager::UpdateCpuMap(const std::vector<unsigned char>& cpumap) {
+    if (cpumap.size() == cpumap_.size()) {
+        RwMutex::WriteLock wlock(mutex_);
+        std::copy(cpumap.begin(), cpumap.end(), cpumap_.begin());
+    }
+}

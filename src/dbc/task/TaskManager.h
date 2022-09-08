@@ -212,7 +212,7 @@ protected:
         float percent = 1.0f);
 
     bool allocate_gpu(int32_t gpu_count, std::map<std::string, std::list<std::string>>& gpus,
-        const std::string& exclude_task_id = "");
+        std::vector<int32_t> gpu_order, const std::string& exclude_task_id = "");
 
     bool allocate_disk(int64_t disk_size_k);
 

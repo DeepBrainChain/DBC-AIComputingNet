@@ -723,14 +723,41 @@ FResult TaskManager::parse_create_params(const std::string& additional, USER_ROL
 
     // rent order id
     bool in_order = !rent_order.empty();
-    std::vector<int32_t> order_gpu_index = RentOrderManager::instance().GetRentedGpuIndex(
+    auto order_gpu_index = RentOrderManager::instance().GetRentedGpuIndex(
         rent_order, wallet);
+    if (role == USER_ROLE::Verifier) { // 验证人可能查不到 order_gpu_index
+        order_gpu_index.clear();
+        size_t sys_gpu_count = SystemInfo::instance().GetGpuInfo().size();
+        for (int i = 0; i < sys_gpu_count; i++)
+            order_gpu_index.push_back(i);
+    }
+    if (order_gpu_index.empty()) return FResult(ERR_ERROR, "order gpu index is empty");
+
+    // "gpu_count"
+    JSON_PARSE_STRING(doc, "gpu_count", s_gpu_count);
+    // check
+    gpu_count = atoi(s_gpu_count.c_str());
+    if (gpu_count < 0) {
+        return FResult(ERR_ERROR, "gpu_count is invalid (usage: gpu_count >= 0)");
+    }
+    if (role == USER_ROLE::Verifier) {
+        gpu_count = SystemInfo::instance().GetGpuInfo().size();
+    }
+
+    if (gpu_count > order_gpu_index.size()) {
+        return FResult(ERR_ERROR, "gpu_count exceeds number of leases");
+    }
+
     float percent = 1.0f;
     if (in_order) {
-        size_t gpu_count = SystemInfo::instance().GetGpuInfo().size();
-        if (gpu_count < 1) return FResult(ERR_ERROR, "get gpu info failed");
-        if (order_gpu_index.empty()) return FResult(ERR_ERROR, "order gpu index is empty");
-        percent = (float)order_gpu_index.size() / gpu_count;
+        size_t sys_gpu_count = SystemInfo::instance().GetGpuInfo().size();
+        if (sys_gpu_count < 1) return FResult(ERR_ERROR, "get gpu info failed");
+        percent = (float)gpu_count / sys_gpu_count;
+    }
+
+    // 分配资源
+    if (!allocate_gpu(gpu_count, gpus, order_gpu_index)) {
+        return FResult(ERR_ERROR, "allocate gpu failed");
     }
 
     // "desc"
@@ -892,21 +919,6 @@ FResult TaskManager::parse_create_params(const std::string& additional, USER_ROL
         if (!allocate_mem(mem_size_k, "", percent)) {
             return FResult(ERR_ERROR, "allocate mem failed");
         }
-    }
-
-    // "gpu_count"
-    JSON_PARSE_STRING(doc, "gpu_count", s_gpu_count);
-    // check
-    gpu_count = atoi(s_gpu_count.c_str());
-    if (gpu_count < 0) {
-        return FResult(ERR_ERROR, "gpu_count is invalid (usage: gpu_count >= 0)");
-    }
-    if (role == USER_ROLE::Verifier)
-        gpu_count = SystemInfo::instance().GetGpuInfo().size();
-
-    // 分配资源
-    if (gpu_count > order_gpu_index.size() || !allocate_gpu(gpu_count, gpus)) {
-        return FResult(ERR_ERROR, "allocate gpu failed");
     }
 
     // "disk_size" (G)
@@ -1323,32 +1335,41 @@ bool TaskManager::allocate_mem(int64_t mem_size_k, const std::string& exclude_ta
 }
 
 bool TaskManager::allocate_gpu(int32_t gpu_count, std::map<std::string, std::list<std::string>>& gpus,
-    const std::string& exclude_task_id) {
-    if (gpu_count == 0) return true;
+        std::vector<int32_t> gpu_order, const std::string& exclude_task_id) {
+    if (gpu_order.empty()) return false;
+    if (gpu_count > gpu_order.size()) return false;
 
     std::map<std::string, gpu_info> can_use_gpu = SystemInfo::instance().GetGpuInfo();
+    if (gpu_count == 0) {
+        if (gpu_order.size() == can_use_gpu.size()) return true;
+        else return false;
+    }
+
+    std::set<std::string> used_gpus;
     auto taskinfos = TaskInfoMgr::instance().getAllTaskInfos();
     for (auto& iter : taskinfos) {
         if (iter.first == exclude_task_id) continue;
         virDomainState st = VmClient::instance().GetDomainStatus(iter.first);
         if (st != VIR_DOMAIN_SHUTOFF) {
-            auto gpus = TaskGpuMgr::instance().getTaskGpus(iter.first);
-            if (!gpus.empty()) {
-                for (auto& iter_gpu : gpus) {
-                    can_use_gpu.erase(iter_gpu.first);
-                }
+            auto task_gpus = TaskGpuMgr::instance().getTaskGpus(iter.first);
+            for (auto& task_gpu : task_gpus) {
+                if (used_gpus.count(task_gpu.first) == 0)
+                    used_gpus.insert(task_gpu.first);
             }
         }
     }
 
-    int cur_count = 0;
-    for (auto& it : can_use_gpu) {
-        gpus[it.first] = it.second.devices;
-        cur_count++;
-        if (cur_count == gpu_count) break;
+    int index = 0;
+    for (const auto& it : can_use_gpu) {
+        auto ifind = std::find(gpu_order.begin(), gpu_order.end(), index);
+        if (ifind != gpu_order.end() && used_gpus.count(it.first) == 0) {
+            gpus[it.first] = it.second.devices;
+        }
+        index++;
+        if (gpus.size() == gpu_count) break;
     }
 
-    return cur_count == gpu_count;
+    return gpus.size() == gpu_count;
 }
 
 bool TaskManager::allocate_disk(int64_t disk_size_k) {
@@ -1400,6 +1421,9 @@ FResult TaskManager::check_cpu(int32_t sockets, int32_t cores, int32_t threads,
         return FResult(ERR_ERROR, "check cpu failed");
     }
 
+    int32_t used_cpus = 0;
+    bool cpu_conflict = false;
+
     std::vector<unsigned char> cpumap;
     cpumap.resize(CpuTuneManager::instance().GetCpuMapLength());
     auto taskinfos = TaskInfoMgr::instance().getAllTaskInfos();
@@ -1407,6 +1431,7 @@ FResult TaskManager::check_cpu(int32_t sockets, int32_t cores, int32_t threads,
         if (iter.first == task_id) continue;
         virDomainState st = VmClient::instance().GetDomainStatus(iter.first);
         if (st == VIR_DOMAIN_RUNNING) {
+            used_cpus += iter.second->getTotalCores();
             std::vector<unsigned int> cpuset;
             VmClient::instance().GetCpuTune(iter.first, cpuset);
             for (const auto& cpu : cpuset) {
@@ -1415,14 +1440,25 @@ FResult TaskManager::check_cpu(int32_t sockets, int32_t cores, int32_t threads,
         }
     }
 
-    std::vector<unsigned int> cpuset;
-    VmClient::instance().GetCpuTune(task_id, cpuset);
-    for (const auto& cpu : cpuset) {
-        if (VIR_CPU_USED(&cpumap[0], cpu))
-            return FResult(ERR_ERROR, "check cpu tune failed");
-    }
+    if (used_cpus + cpu_cores > SystemInfo::instance().GetCpuInfo().cores)
+        return FResult(ERR_ERROR, "cpu count exceeds the maximum");
 
-    return FResultOk;
+    std::vector<unsigned int> cpuset;
+    if (VmClient::instance().GetCpuTune(task_id, cpuset) > 0) {
+        for (const auto& cpu : cpuset) {
+            if (VIR_CPU_USED(&cpumap[0], cpu)) {
+                cpu_conflict = true;
+                break;
+            }
+        }
+    } else {
+        return FResult(ERR_ERROR, "get cpu tune failed");
+    }
+    if (!cpu_conflict) return FResultOk;
+
+    // VCPU绑定出现冲突，重新绑定
+    CpuTuneManager::instance().UpdateCpuMap(cpumap);
+    return VmClient::instance().ResetCpuTune(task_id, cpu_cores);
 }
 
 FResult TaskManager::check_gpu(const std::map<std::string, std::shared_ptr<GpuInfo>>& gpus,
@@ -1679,6 +1715,19 @@ FResult TaskManager::modifyTask(const std::string& wallet,
     //     return FResult(ERR_ERROR, "task is running, please close it first");
     // }
 
+    std::string rent_order = taskinfoPtr->getOrderId();
+    auto order_gpu_index = RentOrderManager::instance().GetRentedGpuIndex(
+        rent_order, wallet);
+    size_t sys_gpu_count = SystemInfo::instance().GetGpuInfo().size();
+    // 是否整机租用
+    bool rent_all_machine = rent_order.empty() || order_gpu_index.size() == sys_gpu_count;
+    float percent = 1.0f;
+    if (!rent_all_machine) {
+        if (order_gpu_index.empty())
+            return FResult(ERR_ERROR, "gpu rent order is empty");
+        percent = (float)order_gpu_index.size() / sys_gpu_count;
+    }
+
     bool need_reset_iptables = false;
     bool need_reboot_vm = false;
     bool need_redefine_vm = false;
@@ -1863,13 +1912,14 @@ FResult TaskManager::modifyTask(const std::string& wallet,
     std::map<std::string, std::list<std::string>> new_gpus;
     JSON_PARSE_STRING(doc, "new_gpu_count", new_gpu_count);
     if (!new_gpu_count.empty()) {
-        if (!taskinfoPtr->getOrderId().empty())
+        if (!rent_all_machine)
             return FResult(ERR_ERROR, "can not modify gpu count");
 		int count = (uint16_t) atoi(new_gpu_count.c_str());
         if (count < 0) return FResult(ERR_ERROR, "new gpu count is invalid");
+
         int old_gpu_count = TaskGpuMgr::instance().getTaskGpusCount(task_id);
         if (count != old_gpu_count) {
-            if (allocate_gpu(count, new_gpus, task_id)) {
+            if (allocate_gpu(count, new_gpus, order_gpu_index, task_id)) {
                 std::map<std::string, std::shared_ptr<GpuInfo>> mp_gpus;
                 for (auto& iter_gpu : new_gpus) {
                     std::shared_ptr<GpuInfo> ptr = std::make_shared<GpuInfo>();
@@ -1895,11 +1945,11 @@ FResult TaskManager::modifyTask(const std::string& wallet,
     std::string s_new_cpu_cores;
     JSON_PARSE_STRING(doc, "new_cpu_cores", s_new_cpu_cores);
     if (!s_new_cpu_cores.empty()) {
-        if (!taskinfoPtr->getOrderId().empty())
+        if (!rent_all_machine)
             return FResult(ERR_ERROR, "can not modify cpu cores");
         int32_t new_cpu_cores = atoi(s_new_cpu_cores);
 		int32_t cpu_sockets = 1, cpu_cores = 1, cpu_threads = 2;
-		if (allocate_cpu(new_cpu_cores, cpu_sockets, cpu_cores, cpu_threads, task_id)) {
+		if (allocate_cpu(new_cpu_cores, cpu_sockets, cpu_cores, cpu_threads, task_id, percent)) {
             if (cpu_sockets != taskinfoPtr->getCpuSockets() ||
                 cpu_cores != taskinfoPtr->getCpuCoresPerSocket() ||
                 cpu_threads != taskinfoPtr->getCpuThreadsPerCore()) {
@@ -1926,10 +1976,10 @@ FResult TaskManager::modifyTask(const std::string& wallet,
     std::string new_mem_size;
     JSON_PARSE_STRING(doc, "new_mem_size", new_mem_size);
     if (!new_mem_size.empty()) {
-        if (!taskinfoPtr->getOrderId().empty())
+        if (!rent_all_machine)
             return FResult(ERR_ERROR, "can not modify mem size");
         int64_t ksize = atoi(new_mem_size.c_str()) * 1024L * 1024L;
-        if (allocate_mem(ksize, task_id)) {
+        if (allocate_mem(ksize, task_id, percent)) {
             if (ksize != taskinfoPtr->getMemSize()) {
                 need_reboot_vm = true;
                 need_redefine_vm = true;
@@ -1952,7 +2002,7 @@ FResult TaskManager::modifyTask(const std::string& wallet,
             } else {
                 return FResult(ERR_ERROR, "allocate memory failed");
             }
-        } 
+        }
     }
 
     // being to redefine domain

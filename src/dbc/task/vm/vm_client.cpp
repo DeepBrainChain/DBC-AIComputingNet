@@ -846,6 +846,10 @@ int32_t VmClient::CreateDomain(const std::shared_ptr<TaskInfo>& taskinfo) {
     }
 
     std::string domain_name = taskinfo->getTaskId();
+    std::string rent_order = taskinfo->getOrderId();
+    if (!rent_order.empty()) {
+        TASK_LOG_INFO(domain_name, "rent order: " << rent_order);
+    }
 
     // gpu
     auto gpus = TaskGpuMgr::instance().getTaskGpus(taskinfo->getTaskId());
@@ -1314,7 +1318,12 @@ FResult VmClient::RedefineDomain(const std::shared_ptr<TaskInfo>& taskinfo) {
         // cpu tune
         if (cpuNumTotal != oldCpuNum) {
             tinyxml2::XMLElement* ele_cputune = root->FirstChildElement("cputune");
-            ele_cputune->DeleteChildren();
+            if (ele_cputune) {
+                ele_cputune->DeleteChildren();
+            } else {
+                ele_cputune = doc.NewElement("cputune");
+                root->LinkEndChild(ele_cputune);
+            }
 
             std::vector<unsigned int> tunable_cpus;
             if (CpuTuneManager::instance().TunableCpus(cpuNumTotal, tunable_cpus)) {
@@ -2567,6 +2576,78 @@ int32_t VmClient::GetCpuTune(const std::string& domain_name, std::vector<unsigne
         ele_vcpupin = ele_vcpupin->NextSiblingElement("vcpupin");
     }
     return cpuset.size();
+}
+
+FResult VmClient::ResetCpuTune(const std::string& domain_name, unsigned int vcpus) {
+    if (m_connPtr == nullptr) {
+		return FResult(ERR_ERROR, "libvirt disconnect");
+	}
+
+	virDomainPtr domainPtr = virDomainLookupByName(m_connPtr, domain_name.c_str());
+	if (nullptr == domainPtr) {
+        return FResult(ERR_ERROR, "task:" + domain_name + " not exist");
+	}
+
+	char* pContent = virDomainGetXMLDesc(domainPtr, VIR_DOMAIN_XML_SECURE | VIR_DOMAIN_XML_INACTIVE);
+    if (pContent != nullptr) {
+        tinyxml2::XMLDocument doc;
+        tinyxml2::XMLError err = doc.Parse(pContent);
+        if (err != tinyxml2::XML_SUCCESS) {
+            free(pContent);
+            virDomainFree(domainPtr);
+            return FResult(ERR_ERROR, "task:" + domain_name + " parse domain xml failed");
+        }
+        tinyxml2::XMLElement* root = doc.RootElement();
+        // cpu tune
+        tinyxml2::XMLElement* ele_cputune = root->FirstChildElement("cputune");
+        if (ele_cputune) {
+            ele_cputune->DeleteChildren();
+        } else {
+            ele_cputune = doc.NewElement("cputune");
+            root->LinkEndChild(ele_cputune);
+        }
+
+        std::vector<unsigned int> tunable_cpus;
+        if (CpuTuneManager::instance().TunableCpus(vcpus, tunable_cpus)) {
+            int32_t i = 0, j = 0;
+            std::string first_cpuset;
+            while (i < vcpus && j < tunable_cpus.size()) {
+                std::string cpuset = std::to_string(tunable_cpus[j]);
+                if (CpuTuneManager::instance().IsHyperThreading()) {
+                    cpuset.append("," + std::to_string(tunable_cpus[j + 1]));
+                    if (i % 2 == 1) j += 2;
+                } else {
+                    j++;
+                }
+                if (first_cpuset.empty()) first_cpuset = cpuset;
+                tinyxml2::XMLElement* vcpu_node = doc.NewElement("vcpupin");
+                vcpu_node->SetAttribute("vcpu", std::to_string(i).c_str());
+                vcpu_node->SetAttribute("cpuset", cpuset.c_str());
+                ele_cputune->LinkEndChild(vcpu_node);
+                ++i;
+            }
+            tinyxml2::XMLElement* vcpu_emulatorpin = doc.NewElement("emulatorpin");
+            vcpu_emulatorpin->SetAttribute("cpuset", first_cpuset.c_str());
+            ele_cputune->LinkEndChild(vcpu_emulatorpin);
+        }
+
+		tinyxml2::XMLPrinter printer;
+		doc.Print(&printer);
+		const char* xml_content = printer.CStr();
+
+		domainPtr = virDomainDefineXML(m_connPtr, xml_content);
+		if (domainPtr == nullptr) {
+			virErrorPtr error = virGetLastError();
+			std::string errmsg = std::string("defineXML failed: ") + error->message;
+            free(pContent);
+			virDomainFree(domainPtr);
+			return FResult(ERR_ERROR, errmsg);
+		}
+        free(pContent);
+    }
+
+	virDomainFree(domainPtr);
+	return FResultOk;
 }
 
 void VmClient::DefaultEventThreadFunc() {

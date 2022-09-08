@@ -130,6 +130,8 @@ public:
 
     int32_t GetCpuTune(const std::string& domain_name, std::vector<unsigned int>& cpuset);
 
+    FResult ResetCpuTune(const std::string& domain_name, unsigned int vcpus);
+
 protected:
     void DefaultEventThreadFunc();
 

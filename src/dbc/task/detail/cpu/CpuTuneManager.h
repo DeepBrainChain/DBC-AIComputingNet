@@ -49,6 +49,8 @@ public:
 
     bool TunableCpus(unsigned int vcpus, std::vector<unsigned int>& cpus);
 
+    void UpdateCpuMap(const std::vector<unsigned char>& cpumap);
+
 protected:
 
 private:
