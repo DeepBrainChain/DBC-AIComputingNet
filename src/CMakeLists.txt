@@ -61,11 +61,13 @@ set(service_src_dir
         dbc/task/vm
         dbc/task/docker
         dbc/task/detail
+        dbc/task/detail/cpu
         dbc/task/detail/disk
         dbc/task/detail/gpu
         dbc/task/detail/image
         dbc/task/detail/info
         dbc/task/detail/iptable
+        dbc/task/detail/rent_order
         dbc/task/detail/wallet_rent_task
         dbc/task/detail/wallet_session_id
         dbc/task
