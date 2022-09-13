@@ -752,7 +752,11 @@ FResult TaskManager::parse_create_params(const std::string& additional, USER_ROL
     if (in_order) {
         size_t sys_gpu_count = SystemInfo::instance().GetGpuInfo().size();
         if (sys_gpu_count < 1) return FResult(ERR_ERROR, "get gpu info failed");
-        percent = (float)gpu_count / sys_gpu_count;
+        if (order_gpu_index.size() != sys_gpu_count) {
+            if (gpu_count != order_gpu_index.size())
+                return FResult(ERR_ERROR, "only use the number what you exactly rented");
+            percent = (float)gpu_count / sys_gpu_count;
+        }
     }
 
     // 分配资源
