@@ -5238,6 +5238,7 @@ void node_request_service::on_node_list_lan_req(const std::shared_ptr<network::m
         // params.multisig_signs = data->multisig_signs;
         // params.session_id = data->session_id;
         // params.session_id_sign = data->session_id_sign;
+        // params.rent_order = data->rent_order;
         // AuthoriseResult result;
         // check_authority(params, result);
         // if (!result.success || result.user_role == USER_ROLE::Unknown || result.user_role == USER_ROLE::Verifier) {
@@ -5434,6 +5435,7 @@ void node_request_service::on_node_create_lan_req(const std::shared_ptr<network:
         params.multisig_signs = data->multisig_signs;
         params.session_id = data->session_id;
         params.session_id_sign = data->session_id_sign;
+        params.rent_order = data->rent_order;
         AuthoriseResult result;
         check_authority(params, result);
         if (!result.success || result.user_role == USER_ROLE::Unknown || result.user_role == USER_ROLE::Verifier) {
@@ -5538,6 +5540,7 @@ void node_request_service::on_node_delete_lan_req(const std::shared_ptr<network:
         params.multisig_signs = data->multisig_signs;
         params.session_id = data->session_id;
         params.session_id_sign = data->session_id_sign;
+        params.rent_order = data->rent_order;
         AuthoriseResult result;
         check_authority(params, result);
         if (!result.success || result.user_role == USER_ROLE::Unknown || result.user_role == USER_ROLE::Verifier) {

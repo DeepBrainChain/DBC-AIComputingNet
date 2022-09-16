@@ -76,6 +76,7 @@ RentOrder::RentStatus RentOrderManager::GetRentStatus(const std::string& rent_or
     if (iter->second->rent_status == "renting" ||
             iter->second->rent_status == "waitingVerifying")
         return RentOrder::RentStatus::Renting;
+    return RentOrder::RentStatus::None;
 }
 
 uint64_t RentOrderManager::GetRentEnd(const std::string& rent_order,

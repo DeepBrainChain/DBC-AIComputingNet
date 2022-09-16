@@ -21,7 +21,8 @@ struct node_list_lan_req_data {
   8: required i32 multisig_threshold,
   9: required list<multisig_sign_item> multisig_signs,
   10: required string session_id,
-  11: required string session_id_sign
+  11: required string session_id_sign,
+  12: optional string rent_order
 }
 
 struct node_list_lan_req_body {
@@ -53,7 +54,8 @@ struct node_create_lan_req_data {
   7: required i32 multisig_threshold,
   8: required list<multisig_sign_item> multisig_signs,
   9: required string session_id,
-  10: required string session_id_sign
+  10: required string session_id_sign,
+  11: optional string rent_order
 }
 
 struct node_create_lan_req_body {
@@ -86,7 +88,8 @@ struct node_delete_lan_req_data {
   8: required i32 multisig_threshold,
   9: required list<multisig_sign_item> multisig_signs,
   10: required string session_id,
-  11: required string session_id_sign
+  11: required string session_id_sign,
+  12: optional string rent_order
 }
 
 struct node_delete_lan_req_body {

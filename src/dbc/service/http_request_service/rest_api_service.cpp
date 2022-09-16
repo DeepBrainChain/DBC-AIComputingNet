@@ -9403,6 +9403,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_list_lan_req_msg
     req_data.__set_multisig_signs(vecMultisigSignItem);
     req_data.__set_session_id(body.session_id);
     req_data.__set_session_id_sign(body.session_id_sign);
+    req_data.__set_rent_order(body.rent_order);
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
@@ -9658,6 +9659,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_create_lan_req_m
     req_data.__set_multisig_signs(vecMultisigSignItem);
     req_data.__set_session_id(body.session_id);
     req_data.__set_session_id_sign(body.session_id_sign);
+    req_data.__set_rent_order(body.rent_order);
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
@@ -9891,6 +9893,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_delete_lan_req_m
     req_data.__set_multisig_signs(vecMultisigSignItem);
     req_data.__set_session_id(body.session_id);
     req_data.__set_session_id_sign(body.session_id_sign);
+    req_data.__set_rent_order(body.rent_order);
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
