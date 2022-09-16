@@ -1,5 +1,5 @@
 #include "node_monitor_service.h"
-#include "db/db_types/monitors_db_types.h"
+#include "db/db_types/db_wallet_monitor_types.h"
 #include "zabbixSender.h"
 #include "task/vm/vm_client.h"
 #include "common/version.h"

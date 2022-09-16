@@ -1,0 +1,13 @@
+namespace cpp dbc
+
+//////////////////////////////////////////////////////////////////////////
+struct db_monitor_server {
+  1: required string host,
+  2: required string port
+}
+
+//////////////////////////////////////////////////////////////////////////
+struct db_wallet_monitors {
+  1: required string wallet,
+  2: required list<db_monitor_server> monitors
+}
