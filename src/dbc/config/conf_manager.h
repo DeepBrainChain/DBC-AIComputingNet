@@ -60,6 +60,10 @@ public:
 
     int32_t GetMulticastPort() const { return m_multicast_port; }
 
+    uint32_t GetCheckVmExpirationFrequency() const  {
+        return m_check_vm_expiration_timer_frequency;
+    }
+
     const std::vector<std::string> & GetPeers() { return m_peers; }
 
     const std::vector<std::string> &GetInternalIpSeeds() { return m_internal_ip_seeds; }
@@ -107,6 +111,7 @@ private:
     std::string m_miner_monitor_server;
     std::string m_multicast_address;
     int32_t m_multicast_port;
+    uint32_t m_check_vm_expiration_timer_frequency;
 
     std::vector<std::string> m_peers;
     std::vector<std::string> m_internal_ip_seeds;

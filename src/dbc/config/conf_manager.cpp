@@ -94,7 +94,8 @@ ERRCODE ConfManager::ParseConf() {
         ("dbc_monitor_server", bpo::value<std::string>()->default_value("monitor.dbcwallet.io:10051"), "")
         ("miner_monitor_server", bpo::value<std::string>(), "")
         ("multicast_address", bpo::value<std::string>()->default_value("239.255.0.1"), "")
-        ("multicast_port", bpo::value<int32_t>()->default_value(30001), "");
+        ("multicast_port", bpo::value<int32_t>()->default_value(30001), "")
+        ("check_vm_expiration_timer_frequency", bpo::value<uint32_t>()->default_value(900), "in seconds");
 
     const boost::filesystem::path &conf_path = EnvManager::instance().get_conf_file_path();
     try {
@@ -145,6 +146,10 @@ ERRCODE ConfManager::ParseConf() {
 
     m_multicast_address = core_args["multicast_address"].as<std::string>();
     m_multicast_port = core_args["multicast_port"].as<int32_t>();
+
+    // 默认900，最小300
+    m_check_vm_expiration_timer_frequency =
+        std::max(core_args["check_vm_expiration_timer_frequency"].as<uint32_t>(), 300u);
 
     variables_map peer_args;
     bpo::options_description peer_opts("peer.conf");

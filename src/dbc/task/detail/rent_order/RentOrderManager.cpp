@@ -35,6 +35,10 @@ void RentOrderManager::UpdateRentOrder(const std::string& machine_id,
             RwMutex::ReadLock rlock(mutex_);
             if (rent_orders_.count(pro->id) > 0) {
                 auto old = rent_orders_[pro->id];
+                // 5C4hrfjw9DjXZTzV3MwzrrAr9P1MJhSrvWGWqi1eSuyUpnhM 是链上的默认钱包
+                // 实际就是全0编码后的值，当租用到期或者没有租用人时就是这个值
+                if (pro->renter == "5C4hrfjw9DjXZTzV3MwzrrAr9P1MJhSrvWGWqi1eSuyUpnhM")
+                    pro->__set_renter(old->renter);
                 if (pro->rent_end == 0) pro->__set_rent_end(old->rent_end);
                 if (pro->gpu_index.empty()) pro->__set_gpu_index(old->gpu_index);
                 if (pro->gpu_num == 0) pro->__set_gpu_num(old->gpu_num);
@@ -44,7 +48,7 @@ void RentOrderManager::UpdateRentOrder(const std::string& machine_id,
         if (rent_orders_.count(pro->id) == 0 || *rent_orders_[pro->id] != *pro) {
             std::string gpu_index;
             for (const auto& index : pro->gpu_index)
-                gpu_index.append(" " + index);
+                gpu_index.append(" " + std::to_string(index));
             LOG_INFO << "update rent order, " << pro->id
                 << ", rent_wallet: " << pro->renter
                 << ", rent end: " << pro->rent_end
@@ -118,8 +122,13 @@ void RentOrderManager::ClearExpiredRentOrder(uint64_t cur_block) {
         RwMutex::ReadLock rlock(mutex_);
         for (const auto& iter : rent_orders_) {
             if (iter.second->rent_status != "rentExpired") continue;
-            if (cur_block - iter.second->rent_end > 120 * 24 * 30)
+            if (cur_block - iter.second->rent_end > 120 * 24 * 30) {
                 ids.push_back(iter.first);
+                LOG_INFO << "rent order " << iter.first
+                    << " is out of date for a long time, rent end:"
+                    << iter.second->rent_end << ", wallet: "
+                    << iter.second->renter;
+            }
         }
     }
     RwMutex::WriteLock wlock(mutex_);

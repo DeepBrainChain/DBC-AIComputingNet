@@ -1516,6 +1516,7 @@ FResult TaskManager::check_mem(int64_t mem_size_k) {
 }
 
 FResult TaskManager::check_resource(const std::shared_ptr<TaskInfo>& taskinfo) {
+    virDomainState dom_state = VmClient::instance().GetDomainStatus(taskinfo->getTaskId());
     // 检查xml里的所有gpu是否都可用，如果存在不可用的gpu，自动删除
     TaskGpuMgr::instance().checkXmlGpu(taskinfo);
 
@@ -1534,14 +1535,16 @@ FResult TaskManager::check_resource(const std::shared_ptr<TaskInfo>& taskinfo) {
     }
     
     // mem
-    int64_t mem_size_k = taskinfo->getMemSize();
-    fret = check_mem(mem_size_k);
-    if (fret.errcode != ERR_SUCCESS) {
-        run_shell("echo 3 > /proc/sys/vm/drop_caches");
-
+    if (dom_state != VIR_DOMAIN_RUNNING) {
+        int64_t mem_size_k = taskinfo->getMemSize();
         fret = check_mem(mem_size_k);
         if (fret.errcode != ERR_SUCCESS) {
-            return FResult(ERR_ERROR, "check memory failed");
+            run_shell("echo 3 > /proc/sys/vm/drop_caches");
+
+            fret = check_mem(mem_size_k);
+            if (fret.errcode != ERR_SUCCESS) {
+                return FResult(ERR_ERROR, "check memory failed");
+            }
         }
     }
 
@@ -3056,13 +3059,16 @@ void TaskManager::process_create_snapshot(const std::shared_ptr<TaskEvent>& ev) 
 
 void TaskManager::prune_task_thread_func() {
     while (m_running) {
+        static uint32_t timer_frequency = ConfManager::instance().GetCheckVmExpirationFrequency();
 		std::unique_lock<std::mutex> lock(m_prune_mtx);
-		m_prune_cond.wait_for(lock, std::chrono::seconds(900), [this] {
+		m_prune_cond.wait_for(lock, std::chrono::seconds(timer_frequency), [this] {
 			return !m_running || !m_events.empty();
 		});
 
 		if (!m_running)
 			break;
+
+        LOG_INFO << "prune task thread timer start running";
 
         shell_remove_reject_iptable_from_system();
 
