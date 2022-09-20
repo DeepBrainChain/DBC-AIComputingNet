@@ -2206,6 +2206,7 @@ void node_request_service::on_node_list_images_req(const std::shared_ptr<network
 		params.multisig_signs = data->multisig_signs;
 		params.session_id = data->session_id;
 		params.session_id_sign = data->session_id_sign;
+        params.rent_order = data->rent_order;
 		AuthoriseResult result;
 		check_authority(params, result);
 
@@ -2346,6 +2347,7 @@ void node_request_service::on_node_download_image_req(const std::shared_ptr<netw
 		params.multisig_signs = data->multisig_signs;
 		params.session_id = data->session_id;
 		params.session_id_sign = data->session_id_sign;
+        params.rent_order = data->rent_order;
 		AuthoriseResult result;
 		check_authority(params, result);
 		if (!result.success) {
@@ -2449,6 +2451,7 @@ void node_request_service::on_node_download_image_progress_req(const std::shared
 		params.multisig_signs = data->multisig_signs;
 		params.session_id = data->session_id;
 		params.session_id_sign = data->session_id_sign;
+        params.rent_order = data->rent_order;
 		AuthoriseResult result;
 		check_authority(params, result);
 		if (!result.success) {
@@ -2570,6 +2573,7 @@ void node_request_service::on_node_stop_download_image_req(const std::shared_ptr
 		params.multisig_signs = data->multisig_signs;
 		params.session_id = data->session_id;
 		params.session_id_sign = data->session_id_sign;
+        params.rent_order = data->rent_order;
 		AuthoriseResult result;
 		check_authority(params, result);
 		if (!result.success) {
@@ -2691,6 +2695,7 @@ void node_request_service::on_node_upload_image_req(const std::shared_ptr<networ
 		params.multisig_signs = data->multisig_signs;
 		params.session_id = data->session_id;
 		params.session_id_sign = data->session_id_sign;
+        params.rent_order = data->rent_order;
 		AuthoriseResult result;
 		check_authority(params, result);
 		if (!result.success) {
@@ -2794,6 +2799,7 @@ void node_request_service::on_node_upload_image_progress_req(const std::shared_p
 		params.multisig_signs = data->multisig_signs;
 		params.session_id = data->session_id;
 		params.session_id_sign = data->session_id_sign;
+        params.rent_order = data->rent_order;
 		AuthoriseResult result;
 		check_authority(params, result);
 		if (!result.success) {
@@ -2915,6 +2921,7 @@ void node_request_service::on_node_stop_upload_image_req(const std::shared_ptr<n
 		params.multisig_signs = data->multisig_signs;
 		params.session_id = data->session_id;
 		params.session_id_sign = data->session_id_sign;
+        params.rent_order = data->rent_order;
 		AuthoriseResult result;
 		check_authority(params, result);
 		if (!result.success) {
@@ -3036,6 +3043,7 @@ void node_request_service::on_node_delete_image_req(const std::shared_ptr<networ
 		params.multisig_signs = data->multisig_signs;
 		params.session_id = data->session_id;
 		params.session_id_sign = data->session_id_sign;
+        params.rent_order = data->rent_order;
 		AuthoriseResult result;
 		check_authority(params, result);
 		if (!result.success) {
@@ -3610,6 +3618,7 @@ void node_request_service::on_node_list_disk_req(const std::shared_ptr<network::
 		params.multisig_signs = data->multisig_signs;
 		params.session_id = data->session_id;
 		params.session_id_sign = data->session_id_sign;
+        params.rent_order = data->rent_order;
 		AuthoriseResult result;
 		check_authority(params, result);
 		if (!result.success || result.user_role == USER_ROLE::Unknown || result.user_role == USER_ROLE::Verifier) {
@@ -3760,6 +3769,7 @@ void node_request_service::on_node_resize_disk_req(const std::shared_ptr<network
 		params.multisig_signs = data->multisig_signs;
 		params.session_id = data->session_id;
 		params.session_id_sign = data->session_id_sign;
+        params.rent_order = data->rent_order;
 		AuthoriseResult result;
 		check_authority(params, result);
 		if (!result.success || result.user_role == USER_ROLE::Unknown || result.user_role == USER_ROLE::Verifier) {
@@ -3930,6 +3940,7 @@ void node_request_service::on_node_add_disk_req(const std::shared_ptr<network::m
 		params.multisig_signs = data->multisig_signs;
 		params.session_id = data->session_id;
 		params.session_id_sign = data->session_id_sign;
+        params.rent_order = data->rent_order;
 		AuthoriseResult result;
 		check_authority(params, result);
 		if (!result.success || result.user_role == USER_ROLE::Unknown || result.user_role == USER_ROLE::Verifier) {
@@ -4104,6 +4115,7 @@ void node_request_service::on_node_delete_disk_req(const std::shared_ptr<network
 		params.multisig_signs = data->multisig_signs;
 		params.session_id = data->session_id;
 		params.session_id_sign = data->session_id_sign;
+        params.rent_order = data->rent_order;
 		AuthoriseResult result;
 		check_authority(params, result);
 		if (!result.success || result.user_role == USER_ROLE::Unknown || result.user_role == USER_ROLE::Verifier) {
@@ -4796,6 +4808,7 @@ void node_request_service::on_node_free_memory_req(const std::shared_ptr<network
 		params.multisig_signs = data->multisig_signs;
 		params.session_id = data->session_id;
 		params.session_id_sign = data->session_id_sign;
+        params.rent_order = data->rent_order;
 		AuthoriseResult result;
 		check_authority(params, result);
 		if (!result.success) {
@@ -5006,6 +5019,7 @@ void node_request_service::on_node_list_monitor_server_req(const std::shared_ptr
         params.multisig_signs = data->multisig_signs;
         params.session_id = data->session_id;
         params.session_id_sign = data->session_id_sign;
+        params.rent_order = data->rent_order;
         AuthoriseResult result;
         check_authority(params, result);
         if (!result.success || result.user_role == USER_ROLE::Unknown || result.user_role == USER_ROLE::Verifier) {
@@ -5138,6 +5152,7 @@ void node_request_service::on_node_set_monitor_server_req(const std::shared_ptr<
         params.multisig_signs = data->multisig_signs;
         params.session_id = data->session_id;
         params.session_id_sign = data->session_id_sign;
+        params.rent_order = data->rent_order;
         AuthoriseResult result;
         check_authority(params, result);
         if (!result.success || result.user_role == USER_ROLE::Unknown || result.user_role == USER_ROLE::Verifier) {
@@ -6077,6 +6092,7 @@ void node_request_service::on_node_bare_metal_power_req(const std::shared_ptr<ne
         params.session_id = data->session_id;
         params.session_id_sign = data->session_id_sign;
         params.machine_id = data->peer_nodes_list[0];
+        params.rent_order = data->rent_order;
         AuthoriseResult result;
         check_authority(params, result);
         if (!result.success || result.user_role == USER_ROLE::Unknown || result.user_role == USER_ROLE::Verifier) {
@@ -6196,6 +6212,7 @@ void node_request_service::on_node_bare_metal_bootdev_req(const std::shared_ptr<
         params.session_id = data->session_id;
         params.session_id_sign = data->session_id_sign;
         params.machine_id = data->peer_nodes_list[0];
+        params.rent_order = data->rent_order;
         AuthoriseResult result;
         check_authority(params, result);
         if (!result.success || result.user_role == USER_ROLE::Unknown || result.user_role == USER_ROLE::Verifier) {

@@ -3814,6 +3814,7 @@ rest_api_service::create_node_list_images_req_msg(const std::string& head_sessio
 	req_data.__set_session_id(body.session_id);
 	req_data.__set_session_id_sign(body.session_id_sign);
 	req_data.__set_image_server(body.image_server);
+    req_data.__set_rent_order(body.rent_order);
 
 	// encrypt
 	std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
@@ -4053,6 +4054,7 @@ rest_api_service::create_node_download_image_req_msg(const std::string& head_ses
 	req_data.__set_session_id(body.session_id);
 	req_data.__set_session_id_sign(body.session_id_sign);
 	req_data.__set_image_server(body.image_server);
+    req_data.__set_rent_order(body.rent_order);
 
 	// encrypt
 	std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
@@ -4276,6 +4278,7 @@ rest_api_service::create_node_download_image_progress_req_msg(const std::string&
 	req_data.__set_multisig_signs(vecMultisigSignItem);
 	req_data.__set_session_id(body.session_id);
 	req_data.__set_session_id_sign(body.session_id_sign);
+    req_data.__set_rent_order(body.rent_order);
 
 	// encrypt
 	std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
@@ -4499,6 +4502,7 @@ rest_api_service::create_node_stop_download_image_req_msg(const std::string& hea
 	req_data.__set_multisig_signs(vecMultisigSignItem);
 	req_data.__set_session_id(body.session_id);
 	req_data.__set_session_id_sign(body.session_id_sign);
+    req_data.__set_rent_order(body.rent_order);
 
 	// encrypt
 	std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
@@ -4765,6 +4769,7 @@ rest_api_service::create_node_upload_image_req_msg(const std::string& head_sessi
 	req_data.__set_session_id(body.session_id);
 	req_data.__set_session_id_sign(body.session_id_sign);
 	req_data.__set_image_server(body.image_server);
+    req_data.__set_rent_order(body.rent_order);
 
 	// encrypt
 	std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
@@ -5025,6 +5030,7 @@ rest_api_service::create_node_upload_image_progress_req_msg(const std::string& h
 	req_data.__set_multisig_signs(vecMultisigSignItem);
 	req_data.__set_session_id(body.session_id);
 	req_data.__set_session_id_sign(body.session_id_sign);
+    req_data.__set_rent_order(body.rent_order);
 
 	// encrypt
 	std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
@@ -5277,6 +5283,7 @@ rest_api_service::create_node_stop_upload_image_req_msg(const std::string& head_
 	req_data.__set_multisig_signs(vecMultisigSignItem);
 	req_data.__set_session_id(body.session_id);
 	req_data.__set_session_id_sign(body.session_id_sign);
+    req_data.__set_rent_order(body.rent_order);
 
 	// encrypt
 	std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
@@ -5513,6 +5520,7 @@ rest_api_service::create_node_delete_image_req_msg(const std::string& head_sessi
 	req_data.__set_multisig_signs(vecMultisigSignItem);
 	req_data.__set_session_id(body.session_id);
 	req_data.__set_session_id_sign(body.session_id_sign);
+    req_data.__set_rent_order(body.rent_order);
 
 	// encrypt
 	std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
@@ -5780,6 +5788,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_list_disk_req_ms
 	req_data.__set_multisig_signs(vecMultisigSignItem);
 	req_data.__set_session_id(body.session_id);
 	req_data.__set_session_id_sign(body.session_id_sign);
+    req_data.__set_rent_order(body.rent_order);
 
 	// encrypt
 	std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
@@ -6019,6 +6028,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_resize_disk_req_
 	req_data.__set_multisig_signs(vecMultisigSignItem);
 	req_data.__set_session_id(body.session_id);
 	req_data.__set_session_id_sign(body.session_id_sign);
+    req_data.__set_rent_order(body.rent_order);
 
 	// encrypt
 	std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
@@ -6258,6 +6268,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_add_disk_req_msg
 	req_data.__set_multisig_signs(vecMultisigSignItem);
 	req_data.__set_session_id(body.session_id);
 	req_data.__set_session_id_sign(body.session_id_sign);
+    req_data.__set_rent_order(body.rent_order);
 
 	// encrypt
 	std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
@@ -6497,6 +6508,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_delete_disk_req_
 	req_data.__set_multisig_signs(vecMultisigSignItem);
 	req_data.__set_session_id(body.session_id);
 	req_data.__set_session_id_sign(body.session_id_sign);
+    req_data.__set_rent_order(body.rent_order);
 
 	// encrypt
 	std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
@@ -6800,6 +6812,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_query_node_info_
     req_data.__set_session_id(body.session_id);
     req_data.__set_session_id_sign(body.session_id_sign);
     req_data.__set_image_server(body.image_server);
+    req_data.__set_rent_order(body.rent_order);
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
@@ -7272,6 +7285,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_free_memory_req_
 	req_data.__set_multisig_signs(vecMultisigSignItem);
 	req_data.__set_session_id(body.session_id);
 	req_data.__set_session_id_sign(body.session_id_sign);
+    req_data.__set_rent_order(body.rent_order);
 
 	// encrypt
 	std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
@@ -8820,6 +8834,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_list_monitor_ser
     req_data.__set_multisig_signs(vecMultisigSignItem);
     req_data.__set_session_id(body.session_id);
     req_data.__set_session_id_sign(body.session_id_sign);
+    req_data.__set_rent_order(body.rent_order);
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
@@ -9051,6 +9066,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_set_monitor_serv
     req_data.__set_multisig_signs(vecMultisigSignItem);
     req_data.__set_session_id(body.session_id);
     req_data.__set_session_id_sign(body.session_id_sign);
+    req_data.__set_rent_order(body.rent_order);
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
@@ -10196,6 +10212,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_list_bare_metal_
     req_data.__set_multisig_signs(vecMultisigSignItem);
     req_data.__set_session_id(body.session_id);
     req_data.__set_session_id_sign(body.session_id_sign);
+    req_data.__set_rent_order(body.rent_order);
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
@@ -10515,6 +10532,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_add_bare_metal_r
     req_data.__set_multisig_signs(vecMultisigSignItem);
     req_data.__set_session_id(body.session_id);
     req_data.__set_session_id_sign(body.session_id_sign);
+    req_data.__set_rent_order(body.rent_order);
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
@@ -10781,6 +10799,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_delete_bare_meta
     req_data.__set_multisig_signs(vecMultisigSignItem);
     req_data.__set_session_id(body.session_id);
     req_data.__set_session_id_sign(body.session_id_sign);
+    req_data.__set_rent_order(body.rent_order);
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
@@ -11041,6 +11060,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_bare_metal_power
     req_data.__set_multisig_signs(vecMultisigSignItem);
     req_data.__set_session_id(body.session_id);
     req_data.__set_session_id_sign(body.session_id_sign);
+    req_data.__set_rent_order(body.rent_order);
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();
@@ -11301,6 +11321,7 @@ std::shared_ptr<network::message> rest_api_service::create_node_bare_metal_bootd
     req_data.__set_multisig_signs(vecMultisigSignItem);
     req_data.__set_session_id(body.session_id);
     req_data.__set_session_id_sign(body.session_id_sign);
+    req_data.__set_rent_order(body.rent_order);
 
     // encrypt
     std::shared_ptr<byte_buf> out_buf = std::make_shared<byte_buf>();

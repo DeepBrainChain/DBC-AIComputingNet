@@ -450,7 +450,8 @@ struct node_list_images_req_data {
   8: required list<multisig_sign_item> multisig_signs,
   9: required string session_id,
   10: required string session_id_sign,
-  11: optional string image_server
+  11: optional string image_server,
+  12: optional string rent_order
 }
 
 struct node_list_images_req_body {
@@ -482,7 +483,8 @@ struct node_download_image_req_data {
   8: required list<multisig_sign_item> multisig_signs,
   9: required string session_id,
   10: required string session_id_sign,
-  11: optional string image_server
+  11: optional string image_server,
+  12: optional string rent_order
 }
 
 struct node_download_image_req_body {
@@ -513,7 +515,8 @@ struct node_download_image_progress_req_data {
   7: required i32 multisig_threshold,
   8: required list<multisig_sign_item> multisig_signs,
   9: required string session_id,
-  10: required string session_id_sign
+  10: required string session_id_sign,
+  11: optional string rent_order
 }
 
 struct node_download_image_progress_req_body {
@@ -544,7 +547,8 @@ struct node_stop_download_image_req_data {
   7: required i32 multisig_threshold,
   8: required list<multisig_sign_item> multisig_signs,
   9: required string session_id,
-  10: required string session_id_sign
+  10: required string session_id_sign,
+  11: optional string rent_order
 }
 
 struct node_stop_download_image_req_body {
@@ -576,7 +580,8 @@ struct node_upload_image_req_data {
   8: required list<multisig_sign_item> multisig_signs,
   9: required string session_id,
   10: required string session_id_sign,
-  11: optional string image_server
+  11: optional string image_server,
+  12: optional string rent_order
 }
 
 struct node_upload_image_req_body {
@@ -607,7 +612,8 @@ struct node_upload_image_progress_req_data {
   7: required i32 multisig_threshold,
   8: required list<multisig_sign_item> multisig_signs,
   9: required string session_id,
-  10: required string session_id_sign
+  10: required string session_id_sign,
+  11: optional string rent_order
 }
 
 struct node_upload_image_progress_req_body {
@@ -638,7 +644,8 @@ struct node_stop_upload_image_req_data {
   7: required i32 multisig_threshold,
   8: required list<multisig_sign_item> multisig_signs,
   9: required string session_id,
-  10: required string session_id_sign
+  10: required string session_id_sign,
+  11: optional string rent_order
 }
 
 struct node_stop_upload_image_req_body {
@@ -669,7 +676,8 @@ struct node_delete_image_req_data {
   7: required i32 multisig_threshold,
   8: required list<multisig_sign_item> multisig_signs,
   9: required string session_id,
-  10: required string session_id_sign
+  10: required string session_id_sign,
+  11: optional string rent_order
 }
 
 struct node_delete_image_req_body {
@@ -806,7 +814,8 @@ struct node_list_disk_req_data {
   8: required i32 multisig_threshold,
   9: required list<multisig_sign_item> multisig_signs,
   10: required string session_id,
-  11: required string session_id_sign
+  11: required string session_id_sign,
+  12: optional string rent_order
 }
 
 struct node_list_disk_req_body {
@@ -839,7 +848,8 @@ struct node_resize_disk_req_data {
   8: required i32 multisig_threshold,
   9: required list<multisig_sign_item> multisig_signs,
   10: required string session_id,
-  11: required string session_id_sign
+  11: required string session_id_sign,
+  12: optional string rent_order
 }
 
 struct node_resize_disk_req_body {
@@ -872,7 +882,8 @@ struct node_add_disk_req_data {
   8: required i32 multisig_threshold,
   9: required list<multisig_sign_item> multisig_signs,
   10: required string session_id,
-  11: required string session_id_sign
+  11: required string session_id_sign,
+  12: optional string rent_order
 }
 
 struct node_add_disk_req_body {
@@ -905,7 +916,8 @@ struct node_delete_disk_req_data {
   8: required i32 multisig_threshold,
   9: required list<multisig_sign_item> multisig_signs,
   10: required string session_id,
-  11: required string session_id_sign
+  11: required string session_id_sign,
+  12: optional string rent_order
 }
 
 struct node_delete_disk_req_body {
@@ -968,7 +980,8 @@ struct node_query_node_info_req_data {
   8: required list<multisig_sign_item> multisig_signs,
   9: required string session_id,
   10: required string session_id_sign,
-  11: optional string image_server
+  11: optional string image_server,
+  12: optional string rent_order
 }
 
 struct node_query_node_info_req_body {
@@ -1031,7 +1044,8 @@ struct node_free_memory_req_data {
   7: required i32 multisig_threshold,
   8: required list<multisig_sign_item> multisig_signs,
   9: required string session_id,
-  10: required string session_id_sign
+  10: required string session_id_sign,
+  11: optional string rent_order
 }
 
 struct node_free_memory_req_body {
@@ -1138,7 +1152,8 @@ struct node_list_monitor_server_req_data {
   7: required i32 multisig_threshold,
   8: required list<multisig_sign_item> multisig_signs,
   9: required string session_id,
-  10: required string session_id_sign
+  10: required string session_id_sign,
+  11: optional string rent_order
 }
 
 struct node_list_monitor_server_req_body {
@@ -1170,7 +1185,8 @@ struct node_set_monitor_server_req_data {
   7: required i32 multisig_threshold,
   8: required list<multisig_sign_item> multisig_signs,
   9: required string session_id,
-  10: required string session_id_sign
+  10: required string session_id_sign,
+  11: optional string rent_order
 }
 
 struct node_set_monitor_server_req_body {
@@ -1203,7 +1219,8 @@ struct node_list_bare_metal_req_data {
   8: required i32 multisig_threshold,
   9: required list<multisig_sign_item> multisig_signs,
   10: required string session_id,
-  11: required string session_id_sign
+  11: required string session_id_sign,
+  12: optional string rent_order
 }
 
 struct node_list_bare_metal_req_body {
@@ -1235,7 +1252,8 @@ struct node_add_bare_metal_req_data {
   7: required i32 multisig_threshold,
   8: required list<multisig_sign_item> multisig_signs,
   9: required string session_id,
-  10: required string session_id_sign
+  10: required string session_id_sign,
+  11: optional string rent_order
 }
 
 struct node_add_bare_metal_req_body {
@@ -1267,7 +1285,8 @@ struct node_delete_bare_metal_req_data {
   7: required i32 multisig_threshold,
   8: required list<multisig_sign_item> multisig_signs,
   9: required string session_id,
-  10: required string session_id_sign
+  10: required string session_id_sign,
+  11: optional string rent_order
 }
 
 struct node_delete_bare_metal_req_body {
@@ -1300,7 +1319,8 @@ struct node_bare_metal_power_req_data {
   8: required i32 multisig_threshold,
   9: required list<multisig_sign_item> multisig_signs,
   10: required string session_id,
-  11: required string session_id_sign
+  11: required string session_id_sign,
+  12: optional string rent_order
 }
 
 struct node_bare_metal_power_req_body {
@@ -1332,7 +1352,8 @@ struct node_bare_metal_bootdev_req_data {
   7: required i32 multisig_threshold,
   8: required list<multisig_sign_item> multisig_signs,
   9: required string session_id,
-  10: required string session_id_sign
+  10: required string session_id_sign,
+  11: optional string rent_order
 }
 
 struct node_bare_metal_bootdev_req_body {
