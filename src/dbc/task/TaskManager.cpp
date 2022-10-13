@@ -153,6 +153,19 @@ void TaskManager::broadcast_message(const std::string& msg) {
 }
 
 FResult TaskManager::init_tasks_status() {
+    // supplement renter wallet of vm task
+    auto renttask = WalletRentTaskMgr::instance().getAllWalletRentTasks();
+    for (const auto& iter : renttask) {
+        auto ids = iter.second->getTaskIds();
+        for (auto& task_id : ids) {
+            auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
+            if (taskinfo && taskinfo->getRenterWallet().empty()) {
+                taskinfo->setRenterWallet(iter.first);
+                TaskInfoMgr::instance().update(taskinfo);
+            }
+        }
+    }
+
     // vda root backfile
     do {
         auto taskinfos = TaskInfoMgr::instance().getAllTaskInfos();
@@ -668,6 +681,7 @@ FResult TaskManager::createTask(
     taskinfo->setVncPassword(create_params.vnc_password);
     taskinfo->setInterfaceModelType(create_params.interface_model_type);
     taskinfo->setOrderId(data->rent_order);
+    taskinfo->setRenterWallet(wallet);
     taskinfo->setTaskStatus(TaskStatus::TS_Task_Creating);
     // vda root backfile
     std::string vda_backfile = "/data/" + create_params.image_name;

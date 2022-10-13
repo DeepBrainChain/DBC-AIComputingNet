@@ -1,6 +1,7 @@
 #include "TaskGpuManager.h"
 
 #include "log/log.h"
+#include "task/detail/info/TaskInfoManager.h"
 #include "task/detail/rent_order/RentOrderManager.h"
 #include "task/vm/vm_client.h"
 #include "tinyxml2.h"
@@ -103,11 +104,9 @@ int32_t TaskGpuManager::getTaskGpusCount(const std::string& task_id) {
     }
 }
 
-void TaskGpuManager::resetGpusByRentOrder(const std::string& task_id,
-                                          const std::string& rent_order) {
-    auto order_gpu_index =
-        RentOrderManager::instance().GetRentedGpuIndex(rent_order, "");
-    if (order_gpu_index.empty()) return;
+void TaskGpuManager::resetGpusByIndex(const std::string& task_id,
+                                      const std::vector<int32_t>& gpu_index) {
+    if (gpu_index.empty()) return;
 
     del(task_id);
     TASK_LOG_INFO(task_id, "begin to reset gpus by rent order");
@@ -117,9 +116,8 @@ void TaskGpuManager::resetGpusByRentOrder(const std::string& task_id,
     std::map<std::string, std::list<std::string>> ordered_gpus;
     int index = 0;
     for (const auto& it : sys_gpus) {
-        auto ifind =
-            std::find(order_gpu_index.begin(), order_gpu_index.end(), index);
-        if (ifind != order_gpu_index.end()) {
+        auto ifind = std::find(gpu_index.begin(), gpu_index.end(), index);
+        if (ifind != gpu_index.end()) {
             ordered_gpus[it.first] = it.second.devices;
             TASK_LOG_INFO(task_id, "add gpu bus id: " << it.first);
         }
@@ -143,21 +141,25 @@ FResult TaskGpuManager::checkXmlGpu(const std::shared_ptr<TaskInfo>& taskinfo,
     bool need_redefine_vm = false;
     if (!taskinfo->getOrderId().empty() && !rent_order.empty() &&
         rent_order != taskinfo->getOrderId() &&
-        RentOrderManager::instance().GetRentStatus(rent_order, "") ==
+        RentOrderManager::instance().GetRentStatus(
+            rent_order, taskinfo->getRenterWallet()) ==
             RentOrder::RentStatus::Renting &&
         RentOrderManager::instance().GetRentStatus(
-            taskinfo->getOrderId(), "") != RentOrder::RentStatus::Renting) {
-        auto order_gpu_index =
-            RentOrderManager::instance().GetRentedGpuIndex(rent_order, "");
+            taskinfo->getOrderId(), taskinfo->getRenterWallet()) !=
+            RentOrder::RentStatus::Renting) {
+        auto order_gpu_index = RentOrderManager::instance().GetRentedGpuIndex(
+            rent_order, taskinfo->getRenterWallet());
         if (!order_gpu_index.empty() &&
-            order_gpu_index != RentOrderManager::instance().GetRentedGpuIndex(
-                                   taskinfo->getOrderId(), "")) {
+            order_gpu_index !=
+                RentOrderManager::instance().GetRentedGpuIndex(
+                    taskinfo->getOrderId(), taskinfo->getRenterWallet())) {
             need_redefine_vm = true;
-            resetGpusByRentOrder(taskinfo->getTaskId(), rent_order);
-            TASK_LOG_INFO(taskinfo->getTaskId(),
-                          "rent order update to " << rent_order);
+            resetGpusByIndex(taskinfo->getTaskId(), order_gpu_index);
         }
         taskinfo->setOrderId(rent_order);
+        TaskInfoMgr::instance().update(taskinfo);
+        TASK_LOG_INFO(taskinfo->getTaskId(),
+                      "rent order update to " << rent_order);
     }
 
     std::map<std::string, std::shared_ptr<GpuInfo>> task_gpus;

@@ -1222,7 +1222,7 @@ void node_request_service::on_node_create_task_req(
             return;
         }
 
-        TaskMgr::instance().closeOtherRentedTasks(result.rent_wallet);
+        // TaskMgr::instance().closeOtherRentedTasks(result.rent_wallet);
 
         if (found_other_running_domains()) {
             send_response_error<dbc::node_create_task_rsp>(
@@ -1409,7 +1409,7 @@ void node_request_service::on_node_start_task_req(
             return;
         }
 
-        TaskMgr::instance().closeOtherRentedTasks(result.rent_wallet);
+        // TaskMgr::instance().closeOtherRentedTasks(result.rent_wallet);
 
         if (found_other_running_domains()) {
             send_response_error<dbc::node_start_task_rsp>(

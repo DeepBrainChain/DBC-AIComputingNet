@@ -41,8 +41,8 @@ public:
 
     int32_t getTaskGpusCount(const std::string& task_id);
 
-    void resetGpusByRentOrder(const std::string& task_id,
-                              const std::string& rent_order);
+    void resetGpusByIndex(const std::string& task_id,
+                          const std::vector<int32_t>& gpu_index);
 
     FResult checkXmlGpu(const std::shared_ptr<TaskInfo>& taskinfo,
                         const std::string& rent_order);

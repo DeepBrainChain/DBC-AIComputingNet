@@ -20,5 +20,6 @@ struct db_task_info {
     35: optional string login_username,     //登陆用户名
     36: optional i64 delete_time,           //删除时间
     40: optional string interface_model_type, //默认网卡类型，默认"virtio"，也可以是"e1000"或者"rtl8139"
-    41: optional string order_id            //链上订单ID
+    41: optional string order_id,           //链上订单ID
+    42: optional string wallet              //租用人的钱包地址
 }
