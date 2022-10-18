@@ -1,0 +1,8 @@
+---
+BasedOnStyle: Google
+IndentWidth: 4
+---
+
+Language: Cpp
+AccessModifierOffset: -4
+Standard: Cpp11
