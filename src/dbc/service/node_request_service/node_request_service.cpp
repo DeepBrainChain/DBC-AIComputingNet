@@ -1223,6 +1223,7 @@ void node_request_service::on_node_create_task_req(
         }
 
         // TaskMgr::instance().closeOtherRentedTasks(result.rent_wallet);
+        TaskMgr::instance().checkRunningTasksRentStatus();
 
         if (found_other_running_domains()) {
             send_response_error<dbc::node_create_task_rsp>(

@@ -144,6 +144,8 @@ public:
 
     void closeOtherRentedTasks(const std::string& wallet);
 
+    void checkRunningTasksRentStatus();
+
     // image
     FResult listImages(
         const std::shared_ptr<dbc::node_list_images_req_data>& data,

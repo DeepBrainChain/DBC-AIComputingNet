@@ -2682,6 +2682,27 @@ void TaskManager::closeOtherRentedTasks(const std::string& wallet) {
     }
 }
 
+void TaskManager::checkRunningTasksRentStatus() {
+    auto alltasks = TaskInfoMgr::instance().getAllTaskInfos();
+    for (const auto& iter : alltasks) {
+        auto taskinfo = iter.second;
+        if (VmClient::instance().GetDomainStatus(iter.first) ==
+            VIR_DOMAIN_RUNNING) {
+            auto status = RentOrderManager::instance().GetRentStatus(
+                taskinfo->getOrderId(), taskinfo->getRenterWallet());
+            if (status != RentOrder::RentStatus::Renting) {
+                TASK_LOG_INFO(
+                    iter.first,
+                    "task will be shutdown later because the rent status is "
+                        << status << ", and rent order "
+                        << taskinfo->getOrderId() << ", wallet "
+                        << taskinfo->getRenterWallet());
+                close_task(iter.first);
+            }
+        }
+    }
+}
+
 FResult TaskManager::listTaskSnapshot(
     const std::string& wallet, const std::string& task_id,
     std::vector<dbc::snapshot_info>& snapshots) {
