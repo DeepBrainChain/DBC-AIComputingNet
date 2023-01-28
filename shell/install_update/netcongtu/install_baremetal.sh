@@ -7,7 +7,7 @@ fi
 
 sudo apt install expect -y
 
-download_url=http://119.6.235.169:9000/dbc/package
+download_url=http://112.192.16.27:9000/dbc/package
 install_dir=$1
 mkdir -p ${install_dir}
 install_dir=$(
