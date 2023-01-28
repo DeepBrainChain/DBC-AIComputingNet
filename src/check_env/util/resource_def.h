@@ -17,7 +17,7 @@ struct DeviceCpu {
     int32_t cores_per_socket = 0;
     int32_t threads_per_core = 0;
 
-    int32_t total_cores();
+    int32_t total_cores() const;
 };
 
 struct DeviceGpu {

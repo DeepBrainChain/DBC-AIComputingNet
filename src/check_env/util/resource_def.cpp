@@ -1,6 +1,6 @@
 #include "resource_def.h"
 
-int32_t DeviceCpu::total_cores() {
+int32_t DeviceCpu::total_cores() const {
     return sockets * cores_per_socket * threads_per_core;
 }
 

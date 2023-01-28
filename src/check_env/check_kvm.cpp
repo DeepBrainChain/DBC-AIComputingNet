@@ -514,6 +514,16 @@ namespace check_kvm {
         run_shell(cmd.c_str());
     }
 
+    void add_port_mapping(const std::string &domain_name, const std::string &public_ip,
+        const std::string &s_port, const std::string &d_port,
+        const std::string &vm_local_ip, const std::string &protocol) {
+        std::string chain_name = "check_chain_" + domain_name;
+        std::string cmd = "sudo iptables -t nat -A " + chain_name + " -p " + protocol +
+            " --destination " + public_ip + " --dport " + s_port +
+            " -j DNAT --to-destination " + vm_local_ip + ":" + d_port;
+        run_shell(cmd.c_str());
+    }
+
     void delete_image_file(const std::string &task_id, const std::string& image_name) {
         std::string image = image_name;
         auto pos = image.find('.');
@@ -585,6 +595,7 @@ namespace check_kvm {
         bool uefi_load = false;
 
         std::vector<std::string> multicast;
+        std::vector<std::string> portmapping;
 
         const ::DeviceCpu& cpus = SystemResourceMgr::instance().GetCpu();
         int sockets = cpus.sockets;
@@ -629,7 +640,11 @@ namespace check_kvm {
             ("uefi", "uefi loader")
             ("max_gpus", boost::program_options::value<int32_t>(), "max gpu count")
             ("multicast", boost::program_options::value<std::string>(), "multicast address")
-            ("gpu_bus_ids", boost::program_options::value<std::string>(), "the tuple bus:device.function gpu PCI identifier");
+            ("gpu_bus_ids", boost::program_options::value<std::string>(), "the tuple bus:device.function gpu PCI identifier")
+            ("cpu_count", boost::program_options::value<int32_t>(), "specify cpu count")
+            ("port_mapping", boost::program_options::value<std::vector<std::string>>(), "port mapping")
+            ("username", boost::program_options::value<std::string>(), "login user name")
+            ("password", boost::program_options::value<std::string>(), "login user password");
 
             try {
                 boost::program_options::variables_map vm;
@@ -682,6 +697,12 @@ namespace check_kvm {
                     ssh_port = "3389";
                     vm_user = "Administrator";// "admin";
                 }
+                if (vm.count("username")) {
+                    vm_user = vm["username"].as<std::string>();
+                }
+                if (vm.count("password")) {
+                    vm_pwd = vm["password"].as<std::string>();
+                }
                 if (vm.count("uefi")) {
                     uefi_load = true;
                 }
@@ -728,6 +749,22 @@ namespace check_kvm {
                     } else {
                         vga_gpu = gpu_bus_ids;
                     }
+                }
+                if (vm.count("cpu_count")) {
+                    int32_t cpu_count = vm["cpu_count"].as<int32_t>();
+                    if (cpu_count > 0 && cpu_count <= cpus.total_cores()) {
+                        sockets = 1;
+                        if (cpu_count % 2 == 0) {
+                            threads = 2;
+                            cores = cpu_count / 2;
+                        } else {
+                            threads = 1;
+                            cores = cpu_count;
+                        }
+                    }
+                }
+                if (vm.count("port_mapping")) {
+                    portmapping = vm["port_mapping"].as<std::vector<std::string>>();
                 }
             }
             catch (const std::exception &e) {
@@ -809,6 +846,21 @@ namespace check_kvm {
             }
             std::cout << "vm local ip:" << vm_local_ip << std::endl;
             transform_port(domain_name, public_ip, ssh_port, vm_local_ip, is_windows);
+            for (const auto& mapping : portmapping) {
+                std::vector<std::string> vec1 = SplitStr(mapping, ',');
+                std::string sport, dport;
+                if (vec1.size() != 2) continue;
+                std::vector<std::string> vec2 = SplitStr(vec1[1], ':');
+                if (vec2.size() < 1 || vec2.size() > 2) continue;
+                sport = vec2[0];
+                if (vec2.size() == 2) dport = vec2[1];
+                else dport = sport;
+                std::replace(sport.begin(), sport.end(), '-', ':');
+                if (vec1[0].find("tcp") != std::string::npos)
+                    add_port_mapping(domain_name, public_ip, sport, dport, vm_local_ip, "tcp");
+                if (vec1[0].find("udp") != std::string::npos)
+                    add_port_mapping(domain_name, public_ip, sport, dport, vm_local_ip, "udp");
+            }
 
             try_count = 0;
             int succ = -1;
