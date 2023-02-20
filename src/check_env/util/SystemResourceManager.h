@@ -2,6 +2,7 @@
 #define DBC_SYSTEMRESOURCEMANAGER_H
 
 #include <iostream>
+
 #include "util.h"
 
 class SystemResourceManager : public Singleton<SystemResourceManager> {
@@ -13,25 +14,21 @@ public:
     // os、cpu、gpu、mem、disk
     void Init();
 
-    const OS& GetOS() {
-        return m_os;
-    }
+    void init_os();
+    void init_cpu();
+    void init_gpu();
+    void init_mem();
+    void init_disk(const std::string& path = "/data");
 
-    const DeviceCpu& GetCpu() {
-        return m_cpu;
-    }
+    const OS& GetOS() { return m_os; }
 
-    const std::map<std::string, DeviceGpu>& GetGpu() {
-        return m_gpu;
-    }
+    const DeviceCpu& GetCpu() { return m_cpu; }
 
-    const DeviceMem& GetMem() {
-        return m_mem;
-    }
+    const std::map<std::string, DeviceGpu>& GetGpu() { return m_gpu; }
 
-    const DeviceDisk& GetDisk() {
-        return m_disk;
-    }
+    const DeviceMem& GetMem() { return m_mem; }
+
+    const DeviceDisk& GetDisk() { return m_disk; }
 
     // test
     void print_os();
@@ -41,12 +38,6 @@ public:
     void print_disk();
 
 private:
-    void init_os();
-    void init_cpu();
-    void init_gpu();
-    void init_mem();
-    void init_disk();
-
     // os
     std::string os_name();
     std::string os_version();
@@ -75,11 +66,11 @@ private:
 private:
     OS m_os;
     DeviceCpu m_cpu;
-    std::map<std::string, DeviceGpu> m_gpu; // <id, gpu>
+    std::map<std::string, DeviceGpu> m_gpu;  // <id, gpu>
     DeviceMem m_mem;
     DeviceDisk m_disk;
 };
 
 typedef SystemResourceManager SystemResourceMgr;
 
-#endif //DBCPROJ_SYSTEMRESOURCEMANAGER_H
+#endif  // DBCPROJ_SYSTEMRESOURCEMANAGER_H
