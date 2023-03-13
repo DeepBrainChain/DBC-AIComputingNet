@@ -3433,7 +3433,24 @@ void TaskManager::prune_task_thread_func() {
                     for (const auto& task_id : it.second->getTaskIds()) {
                         auto taskinfo =
                             TaskInfoMgr::instance().getTaskInfo(task_id);
-                        if (taskinfo->getOrderId().empty()) {
+                        if (!taskinfo) {
+                            if (!VmClient::instance().IsExistDomain(task_id)) {
+                                // delete_task(task_id);
+                                // delete iptable
+                                remove_iptable_from_system(task_id);
+                                TaskIptableMgr::instance().del(task_id);
+                                // delete renttask
+                                WalletRentTaskMgr::instance().del(task_id);
+                                // undefine network filter
+                                VmClient::instance().UndefineNWFilter(task_id);
+                                LOG_ERROR << task_id << " not existed";
+                            } else {
+                                LOG_ERROR
+                                    << task_id
+                                    << " could not get task info, please "
+                                       "restart or contact with dbc developers";
+                            }
+                        } else if (taskinfo->getOrderId().empty()) {
                             TASK_LOG_INFO(
                                 task_id,
                                 "order id is empty while dbc chain need");
