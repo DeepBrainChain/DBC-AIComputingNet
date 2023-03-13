@@ -1,7 +1,8 @@
 #include "HttpDBCChainClient.h"
-#include "log/log.h"
+
 #include "config/conf_manager.h"
 #include "db/db_types/db_rent_order_types.h"
+#include "log/log.h"
 #include "util/system_info.h"
 
 bool chainScore::operator<(const chainScore& other) const {
@@ -9,19 +10,16 @@ bool chainScore::operator<(const chainScore& other) const {
     return block > other.block;
 }
 
-HttpDBCChainClient::HttpDBCChainClient() {
+HttpDBCChainClient::HttpDBCChainClient() {}
 
-}
-
-HttpDBCChainClient::~HttpDBCChainClient() {
-
-}
+HttpDBCChainClient::~HttpDBCChainClient() {}
 
 void HttpDBCChainClient::init(const std::vector<std::string>& dbc_chain_addrs) {
     update_chain_order(dbc_chain_addrs);
 }
 
-void HttpDBCChainClient::update_chain_order(const std::vector<std::string>& dbc_chain_addrs) {
+void HttpDBCChainClient::update_chain_order(
+    const std::vector<std::string>& dbc_chain_addrs) {
     std::map<chainScore, network::net_address> addrs;
     for (int i = 0; i < dbc_chain_addrs.size(); i++) {
         std::vector<std::string> addr = util::split(dbc_chain_addrs[i], ":");
@@ -32,9 +30,8 @@ void HttpDBCChainClient::update_chain_order(const std::vector<std::string>& dbc_
             net_addr.set_ip(addr[0]);
         }
         if (addr.size() > 1) {
-            net_addr.set_port((uint16_t) atoi(addr[1].c_str()));
-        }
-        else {
+            net_addr.set_port((uint16_t)atoi(addr[1].c_str()));
+        } else {
             net_addr.set_port(443);
         }
 
@@ -54,8 +51,10 @@ int64_t HttpDBCChainClient::request_cur_block() {
         cli.set_timeout_sec(5);
         cli.set_read_timeout(10, 0);
 
-        std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"chain_getBlock", "params": []})";
-        std::shared_ptr<httplib::Response> resp = cli.Post("/", str_send, "application/json");
+        std::string str_send =
+            R"({"jsonrpc": "2.0", "id": 1, "method":"chain_getBlock", "params": []})";
+        std::shared_ptr<httplib::Response> resp =
+            cli.Post("/", str_send, "application/json");
         if (resp != nullptr) {
             rapidjson::Document doc;
             rapidjson::ParseResult ok = doc.Parse(resp->body.c_str());
@@ -80,8 +79,7 @@ int64_t HttpDBCChainClient::request_cur_block() {
             char* p;
             try {
                 cur_block = strtol(v_number.GetString(), &p, 16);
-            }
-            catch (...) {
+            } catch (...) {
                 cur_block = 0;
             }
 
@@ -92,7 +90,8 @@ int64_t HttpDBCChainClient::request_cur_block() {
     return cur_block;
 }
 
-MACHINE_STATUS HttpDBCChainClient::request_machine_status(const std::string& node_id) {
+MACHINE_STATUS HttpDBCChainClient::request_machine_status(
+    const std::string& node_id) {
     std::string machine_status;
 
     RwMutex::ReadLock rlock(m_mtx);
@@ -101,9 +100,14 @@ MACHINE_STATUS HttpDBCChainClient::request_machine_status(const std::string& nod
         cli.set_timeout_sec(5);
         cli.set_read_timeout(10, 0);
 
-        std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"onlineProfile_getMachineInfo", "params": [")"
-            + node_id + R"("]})";
-        std::shared_ptr<httplib::Response> resp = cli.Post("/", str_send, "application/json");
+        std::string rpc_api = ConfManager::instance().IsTerminatingRental()
+                                  ? "terminatingRental_getMachineInfo"
+                                  : "onlineProfile_getMachineInfo";
+        std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":")" +
+                               rpc_api + R"(", "params": [")" + node_id +
+                               R"("]})";
+        std::shared_ptr<httplib::Response> resp =
+            cli.Post("/", str_send, "application/json");
         if (resp != nullptr) {
             rapidjson::Document doc;
             doc.Parse(resp->body.c_str());
@@ -122,22 +126,23 @@ MACHINE_STATUS HttpDBCChainClient::request_machine_status(const std::string& nod
         }
     }
 
-    if (machine_status == "addingCustomizeInfo" || machine_status == "distributingOrder" ||
-        machine_status == "committeeVerifying" || machine_status == "committeeRefused") {
+    if (machine_status == "addingCustomizeInfo" ||
+        machine_status == "distributingOrder" ||
+        machine_status == "committeeVerifying" ||
+        machine_status == "committeeRefused") {
         return MACHINE_STATUS::Verify;
-    }
-    else if (machine_status == "waitingFulfill" || machine_status == "online") {
+    } else if (machine_status == "waitingFulfill" ||
+               machine_status == "online") {
         return MACHINE_STATUS::Online;
-    }
-    else if (machine_status == "creating" || machine_status == "rented") {
+    } else if (machine_status == "creating" || machine_status == "rented") {
         return MACHINE_STATUS::Rented;
-    }
-    else {
+    } else {
         return MACHINE_STATUS::Unknown;
     }
 }
 
-bool HttpDBCChainClient::in_verify_time(const std::string& node_id, const std::string& wallet) {
+bool HttpDBCChainClient::in_verify_time(const std::string& node_id,
+                                        const std::string& wallet) {
     int64_t cur_block = request_cur_block();
 
     bool in_time = false;
@@ -148,9 +153,14 @@ bool HttpDBCChainClient::in_verify_time(const std::string& node_id, const std::s
         cli.set_timeout_sec(5);
         cli.set_read_timeout(10, 0);
 
-        std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"onlineCommittee_getCommitteeOps", "params": [")"
-            + wallet + R"(",")" + node_id + R"("]})";
-        std::shared_ptr<httplib::Response> resp = cli.Post("/", str_send, "application/json");
+        std::string rpc_api = ConfManager::instance().IsTerminatingRental()
+                                  ? "terminatingRental_getCommitteeOps"
+                                  : "onlineCommittee_getCommitteeOps";
+        std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":")" +
+                               rpc_api + R"(", "params": [")" + wallet +
+                               R"(",")" + node_id + R"("]})";
+        std::shared_ptr<httplib::Response> resp =
+            cli.Post("/", str_send, "application/json");
         if (resp != nullptr) {
             rapidjson::Document doc;
             doc.Parse(resp->body.c_str());
@@ -171,8 +181,8 @@ bool HttpDBCChainClient::in_verify_time(const std::string& node_id, const std::s
             int64_t v3 = v_verifyTime[2].GetInt64();
 
             in_time = (cur_block > v1 && cur_block <= v1 + 480) ||
-                (cur_block > v2 && cur_block <= v2 + 480) ||
-                (cur_block > v3 && cur_block <= v3 + 480);
+                      (cur_block > v2 && cur_block <= v2 + 480) ||
+                      (cur_block > v3 && cur_block <= v3 + 480);
 
             break;
         }
@@ -181,7 +191,8 @@ bool HttpDBCChainClient::in_verify_time(const std::string& node_id, const std::s
     return in_time;
 }
 
-// int64_t HttpDBCChainClient::request_rent_end(const std::string& node_id, const std::string &wallet) {
+// int64_t HttpDBCChainClient::request_rent_end(const std::string& node_id,
+// const std::string &wallet) {
 //     int64_t rent_end = 0;
 
 //     RwMutex::ReadLock rlock(m_mtx);
@@ -190,10 +201,11 @@ bool HttpDBCChainClient::in_verify_time(const std::string& node_id, const std::s
 //         cli.set_timeout_sec(5);
 //         cli.set_read_timeout(10, 0);
 
-//         std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"rentMachine_getRentOrder", "params": [")"
+//         std::string str_send = R"({"jsonrpc": "2.0", "id": 1,
+//         "method":"rentMachine_getRentOrder", "params": [")"
 //             + node_id + R"("]})";
-//         std::shared_ptr<httplib::Response> resp = cli.Post("/", str_send, "application/json");
-//         if (resp != nullptr) {
+//         std::shared_ptr<httplib::Response> resp = cli.Post("/", str_send,
+//         "application/json"); if (resp != nullptr) {
 //             rapidjson::Document doc;
 //             doc.Parse(resp->body.c_str());
 //             if (!doc.IsObject()) break;
@@ -221,16 +233,23 @@ bool HttpDBCChainClient::in_verify_time(const std::string& node_id, const std::s
 //     return rent_end;
 // }
 
-void HttpDBCChainClient::request_cur_renter(const std::string& node_id, std::string& renter, int64_t& rent_end) {
+void HttpDBCChainClient::request_cur_renter(const std::string& node_id,
+                                            std::string& renter,
+                                            int64_t& rent_end) {
     RwMutex::ReadLock rlock(m_mtx);
     for (auto& it : m_addrs) {
         httplib::SSLClient cli(it.second.get_ip(), it.second.get_port());
         cli.set_timeout_sec(5);
         cli.set_read_timeout(10, 0);
 
-        std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"rentMachine_getRentOrder", "params": [")"
-            + node_id + R"("]})";
-        std::shared_ptr<httplib::Response> resp = cli.Post("/", str_send, "application/json");
+        std::string rpc_api = ConfManager::instance().IsTerminatingRental()
+                                  ? "terminatingRental_getRentOrder"
+                                  : "rentMachine_getRentOrder";
+        std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":")" +
+                               rpc_api + R"(", "params": [")" + node_id +
+                               R"("]})";
+        std::shared_ptr<httplib::Response> resp =
+            cli.Post("/", str_send, "application/json");
         if (resp != nullptr) {
             rapidjson::Document doc;
             doc.Parse(resp->body.c_str());
@@ -247,7 +266,7 @@ void HttpDBCChainClient::request_cur_renter(const std::string& node_id, std::str
 
             if (!v_result.HasMember("rentEnd")) break;
             const rapidjson::Value& v_rentEnd = v_result["rentEnd"];
-            if (!v_rentEnd.IsNumber()) break; 
+            if (!v_rentEnd.IsNumber()) break;
             rent_end = v_rentEnd.GetInt64();
 
             break;
@@ -255,7 +274,8 @@ void HttpDBCChainClient::request_cur_renter(const std::string& node_id, std::str
     }
 }
 
-bool HttpDBCChainClient::getCommitteeUploadInfo(const std::string& node_id, CommitteeUploadInfo& info) {
+bool HttpDBCChainClient::getCommitteeUploadInfo(const std::string& node_id,
+                                                CommitteeUploadInfo& info) {
     bool bret = false;
 
     RwMutex::ReadLock rlock(m_mtx);
@@ -264,9 +284,14 @@ bool HttpDBCChainClient::getCommitteeUploadInfo(const std::string& node_id, Comm
         cli.set_timeout_sec(5);
         cli.set_read_timeout(10, 0);
 
-        std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"onlineProfile_getMachineInfo", "params": [")"
-            + node_id + R"("]})";
-        std::shared_ptr<httplib::Response> resp = cli.Post("/", str_send, "application/json");
+        std::string rpc_api = ConfManager::instance().IsTerminatingRental()
+                                  ? "terminatingRental_getMachineInfo"
+                                  : "onlineProfile_getMachineInfo";
+        std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":")" +
+                               rpc_api + R"(", "params": [")" + node_id +
+                               R"("]})";
+        std::shared_ptr<httplib::Response> resp =
+            cli.Post("/", str_send, "application/json");
         if (resp != nullptr) {
             rapidjson::Document doc;
             doc.Parse(resp->body.c_str());
@@ -277,15 +302,19 @@ bool HttpDBCChainClient::getCommitteeUploadInfo(const std::string& node_id, Comm
             if (!v_result.IsObject()) break;
 
             if (!v_result.HasMember("machineInfoDetail")) break;
-            const rapidjson::Value& v_machineInfoDetail = v_result["machineInfoDetail"];
+            const rapidjson::Value& v_machineInfoDetail =
+                v_result["machineInfoDetail"];
             if (!v_machineInfoDetail.IsObject()) break;
 
             if (!v_machineInfoDetail.HasMember("committee_upload_info")) break;
-            const rapidjson::Value& v_committeeUploadInfo = v_machineInfoDetail["committee_upload_info"];
+            const rapidjson::Value& v_committeeUploadInfo =
+                v_machineInfoDetail["committee_upload_info"];
             if (!v_committeeUploadInfo.IsObject()) break;
 
-            if (v_committeeUploadInfo.HasMember("machine_id") && v_committeeUploadInfo["machine_id"].IsArray()) {
-                const rapidjson::Value& v_array = v_committeeUploadInfo["machine_id"];
+            if (v_committeeUploadInfo.HasMember("machine_id") &&
+                v_committeeUploadInfo["machine_id"].IsArray()) {
+                const rapidjson::Value& v_array =
+                    v_committeeUploadInfo["machine_id"];
                 std::vector<unsigned char> bytes;
                 for (const auto& v : v_array.GetArray()) {
                     bytes.push_back(v.GetUint());
@@ -293,8 +322,10 @@ bool HttpDBCChainClient::getCommitteeUploadInfo(const std::string& node_id, Comm
                 info.machine_id = std::string((char*)&bytes[0], bytes.size());
             }
 
-            if (v_committeeUploadInfo.HasMember("gpu_type") && v_committeeUploadInfo["gpu_type"].IsArray()) {
-                const rapidjson::Value& v_array = v_committeeUploadInfo["gpu_type"];
+            if (v_committeeUploadInfo.HasMember("gpu_type") &&
+                v_committeeUploadInfo["gpu_type"].IsArray()) {
+                const rapidjson::Value& v_array =
+                    v_committeeUploadInfo["gpu_type"];
                 std::vector<unsigned char> bytes;
                 for (const auto& v : v_array.GetArray()) {
                     bytes.push_back(v.GetUint());
@@ -302,44 +333,53 @@ bool HttpDBCChainClient::getCommitteeUploadInfo(const std::string& node_id, Comm
                 info.gpu_type = std::string((char*)&bytes[0], bytes.size());
             }
 
-            if (v_committeeUploadInfo.HasMember("gpu_num") && v_committeeUploadInfo["gpu_num"].IsUint()) {
+            if (v_committeeUploadInfo.HasMember("gpu_num") &&
+                v_committeeUploadInfo["gpu_num"].IsUint()) {
                 info.gpu_num = v_committeeUploadInfo["gpu_num"].GetUint();
             } else {
                 info.gpu_num = 0;
             }
 
-            if (v_committeeUploadInfo.HasMember("cuda_core") && v_committeeUploadInfo["cuda_core"].IsUint()) {
+            if (v_committeeUploadInfo.HasMember("cuda_core") &&
+                v_committeeUploadInfo["cuda_core"].IsUint()) {
                 info.cuda_core = v_committeeUploadInfo["cuda_core"].GetUint();
             } else {
                 info.cuda_core = 0;
             }
 
-            if (v_committeeUploadInfo.HasMember("gpu_mem") && v_committeeUploadInfo["gpu_mem"].IsUint64()) {
+            if (v_committeeUploadInfo.HasMember("gpu_mem") &&
+                v_committeeUploadInfo["gpu_mem"].IsUint64()) {
                 info.gpu_mem = v_committeeUploadInfo["gpu_mem"].GetUint64();
             } else {
                 info.gpu_mem = 0;
             }
 
-            if (v_committeeUploadInfo.HasMember("calc_point") && v_committeeUploadInfo["calc_point"].IsUint64()) {
-                info.calc_point = v_committeeUploadInfo["calc_point"].GetUint64();
+            if (v_committeeUploadInfo.HasMember("calc_point") &&
+                v_committeeUploadInfo["calc_point"].IsUint64()) {
+                info.calc_point =
+                    v_committeeUploadInfo["calc_point"].GetUint64();
             } else {
                 info.calc_point = 0;
             }
 
-            if (v_committeeUploadInfo.HasMember("sys_disk") && v_committeeUploadInfo["sys_disk"].IsUint64()) {
+            if (v_committeeUploadInfo.HasMember("sys_disk") &&
+                v_committeeUploadInfo["sys_disk"].IsUint64()) {
                 info.sys_disk = v_committeeUploadInfo["sys_disk"].GetUint64();
             } else {
                 info.sys_disk = 0;
             }
 
-            if (v_committeeUploadInfo.HasMember("data_disk") && v_committeeUploadInfo["data_disk"].IsUint64()) {
+            if (v_committeeUploadInfo.HasMember("data_disk") &&
+                v_committeeUploadInfo["data_disk"].IsUint64()) {
                 info.data_disk = v_committeeUploadInfo["data_disk"].GetUint64();
             } else {
                 info.data_disk = 0;
             }
 
-            if (v_committeeUploadInfo.HasMember("cpu_type") && v_committeeUploadInfo["cpu_type"].IsArray()) {
-                const rapidjson::Value& v_array = v_committeeUploadInfo["cpu_type"];
+            if (v_committeeUploadInfo.HasMember("cpu_type") &&
+                v_committeeUploadInfo["cpu_type"].IsArray()) {
+                const rapidjson::Value& v_array =
+                    v_committeeUploadInfo["cpu_type"];
                 std::vector<unsigned char> bytes;
                 for (const auto& v : v_array.GetArray()) {
                     bytes.push_back(v.GetUint());
@@ -347,25 +387,30 @@ bool HttpDBCChainClient::getCommitteeUploadInfo(const std::string& node_id, Comm
                 info.cpu_type = std::string((char*)&bytes[0], bytes.size());
             }
 
-            if (v_committeeUploadInfo.HasMember("cpu_core_num") && v_committeeUploadInfo["cpu_core_num"].IsUint()) {
-                info.cpu_core_num = v_committeeUploadInfo["cpu_core_num"].GetUint();
+            if (v_committeeUploadInfo.HasMember("cpu_core_num") &&
+                v_committeeUploadInfo["cpu_core_num"].IsUint()) {
+                info.cpu_core_num =
+                    v_committeeUploadInfo["cpu_core_num"].GetUint();
             } else {
                 info.cpu_core_num = 0;
             }
 
-            if (v_committeeUploadInfo.HasMember("cpu_rate") && v_committeeUploadInfo["cpu_rate"].IsUint64()) {
+            if (v_committeeUploadInfo.HasMember("cpu_rate") &&
+                v_committeeUploadInfo["cpu_rate"].IsUint64()) {
                 info.cpu_rate = v_committeeUploadInfo["cpu_rate"].GetUint64();
             } else {
                 info.cpu_rate = 0;
             }
 
-            if (v_committeeUploadInfo.HasMember("mem_num") && v_committeeUploadInfo["mem_num"].IsUint64()) {
+            if (v_committeeUploadInfo.HasMember("mem_num") &&
+                v_committeeUploadInfo["mem_num"].IsUint64()) {
                 info.mem_num = v_committeeUploadInfo["mem_num"].GetUint64();
             } else {
                 info.mem_num = 0;
             }
 
-            if (v_committeeUploadInfo.HasMember("is_support") && v_committeeUploadInfo["is_support"].IsBool()) {
+            if (v_committeeUploadInfo.HasMember("is_support") &&
+                v_committeeUploadInfo["is_support"].IsBool()) {
                 info.is_support = v_committeeUploadInfo["is_support"].GetBool();
             } else {
                 info.is_support = 0;
@@ -379,25 +424,29 @@ bool HttpDBCChainClient::getCommitteeUploadInfo(const std::string& node_id, Comm
     return bret;
 }
 
-chainScore HttpDBCChainClient::getChainScore(const network::net_address& addr, int delta) const {
+chainScore HttpDBCChainClient::getChainScore(const network::net_address& addr,
+                                             int delta) const {
     int64_t cur_block = 0;
     int32_t time = 0xFFFF + delta;
 
     do {
-        struct timeval tv1{};
+        struct timeval tv1 {};
         gettimeofday(&tv1, 0);
 
         httplib::SSLClient cli(addr.get_ip(), addr.get_port());
         cli.set_timeout_sec(5);
         cli.set_read_timeout(10, 0);
 
-        std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"chain_getBlock", "params": []})";
-        std::shared_ptr<httplib::Response> resp = cli.Post("/", str_send, "application/json");
+        std::string str_send =
+            R"({"jsonrpc": "2.0", "id": 1, "method":"chain_getBlock", "params": []})";
+        std::shared_ptr<httplib::Response> resp =
+            cli.Post("/", str_send, "application/json");
         if (!resp) break;
 
         struct timeval tv2 {};
         gettimeofday(&tv2, 0);
-        time = (tv2.tv_sec * 1000 + tv2.tv_usec / 1000) - (tv1.tv_sec * 1000 + tv1.tv_usec / 1000);
+        time = (tv2.tv_sec * 1000 + tv2.tv_usec / 1000) -
+               (tv1.tv_sec * 1000 + tv1.tv_usec / 1000);
 
         rapidjson::Document doc;
         rapidjson::ParseResult ok = doc.Parse(resp->body.c_str());
@@ -422,8 +471,7 @@ chainScore HttpDBCChainClient::getChainScore(const network::net_address& addr, i
         char* p;
         try {
             cur_block = strtol(v_number.GetString(), &p, 16);
-        }
-        catch (...) {
+        } catch (...) {
             cur_block = 0;
         }
     } while (0);
@@ -431,7 +479,8 @@ chainScore HttpDBCChainClient::getChainScore(const network::net_address& addr, i
     return {cur_block, time};
 }
 
-std::shared_ptr<dbc::db_rent_order> HttpDBCChainClient::getRentOrder(const std::string& node_id, const std::string& rent_order) {
+std::shared_ptr<dbc::db_rent_order> HttpDBCChainClient::getRentOrder(
+    const std::string& node_id, const std::string& rent_order) {
     bool is_order = !rent_order.empty();
     RwMutex::ReadLock rlock(m_mtx);
     for (auto& it : m_addrs) {
@@ -442,9 +491,13 @@ std::shared_ptr<dbc::db_rent_order> HttpDBCChainClient::getRentOrder(const std::
         std::string params = rent_order;
         if (!is_order) params = "\"" + node_id + "\"";
 
-        std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"rentMachine_getRentOrder", "params": [)"
-            + params + R"(]})";
-        std::shared_ptr<httplib::Response> resp = cli.Post("/", str_send, "application/json");
+        std::string rpc_api = ConfManager::instance().IsTerminatingRental()
+                                  ? "terminatingRental_getRentOrder"
+                                  : "rentMachine_getRentOrder";
+        std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":")" +
+                               rpc_api + R"(", "params": [)" + params + R"(]})";
+        std::shared_ptr<httplib::Response> resp =
+            cli.Post("/", str_send, "application/json");
         if (resp != nullptr) {
             rapidjson::Document doc;
             doc.Parse(resp->body.c_str());
@@ -489,16 +542,17 @@ std::shared_ptr<dbc::db_rent_order> HttpDBCChainClient::getRentOrder(const std::
                 const rapidjson::Value& v_gpuIndex = v_result["gpuIndex"];
                 if (!v_gpuIndex.IsArray()) break;
                 for (const auto& v_index : v_gpuIndex.GetArray()) {
-                    if (v_index.IsInt()) gpus.push_back(v_index.GetInt());
-                    else break;
+                    if (v_index.IsInt())
+                        gpus.push_back(v_index.GetInt());
+                    else
+                        break;
                 }
                 // if (gpus.empty()) break;
                 pro->__set_gpu_index(gpus);
             } else {
                 int gpu_count = SystemInfo::instance().GetGpuInfo().size();
                 pro->__set_gpu_num(gpu_count);
-                for (int i = 0; i < gpu_count; i++)
-                    gpus.push_back(i);
+                for (int i = 0; i < gpu_count; i++) gpus.push_back(i);
                 pro->__set_gpu_index(gpus);
             }
 
@@ -508,7 +562,8 @@ std::shared_ptr<dbc::db_rent_order> HttpDBCChainClient::getRentOrder(const std::
     return nullptr;
 }
 
-bool HttpDBCChainClient::getRentOrderList(const std::string& node_id, std::set<std::string>& orders) {
+bool HttpDBCChainClient::getRentOrderList(const std::string& node_id,
+                                          std::set<std::string>& orders) {
     bool bret = false;
     RwMutex::ReadLock rlock(m_mtx);
     for (auto& it : m_addrs) {
@@ -518,9 +573,14 @@ bool HttpDBCChainClient::getRentOrderList(const std::string& node_id, std::set<s
         cli.set_timeout_sec(5);
         cli.set_read_timeout(10, 0);
 
-        std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"rentMachine_getMachineRentId", "params": [")"
-            + node_id + R"("]})";
-        std::shared_ptr<httplib::Response> resp = cli.Post("/", str_send, "application/json");
+        std::string rpc_api = ConfManager::instance().IsTerminatingRental()
+                                  ? "terminatingRental_getMachineRentId"
+                                  : "rentMachine_getMachineRentId";
+        std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":")" +
+                               rpc_api + R"(", "params": [")" + node_id +
+                               R"("]})";
+        std::shared_ptr<httplib::Response> resp =
+            cli.Post("/", str_send, "application/json");
         if (resp != nullptr) {
             rapidjson::Document doc;
             doc.Parse(resp->body.c_str());
@@ -537,7 +597,8 @@ bool HttpDBCChainClient::getRentOrderList(const std::string& node_id, std::set<s
             for (const auto& v_order : v_rentOrder.GetArray()) {
                 if (v_order.IsUint64())
                     orders.insert(std::to_string(v_order.GetUint64()));
-                else break;
+                else
+                    break;
             }
             bret = true;
             break;
@@ -546,7 +607,8 @@ bool HttpDBCChainClient::getRentOrderList(const std::string& node_id, std::set<s
     return bret;
 }
 
-bool HttpDBCChainClient::isMachineRenter(const std::string& node_id, const std::string& wallet) {
+bool HttpDBCChainClient::isMachineRenter(const std::string& node_id,
+                                         const std::string& wallet) {
     bool bret = false;
 
     RwMutex::ReadLock rlock(m_mtx);
@@ -555,9 +617,14 @@ bool HttpDBCChainClient::isMachineRenter(const std::string& node_id, const std::
         cli.set_timeout_sec(5);
         cli.set_read_timeout(10, 0);
 
-        std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":"rentMachine_isMachineRenter", "params": [")"
-            + node_id + R"(",")" + wallet + R"("]})";
-        std::shared_ptr<httplib::Response> resp = cli.Post("/", str_send, "application/json");
+        std::string rpc_api = ConfManager::instance().IsTerminatingRental()
+                                  ? "terminatingRental_isMachineRenter"
+                                  : "rentMachine_isMachineRenter";
+        std::string str_send = R"({"jsonrpc": "2.0", "id": 1, "method":")" +
+                               rpc_api + R"(", "params": [")" + node_id +
+                               R"(",")" + wallet + R"("]})";
+        std::shared_ptr<httplib::Response> resp =
+            cli.Post("/", str_send, "application/json");
         if (resp != nullptr) {
             rapidjson::Document doc;
             doc.Parse(resp->body.c_str());

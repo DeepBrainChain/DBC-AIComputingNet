@@ -1,18 +1,17 @@
 #ifndef DBC_CONF_MANAGER_H
 #define DBC_CONF_MANAGER_H
 
-#include "util/utils.h"
 #include "network/compress/matrix_capacity.h"
+#include "util/utils.h"
 
 namespace bpo = boost::program_options;
 
 struct peer_seeds {
-    const char * seed;
+    const char* seed;
     uint16_t port;
 };
 
-class ConfManager : public Singleton<ConfManager>
-{
+class ConfManager : public Singleton<ConfManager> {
 public:
     ConfManager();
 
@@ -38,16 +37,27 @@ public:
 
     int32_t GetHttpListenPort() const { return m_http_listen_port; }
 
-    std::vector<std::string> GetDbcChainDomain() const { return m_dbc_chain_domain; }
+    std::vector<std::string> GetDbcChainDomain() const {
+        return m_dbc_chain_domain;
+    }
 
-    const std::map<std::string, ImageServer*>& GetImageServers() const { return m_image_server; }
+    std::string GetChainAdditionalField() const {
+        return m_chain_additional_field;
+    }
+
+    bool IsTerminatingRental() const {
+        m_chain_additional_field == "terminatingRental";
+    }
+
+    const std::map<std::string, ImageServer*>& GetImageServers() const {
+        return m_image_server;
+    }
 
     ImageServer* FindImageServer(const std::string& id) const {
         auto it = m_image_server.find(id);
         if (it != m_image_server.end()) {
             return (*it).second;
-        }
-        else {
+        } else {
             return nullptr;
         }
     }
@@ -60,15 +70,19 @@ public:
 
     int32_t GetMulticastPort() const { return m_multicast_port; }
 
-    uint32_t GetCheckVmExpirationFrequency() const  {
+    uint32_t GetCheckVmExpirationFrequency() const {
         return m_check_vm_expiration_timer_frequency;
     }
 
-    const std::vector<std::string> & GetPeers() { return m_peers; }
+    const std::vector<std::string>& GetPeers() { return m_peers; }
 
-    const std::vector<std::string> &GetInternalIpSeeds() { return m_internal_ip_seeds; }
+    const std::vector<std::string>& GetInternalIpSeeds() {
+        return m_internal_ip_seeds;
+    }
 
-    const std::vector<std::string> &GetInternalDnsSeeds() { return m_internal_dns_seeds; }
+    const std::vector<std::string>& GetInternalDnsSeeds() {
+        return m_internal_dns_seeds;
+    }
 
     std::string GetNodeId() const { return m_node_id; }
 
@@ -89,7 +103,7 @@ protected:
 
     ERRCODE CreateNewNodeId();
 
-    ERRCODE SerializeNodeInfo(const util::machine_node_info &info);
+    ERRCODE SerializeNodeInfo(const util::machine_node_info& info);
 
     bool CheckNodeId();
 
@@ -106,6 +120,7 @@ private:
     std::string m_http_listen_ip = "127.0.0.1";
     int32_t m_http_listen_port = 5050;
     std::vector<std::string> m_dbc_chain_domain;
+    std::string m_chain_additional_field;
     std::map<std::string, ImageServer*> m_image_server;
     std::string m_dbc_monitor_server;
     std::string m_miner_monitor_server;
