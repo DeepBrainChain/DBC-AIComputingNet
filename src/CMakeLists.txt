@@ -57,7 +57,7 @@ set(service_src_dir
         dbc/server
         dbc/message
         dbc/message/protocol_coder
-        dbc/task/ipmitool
+        dbc/task/bare_metal
         dbc/task/vm
         dbc/task/docker
         dbc/task/detail

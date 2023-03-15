@@ -6,7 +6,6 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/thread/thread.hpp>
 
-#include "config/BareMetalNodeManager.h"
 #include "config/conf_manager.h"
 #include "cpp_substrate.h"
 #include "message/matrix_types.h"
@@ -14,10 +13,11 @@
 #include "message/protocol_coder/matrix_coder.h"
 #include "server/server.h"
 #include "service/node_monitor_service/node_monitor_service.h"
+#include "task/BareMetalTaskManager.h"
+#include "task/bare_metal/bare_metal_node_manager.h"
 #include "task/detail/VxlanManager.h"
 #include "task/detail/rent_order/RentOrderManager.h"
 #include "task/detail/wallet_session_id/WalletSessionIDManager.h"
-#include "task/ipmitool/ipmitool_client.h"
 #include "tinyxml2.h"
 #include "tweetnacl/randombytes.h"
 #include "tweetnacl/tools.h"
@@ -94,7 +94,7 @@ ERRCODE node_request_service::init() {
             add_self_to_servicelist(iter.first);
         }
 
-        fret = IpmiToolClient::instance().Init();
+        fret = BareMetalTaskManager::instance().Init();
         if (fret.errcode != ERR_SUCCESS) {
             LOG_ERROR << fret.errmsg;
             return ERR_ERROR;
@@ -120,7 +120,7 @@ void node_request_service::exit() {
     }
 
     if (Server::NodeType == NODE_TYPE::BareMetalNode) {
-        IpmiToolClient::instance().Exit();
+        BareMetalTaskManager::instance().Exit();
     }
 }
 
@@ -5984,7 +5984,7 @@ void node_request_service::on_training_task_timer(
 
 void node_request_service::on_prune_bare_metal_timer(
     const std::shared_ptr<core_timer>& timer) {
-    IpmiToolClient::instance().PruneNodes();
+    BareMetalTaskManager::instance().PruneNodes();
 }
 
 void node_request_service::on_prune_task_timer(
@@ -7612,7 +7612,7 @@ void node_request_service::bare_metal_power(
         return;
     }
 
-    auto fret = IpmiToolClient::instance().PowerControl(
+    auto fret = BareMetalTaskManager::instance().PowerControl(
         data->peer_nodes_list[0], command);
     send_response_error<dbc::node_bare_metal_power_rsp>(
         NODE_BARE_METAL_POWER_RSP, header,
@@ -7761,7 +7761,7 @@ void node_request_service::bare_metal_bootdev(
         return;
     }
 
-    auto fret = IpmiToolClient::instance().SetBootDeviceOrder(
+    auto fret = BareMetalTaskManager::instance().SetBootDeviceOrder(
         data->peer_nodes_list[0], device);
     send_response_error<dbc::node_bare_metal_bootdev_rsp>(
         NODE_BARE_METAL_BOOTDEV_RSP, header,

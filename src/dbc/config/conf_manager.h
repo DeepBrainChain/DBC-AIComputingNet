@@ -74,6 +74,10 @@ public:
         return m_check_vm_expiration_timer_frequency;
     }
 
+    std::string GetCloudCybercafeServer() const {
+        return m_cloud_cybercafe_server;
+    }
+
     const std::vector<std::string>& GetPeers() { return m_peers; }
 
     const std::vector<std::string>& GetInternalIpSeeds() {
@@ -127,6 +131,7 @@ private:
     std::string m_multicast_address;
     int32_t m_multicast_port;
     uint32_t m_check_vm_expiration_timer_frequency;
+    std::string m_cloud_cybercafe_server;
 
     std::vector<std::string> m_peers;
     std::vector<std::string> m_internal_ip_seeds;

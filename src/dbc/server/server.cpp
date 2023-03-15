@@ -7,7 +7,6 @@
 
 #include <boost/exception/all.hpp>
 
-#include "config/BareMetalNodeManager.h"
 #include "config/env_manager.h"
 #include "network/connection_manager.h"
 #include "service/http_request_service/http_server_service.h"
@@ -17,6 +16,7 @@
 #include "service/peer_request_service/p2p_lan_service.h"
 #include "service/peer_request_service/p2p_net_service.h"
 #include "task/HttpDBCChainClient.h"
+#include "task/bare_metal/bare_metal_node_manager.h"
 #include "task/detail/VxlanManager.h"
 #include "task/detail/image/ImageManager.h"
 #include "util/crypto/key.h"

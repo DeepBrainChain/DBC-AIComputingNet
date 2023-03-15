@@ -3,10 +3,10 @@
 #include <boost/exception/all.hpp>
 #include <boost/format.hpp>
 
-#include "BareMetalNodeManager.h"
 #include "env_manager.h"
 #include "log/log.h"
 #include "server/server.h"
+#include "task/bare_metal/bare_metal_node_manager.h"
 #include "tweetnacl/tools.h"
 #include "tweetnacl/tweetnacl.h"
 #include "util/crypto/utilstrencodings.h"
@@ -93,7 +93,8 @@ ERRCODE ConfManager::ParseConf() {
         ("miner_monitor_server", bpo::value<std::string>(), "")
         ("multicast_address", bpo::value<std::string>()->default_value("239.255.0.1"), "")
         ("multicast_port", bpo::value<int32_t>()->default_value(30001), "")
-        ("check_vm_expiration_timer_frequency", bpo::value<uint32_t>()->default_value(900), "in seconds");
+        ("check_vm_expiration_timer_frequency", bpo::value<uint32_t>()->default_value(900), "in seconds")
+        ("dbc_cloud_cybercafe", bpo::value<std::string>(), "");
     // clang-format on
 
     const boost::filesystem::path& conf_path =
@@ -158,6 +159,11 @@ ERRCODE ConfManager::ParseConf() {
     // 默认900，最小300
     m_check_vm_expiration_timer_frequency = std::max(
         core_args["check_vm_expiration_timer_frequency"].as<uint32_t>(), 300u);
+
+    if (core_args.count("dbc_cloud_cybercafe") > 0) {
+        m_cloud_cybercafe_server =
+            core_args["dbc_cloud_cybercafe"].as<std::string>();
+    }
 
     variables_map peer_args;
     bpo::options_description peer_opts("peer.conf");
