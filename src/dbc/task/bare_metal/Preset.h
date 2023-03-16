@@ -9,6 +9,7 @@
 
 // #include <thrift/TDispatchProcessor.h>
 // #include <thrift/async/TConcurrentClientSyncInfo.h>
+#include <boost/asio.hpp>
 #include <memory>
 
 #include "message/preset_types.h"
@@ -205,13 +206,17 @@ public:
 
 class PresetClient : virtual public PresetIf {
 public:
-    PresetClient(std::shared_ptr<::apache::thrift::protocol::TProtocol> prot) {
-        setProtocol(prot);
-    }
-    PresetClient(std::shared_ptr<::apache::thrift::protocol::TProtocol> iprot,
-                 std::shared_ptr<::apache::thrift::protocol::TProtocol> oprot) {
-        setProtocol(iprot, oprot);
-    }
+    PresetClient(boost::asio::io_context& io_context,
+                 std::shared_ptr<::apache::thrift::protocol::TProtocol> prot);
+    PresetClient(boost::asio::io_context& io_context,
+                 std::shared_ptr<::apache::thrift::protocol::TProtocol> iprot,
+                 std::shared_ptr<::apache::thrift::protocol::TProtocol> oprot);
+
+    bool connect(const std::string& host, uint32_t port);
+
+    bool sendMessage();
+
+    void receiveMessage();
 
 private:
     void setProtocol(
@@ -246,6 +251,10 @@ protected:
     std::shared_ptr<::apache::thrift::protocol::TProtocol> poprot_;
     ::apache::thrift::protocol::TProtocol* iprot_;
     ::apache::thrift::protocol::TProtocol* oprot_;
+    boost::asio::ip::tcp::socket socket_;
+    std::shared_ptr<byte_buf> pibuf_;
+    std::shared_ptr<byte_buf> pobuf_;
+    std::string response_;
 };
 
 #ifdef _MSC_VER

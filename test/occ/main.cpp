@@ -8,8 +8,6 @@
 // #include "network/protocol/protocol.h"
 #include "network/protocol/binary_protocol.h"
 
-#define MAX_LENGTH 512
-
 template <typename ThriftStruct>
 std::string ThriftToString(const ThriftStruct& ts) {
     using namespace apache::thrift::protocol;

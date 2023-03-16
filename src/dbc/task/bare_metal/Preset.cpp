@@ -8,6 +8,12 @@
 
 #include "network/protocol/protocol.h"
 
+// The T_STOP of enum TType in dbc is not equal to the value of thrift official
+// code: ::apache::thrift::protocol::T_STOP
+#define ORIGIN_T_STOP 0
+
+#define MAX_RESPONSE_LENGTH 4096
+
 namespace occ {
 
 Preset_ping_args::~Preset_ping_args() noexcept {}
@@ -25,7 +31,7 @@ uint32_t Preset_ping_args::read(::apache::thrift::protocol::TProtocol* iprot) {
 
     while (true) {
         xfer += iprot->readFieldBegin(fname, ftype, fid);
-        if (ftype == ::apache::thrift::protocol::T_STOP) {
+        if (ftype == ORIGIN_T_STOP) {
             break;
         }
         xfer += iprot->skip(ftype);
@@ -77,7 +83,7 @@ uint32_t Preset_ping_result::read(
 
     while (true) {
         xfer += iprot->readFieldBegin(fname, ftype, fid);
-        if (ftype == ::apache::thrift::protocol::T_STOP) {
+        if (ftype == ORIGIN_T_STOP) {
             break;
         }
         switch (fid) {
@@ -134,7 +140,7 @@ uint32_t Preset_ping_presult::read(
 
     while (true) {
         xfer += iprot->readFieldBegin(fname, ftype, fid);
-        if (ftype == ::apache::thrift::protocol::T_STOP) {
+        if (ftype == ORIGIN_T_STOP) {
             break;
         }
         switch (fid) {
@@ -174,7 +180,7 @@ uint32_t Preset_handleMessage_args::read(
 
     while (true) {
         xfer += iprot->readFieldBegin(fname, ftype, fid);
-        if (ftype == ::apache::thrift::protocol::T_STOP) {
+        if (ftype == ORIGIN_T_STOP) {
             break;
         }
         switch (fid) {
@@ -248,7 +254,7 @@ uint32_t Preset_handleMessage_result::read(
 
     while (true) {
         xfer += iprot->readFieldBegin(fname, ftype, fid);
-        if (ftype == ::apache::thrift::protocol::T_STOP) {
+        if (ftype == ORIGIN_T_STOP) {
             break;
         }
         switch (fid) {
@@ -318,7 +324,7 @@ uint32_t Preset_handleMessage_presult::read(
 
     while (true) {
         xfer += iprot->readFieldBegin(fname, ftype, fid);
-        if (ftype == ::apache::thrift::protocol::T_STOP) {
+        if (ftype == ORIGIN_T_STOP) {
             break;
         }
         switch (fid) {
@@ -350,6 +356,69 @@ uint32_t Preset_handleMessage_presult::read(
     return xfer;
 }
 
+PresetClient::PresetClient(
+    boost::asio::io_context& io_context,
+    std::shared_ptr<::apache::thrift::protocol::TProtocol> prot)
+    : socket_(io_context), pibuf_(nullptr), pobuf_(nullptr) {
+    pibuf_ = std::make_shared<byte_buf>();
+    pobuf_ = pibuf_;
+    prot->init_buf(pibuf_.get());
+    setProtocol(prot);
+    response_.resize(MAX_RESPONSE_LENGTH);
+}
+
+PresetClient::PresetClient(
+    boost::asio::io_context& io_context,
+    std::shared_ptr<::apache::thrift::protocol::TProtocol> iprot,
+    std::shared_ptr<::apache::thrift::protocol::TProtocol> oprot)
+    : socket_(io_context), pibuf_(nullptr), pobuf_(nullptr) {
+    pibuf_ = std::make_shared<byte_buf>();
+    pobuf_ = std::make_shared<byte_buf>();
+    iprot->init_buf(pibuf_.get());
+    oprot->init_buf(pobuf_.get());
+    setProtocol(iprot, oprot);
+    response_.resize(MAX_RESPONSE_LENGTH);
+}
+
+bool PresetClient::connect(const std::string& host, uint32_t port) {
+    try {
+        boost::asio::ip::tcp::endpoint ep(
+            boost::asio::ip::address::from_string(host), port);
+        socket_.connect(ep);
+        return socket_.is_open();
+    } catch (std::exception& e) {
+        std::cerr << "Exception: " << e.what() << std::endl;
+        return false;
+    }
+}
+
+bool PresetClient::sendMessage() {
+    try {
+        if (!pobuf_ || !socket_.is_open()) return false;
+        socket_.write_some(boost::asio::buffer(pobuf_->get_read_ptr(),
+                                               pobuf_->get_valid_read_len()));
+        return true;
+    } catch (std::exception& e) {
+        std::cerr << "Exception: " << e.what() << std::endl;
+        return false;
+    }
+}
+
+void PresetClient::receiveMessage() {
+    try {
+        std::memset(&response_[0], 0, MAX_RESPONSE_LENGTH);
+        size_t reply_length = socket_.read_some(
+            boost::asio::buffer(&response_[0], MAX_RESPONSE_LENGTH));
+        // std::cout << "Received: " << response_ << std::endl;
+        if (pibuf_) {
+            pibuf_->reset();
+            pibuf_->write_to_byte_buf(&response_[0], reply_length);
+        }
+    } catch (std::exception& e) {
+        std::cerr << "Exception: " << e.what() << std::endl;
+    }
+}
+
 void PresetClient::ping(std::string& _return) {
     send_ping();
     recv_ping(_return);
@@ -367,6 +436,9 @@ void PresetClient::send_ping() {
     oprot_->writeMessageEnd();
     // oprot_->getTransport()->writeEnd();
     // oprot_->getTransport()->flush();
+    sendMessage();
+    pobuf_->reset();
+    receiveMessage();
 }
 
 void PresetClient::recv_ping(std::string& _return) {
@@ -381,23 +453,27 @@ void PresetClient::recv_ping(std::string& _return) {
         x.read(iprot_);
         iprot_->readMessageEnd();
         // iprot_->getTransport()->readEnd();
+        pibuf_->reset();
         throw x;
     }
     if (mtype != network::T_REPLY) {
         iprot_->skip(::apache::thrift::protocol::T_STRUCT);
         iprot_->readMessageEnd();
         // iprot_->getTransport()->readEnd();
+        pibuf_->reset();
     }
     if (fname.compare("ping") != 0) {
         iprot_->skip(::apache::thrift::protocol::T_STRUCT);
         iprot_->readMessageEnd();
         // iprot_->getTransport()->readEnd();
+        pibuf_->reset();
     }
     Preset_ping_presult result;
     result.success = &_return;
     result.read(iprot_);
     iprot_->readMessageEnd();
     // iprot_->getTransport()->readEnd();
+    pibuf_->reset();
 
     if (result.__isset.success) {
         // _return pointer has now been filled
@@ -424,6 +500,9 @@ void PresetClient::send_handleMessage(const Message& msg) {
     oprot_->writeMessageEnd();
     // oprot_->getTransport()->writeEnd();
     // oprot_->getTransport()->flush();
+    sendMessage();
+    pobuf_->reset();
+    receiveMessage();
 }
 
 void PresetClient::recv_handleMessage(ResultStruct& _return) {
@@ -438,23 +517,27 @@ void PresetClient::recv_handleMessage(ResultStruct& _return) {
         x.read(iprot_);
         iprot_->readMessageEnd();
         // iprot_->getTransport()->readEnd();
+        pibuf_->reset();
         throw x;
     }
     if (mtype != network::T_REPLY) {
         iprot_->skip(::apache::thrift::protocol::T_STRUCT);
         iprot_->readMessageEnd();
         // iprot_->getTransport()->readEnd();
+        pibuf_->reset();
     }
     if (fname.compare("handleMessage") != 0) {
         iprot_->skip(::apache::thrift::protocol::T_STRUCT);
         iprot_->readMessageEnd();
         // iprot_->getTransport()->readEnd();
+        pibuf_->reset();
     }
     Preset_handleMessage_presult result;
     result.success = &_return;
     result.read(iprot_);
     iprot_->readMessageEnd();
     // iprot_->getTransport()->readEnd();
+    pibuf_->reset();
 
     if (result.__isset.success) {
         // _return pointer has now been filled

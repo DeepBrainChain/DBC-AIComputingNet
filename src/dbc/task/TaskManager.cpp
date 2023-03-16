@@ -63,11 +63,6 @@ FResult TaskManager::init() {
         return FResult(ERR_ERROR, "wallet_renttask manager init failed");
     }
 
-    fret = RentOrderManager::instance().Init();
-    if (fret.errcode != ERR_SUCCESS) {
-        return FResult(ERR_ERROR, "rent order manager init failed");
-    }
-
     // 重启时恢复running_tasks、初始化task状态
     fret = this->init_tasks_status();
     if (fret.errcode != ERR_SUCCESS) {

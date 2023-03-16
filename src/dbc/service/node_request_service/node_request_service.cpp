@@ -80,6 +80,12 @@ ERRCODE node_request_service::init() {
         return ERR_ERROR;
     }
 
+    fret = RentOrderManager::instance().Init();
+    if (fret.errcode != ERR_SUCCESS) {
+        LOG_ERROR << "rent order manager init failed";
+        return ERR_ERROR;
+    }
+
     if (Server::NodeType == NODE_TYPE::ComputeNode ||
         Server::NodeType == NODE_TYPE::BareMetalNode) {
         add_self_to_servicelist(ConfManager::instance().GetNodeId());

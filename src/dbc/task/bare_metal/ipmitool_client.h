@@ -1,29 +1,23 @@
 #ifndef DBC_IPMITOOL_CLIENT_H
 #define DBC_IPMITOOL_CLIENT_H
 
-#include "util/utils.h"
+#include "bare_metal_client_base.h"
 
-class IpmiToolClient : public Singleton<IpmiToolClient> {
+class IpmiToolClient : public BareMetalClientBase {
 public:
     IpmiToolClient();
 
-    virtual ~IpmiToolClient();
+    ~IpmiToolClient() override;
 
-    FResult Init();
+    FResult Init() override;
 
-    void Exit();
+    void Exit() override;
 
-    FResult PowerControl(const std::string& node_id, const std::string& command);
+    FResult PowerControl(const std::string& node_id,
+                         const std::string& command) override;
 
-    FResult SetBootDeviceOrder(const std::string& node_id, const std::string& device);
-
-    void PruneNode(const std::string& node_id);
-
-    void PruneNodes();
-
-protected:
-    bool stopped = false;
-
+    FResult SetBootDeviceOrder(const std::string& node_id,
+                               const std::string& device) override;
 };
 
-#endif // DBC_IPMITOOL_CLIENT_H
+#endif  // DBC_IPMITOOL_CLIENT_H

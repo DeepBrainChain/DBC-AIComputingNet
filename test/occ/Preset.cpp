@@ -6,7 +6,6 @@
  */
 #include "Preset.h"
 
-#include "network/protocol/binary_protocol.h"
 #include "network/protocol/protocol.h"
 
 // The T_STOP of enum TType in dbc is not equal to the value of thrift official
