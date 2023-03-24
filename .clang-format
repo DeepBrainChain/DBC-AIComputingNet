@@ -3,6 +3,9 @@ BasedOnStyle: Google
 IndentWidth: 4
 ---
 
+# 对齐连续宏定义
+AlignConsecutiveMacros: true
+
 Language: Cpp
 AccessModifierOffset: -4
 Standard: Cpp11
