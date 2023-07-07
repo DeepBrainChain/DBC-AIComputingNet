@@ -32,9 +32,10 @@ FResult IpmiToolClient::PowerControl(const std::string& node_id,
         BareMetalNodeManager::instance().getBareMetalNode(node_id);
     if (!bm) return FResult(ERR_ERROR, "node id not existed");
 
-    std::string cmd = "ipmitool -H " + bm->ipmi_hostname + " -U " +
-                      bm->ipmi_username + " -P " + bm->ipmi_password +
-                      " chassis power " + command;
+    std::string cmd = "ipmitool -H " + bm->ipmi_hostname;
+    if (!bm->ipmi_port.empty()) cmd += " -p " + bm->ipmi_port;
+    cmd += " -U " + bm->ipmi_username + " -P " + bm->ipmi_password +
+           " chassis power " + command;
     std::string cmd_ret = run_shell(cmd);
     LOG_INFO << "run shell (" << cmd << ") return :" << cmd_ret;
     util::replace(cmd_ret, "\n", " <line> ");
@@ -50,9 +51,10 @@ FResult IpmiToolClient::SetBootDeviceOrder(const std::string& node_id,
         BareMetalNodeManager::instance().getBareMetalNode(node_id);
     if (!bm) return FResult(ERR_ERROR, "node id not existed");
 
-    std::string cmd = "ipmitool -H " + bm->ipmi_hostname + " -U " +
-                      bm->ipmi_username + " -P " + bm->ipmi_password +
-                      " chassis bootdev " + device;
+    std::string cmd = "ipmitool -H " + bm->ipmi_hostname;
+    if (!bm->ipmi_port.empty()) cmd += " -p " + bm->ipmi_port;
+    cmd += " -U " + bm->ipmi_username + " -P " + bm->ipmi_password +
+           " chassis bootdev " + device;
     std::string cmd_ret = run_shell(cmd);
     LOG_INFO << "run shell (" << cmd << ") return :" << cmd_ret;
     util::replace(cmd_ret, "\n", " <line> ");

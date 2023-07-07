@@ -531,6 +531,7 @@ void TaskManager::shell_remove_reject_iptable_from_system() {
 }
 
 void TaskManager::delete_task(const std::string& task_id) {
+    if (!VmClient::instance().IsExistDomain(task_id)) return;
     unsigned int undefineFlags = 0;
     int32_t hasNvram = VmClient::instance().IsDomainHasNvram(task_id);
     if (hasNvram > 0) undefineFlags |= VIR_DOMAIN_UNDEFINE_NVRAM;

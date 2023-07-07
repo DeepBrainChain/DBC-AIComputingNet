@@ -86,6 +86,8 @@ FResult BareMetalNodeManager::AddBareMetalNodes(
         bm->__set_ipmi_hostname(iter.second.ipmi_hostname);
         bm->__set_ipmi_username(iter.second.ipmi_username);
         bm->__set_ipmi_password(iter.second.ipmi_password);
+        if (iter.second.ipmi_port > 0 && iter.second.ipmi_port <= 65535)
+            bm->__set_ipmi_port(std::to_string(iter.second.ipmi_port));
         if (!m_db.write_data(bm)) {
             fret.errmsg = "write bare metal db error";
             LOG_ERROR << fret.errmsg;
@@ -99,7 +101,8 @@ FResult BareMetalNodeManager::AddBareMetalNodes(
                  << ", desc: " << iter.second.desc
                  << ", ipmi hostname: " << iter.second.ipmi_hostname
                  << ", ipmi username: " << iter.second.ipmi_username
-                 << ", ipmi password: " << iter.second.ipmi_password;
+                 << ", ipmi password: " << iter.second.ipmi_password
+                 << ", ipmi port: " << iter.second.ipmi_port;
     }
 
     fret.errcode = ERR_SUCCESS;

@@ -11910,6 +11910,8 @@ void bare_metal_list(
            << "\"" << it.second->ipmi_username << "\"";
         ss << ",\"ipmi_password\":"
            << "\"" << it.second->ipmi_password << "\"";
+        if (!it.second->ipmi_port.empty())
+            ss << ",\"ipmi_port\":" << it.second->ipmi_port;
         ss << "}";
 
         count++;
@@ -12313,6 +12315,17 @@ void rest_api_service::rest_add_bare_metal(
                 info.ipmi_username = v["ipmi_username"].GetString();
             if (v.HasMember("ipmi_password") && v["ipmi_password"].IsString())
                 info.ipmi_password = v["ipmi_password"].GetString();
+            if (v.HasMember("ipmi_port") && v["ipmi_port"].IsUint()) {
+                uint32_t port = v["ipmi_port"].GetUint();
+                if (port > 0 && port <= 65535) {
+                    info.ipmi_port = port;
+                } else {
+                    httpReq->reply_comm_rest_err(HTTP_BADREQUEST,
+                                                 RPC_INVALID_PARAMS,
+                                                 "invalid ipmi port");
+                    return;
+                }
+            }
             if (!info.validate()) {
                 httpReq->reply_comm_rest_err(
                     HTTP_BADREQUEST, RPC_INVALID_PARAMS,

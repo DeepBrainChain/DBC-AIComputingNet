@@ -24,10 +24,10 @@
 #include "tweetnacl/tweetnacl.h"
 #include "util/base64.h"
 
-#define AI_TRAINING_TASK_TIMER "training_task"
-#define AI_PRUNE_TASK_TIMER "prune_task"
+#define AI_TRAINING_TASK_TIMER    "training_task"
+#define AI_PRUNE_TASK_TIMER       "prune_task"
 #define AI_PRUNE_BARE_METAL_TIMER "prune_bare_metal"
-#define SERVICE_BROADCAST_TIMER "service_broadcast_timer"
+#define SERVICE_BROADCAST_TIMER   "service_broadcast_timer"
 
 #define TIME_SERVICE_INFO_LIST_EXPIRED 300  // second
 
@@ -7068,6 +7068,8 @@ void node_request_service::list_bare_metal(
                << "\"" << it.second->ipmi_username << "\"";
             ss << ",\"ipmi_password\":"
                << "\"" << it.second->ipmi_password << "\"";
+            if (!it.second->ipmi_port.empty())
+                ss << ",\"ipmi_port\":" << it.second->ipmi_port;
             ss << "}";
 
             count++;
@@ -7245,6 +7247,18 @@ void node_request_service::add_bare_metal(
             info.ipmi_username = v["ipmi_username"].GetString();
         if (v.HasMember("ipmi_password") && v["ipmi_password"].IsString())
             info.ipmi_password = v["ipmi_password"].GetString();
+        if (v.HasMember("ipmi_port") && v["ipmi_port"].IsUint()) {
+            uint32_t port = v["ipmi_port"].GetUint();
+            if (port > 0 && port <= 65535) {
+                info.ipmi_port = port;
+            } else {
+                send_response_error<dbc::node_add_bare_metal_rsp>(
+                    NODE_ADD_BARE_METAL_RSP, header, E_DEFAULT,
+                    "invalid ipmi port in " + info.uuid,
+                    data->peer_nodes_list[0]);
+                return;
+            }
+        }
         if (!info.validate()) {
             send_response_error<dbc::node_add_bare_metal_rsp>(
                 NODE_ADD_BARE_METAL_RSP, header, E_DEFAULT,

@@ -58,6 +58,11 @@ void db_bare_metal::__set_ipmi_password(const std::string& val) {
   this->ipmi_password = val;
 __isset.ipmi_password = true;
 }
+
+void db_bare_metal::__set_ipmi_port(const std::string& val) {
+  this->ipmi_port = val;
+__isset.ipmi_port = true;
+}
 std::ostream& operator<<(std::ostream& out, const db_bare_metal& obj)
 {
   obj.printTo(out);
@@ -162,6 +167,14 @@ uint32_t db_bare_metal::read(::apache::thrift::protocol::TProtocol* iprot) {
           xfer += iprot->skip(ftype);
         }
         break;
+      case 10:
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
+          xfer += iprot->readString(this->ipmi_port);
+          this->__isset.ipmi_port = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
       default:
         xfer += iprot->skip(ftype);
         break;
@@ -228,6 +241,11 @@ uint32_t db_bare_metal::write(::apache::thrift::protocol::TProtocol* oprot) cons
     xfer += oprot->writeString(this->ipmi_password);
     xfer += oprot->writeFieldEnd();
   }
+  if (this->__isset.ipmi_port) {
+    xfer += oprot->writeFieldBegin("ipmi_port", ::apache::thrift::protocol::T_STRING, 10);
+    xfer += oprot->writeString(this->ipmi_port);
+    xfer += oprot->writeFieldEnd();
+  }
   xfer += oprot->writeFieldStop();
   xfer += oprot->writeStructEnd();
   return xfer;
@@ -244,6 +262,7 @@ void swap(db_bare_metal &a, db_bare_metal &b) {
   swap(a.ipmi_hostname, b.ipmi_hostname);
   swap(a.ipmi_username, b.ipmi_username);
   swap(a.ipmi_password, b.ipmi_password);
+  swap(a.ipmi_port, b.ipmi_port);
   swap(a.__isset, b.__isset);
 }
 
@@ -257,6 +276,7 @@ db_bare_metal::db_bare_metal(const db_bare_metal& other0) {
   ipmi_hostname = other0.ipmi_hostname;
   ipmi_username = other0.ipmi_username;
   ipmi_password = other0.ipmi_password;
+  ipmi_port = other0.ipmi_port;
   __isset = other0.__isset;
 }
 db_bare_metal& db_bare_metal::operator=(const db_bare_metal& other1) {
@@ -269,6 +289,7 @@ db_bare_metal& db_bare_metal::operator=(const db_bare_metal& other1) {
   ipmi_hostname = other1.ipmi_hostname;
   ipmi_username = other1.ipmi_username;
   ipmi_password = other1.ipmi_password;
+  ipmi_port = other1.ipmi_port;
   __isset = other1.__isset;
   return *this;
 }
@@ -284,6 +305,7 @@ void db_bare_metal::printTo(std::ostream& out) const {
   out << ", " << "ipmi_hostname="; (__isset.ipmi_hostname ? (out << to_string(ipmi_hostname)) : (out << "<null>"));
   out << ", " << "ipmi_username="; (__isset.ipmi_username ? (out << to_string(ipmi_username)) : (out << "<null>"));
   out << ", " << "ipmi_password="; (__isset.ipmi_password ? (out << to_string(ipmi_password)) : (out << "<null>"));
+  out << ", " << "ipmi_port="; (__isset.ipmi_port ? (out << to_string(ipmi_port)) : (out << "<null>"));
   out << ")";
 }
 
