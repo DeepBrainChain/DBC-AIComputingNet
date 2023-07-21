@@ -63,6 +63,16 @@ void db_bare_metal::__set_ipmi_port(const std::string& val) {
   this->ipmi_port = val;
 __isset.ipmi_port = true;
 }
+
+void db_bare_metal::__set_deeplink_device_id(const std::string& val) {
+  this->deeplink_device_id = val;
+__isset.deeplink_device_id = true;
+}
+
+void db_bare_metal::__set_deeplink_device_password(const std::string& val) {
+  this->deeplink_device_password = val;
+__isset.deeplink_device_password = true;
+}
 std::ostream& operator<<(std::ostream& out, const db_bare_metal& obj)
 {
   obj.printTo(out);
@@ -175,6 +185,22 @@ uint32_t db_bare_metal::read(::apache::thrift::protocol::TProtocol* iprot) {
           xfer += iprot->skip(ftype);
         }
         break;
+      case 20:
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
+          xfer += iprot->readString(this->deeplink_device_id);
+          this->__isset.deeplink_device_id = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 21:
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
+          xfer += iprot->readString(this->deeplink_device_password);
+          this->__isset.deeplink_device_password = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
       default:
         xfer += iprot->skip(ftype);
         break;
@@ -246,6 +272,16 @@ uint32_t db_bare_metal::write(::apache::thrift::protocol::TProtocol* oprot) cons
     xfer += oprot->writeString(this->ipmi_port);
     xfer += oprot->writeFieldEnd();
   }
+  if (this->__isset.deeplink_device_id) {
+    xfer += oprot->writeFieldBegin("deeplink_device_id", ::apache::thrift::protocol::T_STRING, 20);
+    xfer += oprot->writeString(this->deeplink_device_id);
+    xfer += oprot->writeFieldEnd();
+  }
+  if (this->__isset.deeplink_device_password) {
+    xfer += oprot->writeFieldBegin("deeplink_device_password", ::apache::thrift::protocol::T_STRING, 21);
+    xfer += oprot->writeString(this->deeplink_device_password);
+    xfer += oprot->writeFieldEnd();
+  }
   xfer += oprot->writeFieldStop();
   xfer += oprot->writeStructEnd();
   return xfer;
@@ -263,6 +299,8 @@ void swap(db_bare_metal &a, db_bare_metal &b) {
   swap(a.ipmi_username, b.ipmi_username);
   swap(a.ipmi_password, b.ipmi_password);
   swap(a.ipmi_port, b.ipmi_port);
+  swap(a.deeplink_device_id, b.deeplink_device_id);
+  swap(a.deeplink_device_password, b.deeplink_device_password);
   swap(a.__isset, b.__isset);
 }
 
@@ -277,6 +315,8 @@ db_bare_metal::db_bare_metal(const db_bare_metal& other0) {
   ipmi_username = other0.ipmi_username;
   ipmi_password = other0.ipmi_password;
   ipmi_port = other0.ipmi_port;
+  deeplink_device_id = other0.deeplink_device_id;
+  deeplink_device_password = other0.deeplink_device_password;
   __isset = other0.__isset;
 }
 db_bare_metal& db_bare_metal::operator=(const db_bare_metal& other1) {
@@ -290,6 +330,8 @@ db_bare_metal& db_bare_metal::operator=(const db_bare_metal& other1) {
   ipmi_username = other1.ipmi_username;
   ipmi_password = other1.ipmi_password;
   ipmi_port = other1.ipmi_port;
+  deeplink_device_id = other1.deeplink_device_id;
+  deeplink_device_password = other1.deeplink_device_password;
   __isset = other1.__isset;
   return *this;
 }
@@ -306,6 +348,8 @@ void db_bare_metal::printTo(std::ostream& out) const {
   out << ", " << "ipmi_username="; (__isset.ipmi_username ? (out << to_string(ipmi_username)) : (out << "<null>"));
   out << ", " << "ipmi_password="; (__isset.ipmi_password ? (out << to_string(ipmi_password)) : (out << "<null>"));
   out << ", " << "ipmi_port="; (__isset.ipmi_port ? (out << to_string(ipmi_port)) : (out << "<null>"));
+  out << ", " << "deeplink_device_id="; (__isset.deeplink_device_id ? (out << to_string(deeplink_device_id)) : (out << "<null>"));
+  out << ", " << "deeplink_device_password="; (__isset.deeplink_device_password ? (out << to_string(deeplink_device_password)) : (out << "<null>"));
   out << ")";
 }
 

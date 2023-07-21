@@ -31426,4 +31426,1508 @@ void node_bare_metal_bootdev_rsp::printTo(std::ostream& out) const {
   out << ")";
 }
 
+
+node_list_deeplink_info_req_data::~node_list_deeplink_info_req_data() throw() {
+}
+
+
+void node_list_deeplink_info_req_data::__set_peer_nodes_list(const std::vector<std::string> & val) {
+  this->peer_nodes_list = val;
+}
+
+void node_list_deeplink_info_req_data::__set_additional(const std::string& val) {
+  this->additional = val;
+}
+
+void node_list_deeplink_info_req_data::__set_wallet(const std::string& val) {
+  this->wallet = val;
+}
+
+void node_list_deeplink_info_req_data::__set_nonce(const std::string& val) {
+  this->nonce = val;
+}
+
+void node_list_deeplink_info_req_data::__set_sign(const std::string& val) {
+  this->sign = val;
+}
+
+void node_list_deeplink_info_req_data::__set_multisig_wallets(const std::vector<std::string> & val) {
+  this->multisig_wallets = val;
+}
+
+void node_list_deeplink_info_req_data::__set_multisig_threshold(const int32_t val) {
+  this->multisig_threshold = val;
+}
+
+void node_list_deeplink_info_req_data::__set_multisig_signs(const std::vector<multisig_sign_item> & val) {
+  this->multisig_signs = val;
+}
+
+void node_list_deeplink_info_req_data::__set_session_id(const std::string& val) {
+  this->session_id = val;
+}
+
+void node_list_deeplink_info_req_data::__set_session_id_sign(const std::string& val) {
+  this->session_id_sign = val;
+}
+
+void node_list_deeplink_info_req_data::__set_rent_order(const std::string& val) {
+  this->rent_order = val;
+__isset.rent_order = true;
+}
+std::ostream& operator<<(std::ostream& out, const node_list_deeplink_info_req_data& obj)
+{
+  obj.printTo(out);
+  return out;
+}
+
+
+uint32_t node_list_deeplink_info_req_data::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+  uint32_t xfer = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  using ::apache::thrift::protocol::TProtocolException;
+
+  bool isset_peer_nodes_list = false;
+  bool isset_additional = false;
+  bool isset_wallet = false;
+  bool isset_nonce = false;
+  bool isset_sign = false;
+  bool isset_multisig_wallets = false;
+  bool isset_multisig_threshold = false;
+  bool isset_multisig_signs = false;
+  bool isset_session_id = false;
+  bool isset_session_id_sign = false;
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 1:
+        if (ftype == ::apache::thrift::protocol::T_LIST) {
+          {
+            this->peer_nodes_list.clear();
+            uint32_t _size1140;
+            ::apache::thrift::protocol::TType _etype1143;
+            xfer += iprot->readListBegin(_etype1143, _size1140);
+            this->peer_nodes_list.resize(_size1140);
+            uint32_t _i1144;
+            for (_i1144 = 0; _i1144 < _size1140; ++_i1144)
+            {
+              xfer += iprot->readString(this->peer_nodes_list[_i1144]);
+            }
+            xfer += iprot->readListEnd();
+          }
+          isset_peer_nodes_list = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 2:
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
+          xfer += iprot->readString(this->additional);
+          isset_additional = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 3:
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
+          xfer += iprot->readString(this->wallet);
+          isset_wallet = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 4:
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
+          xfer += iprot->readString(this->nonce);
+          isset_nonce = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 5:
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
+          xfer += iprot->readString(this->sign);
+          isset_sign = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 6:
+        if (ftype == ::apache::thrift::protocol::T_LIST) {
+          {
+            this->multisig_wallets.clear();
+            uint32_t _size1145;
+            ::apache::thrift::protocol::TType _etype1148;
+            xfer += iprot->readListBegin(_etype1148, _size1145);
+            this->multisig_wallets.resize(_size1145);
+            uint32_t _i1149;
+            for (_i1149 = 0; _i1149 < _size1145; ++_i1149)
+            {
+              xfer += iprot->readString(this->multisig_wallets[_i1149]);
+            }
+            xfer += iprot->readListEnd();
+          }
+          isset_multisig_wallets = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 7:
+        if (ftype == ::apache::thrift::protocol::T_I32) {
+          xfer += iprot->readI32(this->multisig_threshold);
+          isset_multisig_threshold = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 8:
+        if (ftype == ::apache::thrift::protocol::T_LIST) {
+          {
+            this->multisig_signs.clear();
+            uint32_t _size1150;
+            ::apache::thrift::protocol::TType _etype1153;
+            xfer += iprot->readListBegin(_etype1153, _size1150);
+            this->multisig_signs.resize(_size1150);
+            uint32_t _i1154;
+            for (_i1154 = 0; _i1154 < _size1150; ++_i1154)
+            {
+              xfer += this->multisig_signs[_i1154].read(iprot);
+            }
+            xfer += iprot->readListEnd();
+          }
+          isset_multisig_signs = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 9:
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
+          xfer += iprot->readString(this->session_id);
+          isset_session_id = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 10:
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
+          xfer += iprot->readString(this->session_id_sign);
+          isset_session_id_sign = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 11:
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
+          xfer += iprot->readString(this->rent_order);
+          this->__isset.rent_order = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      default:
+        xfer += iprot->skip(ftype);
+        break;
+    }
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  if (!isset_peer_nodes_list)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  if (!isset_additional)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  if (!isset_wallet)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  if (!isset_nonce)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  if (!isset_sign)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  if (!isset_multisig_wallets)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  if (!isset_multisig_threshold)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  if (!isset_multisig_signs)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  if (!isset_session_id)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  if (!isset_session_id_sign)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  return xfer;
+}
+
+uint32_t node_list_deeplink_info_req_data::write(::apache::thrift::protocol::TProtocol* oprot) const {
+  uint32_t xfer = 0;
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+  xfer += oprot->writeStructBegin("node_list_deeplink_info_req_data");
+
+  xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 1);
+  {
+    xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
+    std::vector<std::string> ::const_iterator _iter1155;
+    for (_iter1155 = this->peer_nodes_list.begin(); _iter1155 != this->peer_nodes_list.end(); ++_iter1155)
+    {
+      xfer += oprot->writeString((*_iter1155));
+    }
+    xfer += oprot->writeListEnd();
+  }
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("additional", ::apache::thrift::protocol::T_STRING, 2);
+  xfer += oprot->writeString(this->additional);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("wallet", ::apache::thrift::protocol::T_STRING, 3);
+  xfer += oprot->writeString(this->wallet);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("nonce", ::apache::thrift::protocol::T_STRING, 4);
+  xfer += oprot->writeString(this->nonce);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("sign", ::apache::thrift::protocol::T_STRING, 5);
+  xfer += oprot->writeString(this->sign);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("multisig_wallets", ::apache::thrift::protocol::T_LIST, 6);
+  {
+    xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->multisig_wallets.size()));
+    std::vector<std::string> ::const_iterator _iter1156;
+    for (_iter1156 = this->multisig_wallets.begin(); _iter1156 != this->multisig_wallets.end(); ++_iter1156)
+    {
+      xfer += oprot->writeString((*_iter1156));
+    }
+    xfer += oprot->writeListEnd();
+  }
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("multisig_threshold", ::apache::thrift::protocol::T_I32, 7);
+  xfer += oprot->writeI32(this->multisig_threshold);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("multisig_signs", ::apache::thrift::protocol::T_LIST, 8);
+  {
+    xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->multisig_signs.size()));
+    std::vector<multisig_sign_item> ::const_iterator _iter1157;
+    for (_iter1157 = this->multisig_signs.begin(); _iter1157 != this->multisig_signs.end(); ++_iter1157)
+    {
+      xfer += (*_iter1157).write(oprot);
+    }
+    xfer += oprot->writeListEnd();
+  }
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("session_id", ::apache::thrift::protocol::T_STRING, 9);
+  xfer += oprot->writeString(this->session_id);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("session_id_sign", ::apache::thrift::protocol::T_STRING, 10);
+  xfer += oprot->writeString(this->session_id_sign);
+  xfer += oprot->writeFieldEnd();
+
+  if (this->__isset.rent_order) {
+    xfer += oprot->writeFieldBegin("rent_order", ::apache::thrift::protocol::T_STRING, 11);
+    xfer += oprot->writeString(this->rent_order);
+    xfer += oprot->writeFieldEnd();
+  }
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  return xfer;
+}
+
+void swap(node_list_deeplink_info_req_data &a, node_list_deeplink_info_req_data &b) {
+  using ::std::swap;
+  swap(a.peer_nodes_list, b.peer_nodes_list);
+  swap(a.additional, b.additional);
+  swap(a.wallet, b.wallet);
+  swap(a.nonce, b.nonce);
+  swap(a.sign, b.sign);
+  swap(a.multisig_wallets, b.multisig_wallets);
+  swap(a.multisig_threshold, b.multisig_threshold);
+  swap(a.multisig_signs, b.multisig_signs);
+  swap(a.session_id, b.session_id);
+  swap(a.session_id_sign, b.session_id_sign);
+  swap(a.rent_order, b.rent_order);
+  swap(a.__isset, b.__isset);
+}
+
+node_list_deeplink_info_req_data::node_list_deeplink_info_req_data(const node_list_deeplink_info_req_data& other1158) {
+  peer_nodes_list = other1158.peer_nodes_list;
+  additional = other1158.additional;
+  wallet = other1158.wallet;
+  nonce = other1158.nonce;
+  sign = other1158.sign;
+  multisig_wallets = other1158.multisig_wallets;
+  multisig_threshold = other1158.multisig_threshold;
+  multisig_signs = other1158.multisig_signs;
+  session_id = other1158.session_id;
+  session_id_sign = other1158.session_id_sign;
+  rent_order = other1158.rent_order;
+  __isset = other1158.__isset;
+}
+node_list_deeplink_info_req_data& node_list_deeplink_info_req_data::operator=(const node_list_deeplink_info_req_data& other1159) {
+  peer_nodes_list = other1159.peer_nodes_list;
+  additional = other1159.additional;
+  wallet = other1159.wallet;
+  nonce = other1159.nonce;
+  sign = other1159.sign;
+  multisig_wallets = other1159.multisig_wallets;
+  multisig_threshold = other1159.multisig_threshold;
+  multisig_signs = other1159.multisig_signs;
+  session_id = other1159.session_id;
+  session_id_sign = other1159.session_id_sign;
+  rent_order = other1159.rent_order;
+  __isset = other1159.__isset;
+  return *this;
+}
+void node_list_deeplink_info_req_data::printTo(std::ostream& out) const {
+  using ::apache::thrift::to_string;
+  out << "node_list_deeplink_info_req_data(";
+  out << "peer_nodes_list=" << to_string(peer_nodes_list);
+  out << ", " << "additional=" << to_string(additional);
+  out << ", " << "wallet=" << to_string(wallet);
+  out << ", " << "nonce=" << to_string(nonce);
+  out << ", " << "sign=" << to_string(sign);
+  out << ", " << "multisig_wallets=" << to_string(multisig_wallets);
+  out << ", " << "multisig_threshold=" << to_string(multisig_threshold);
+  out << ", " << "multisig_signs=" << to_string(multisig_signs);
+  out << ", " << "session_id=" << to_string(session_id);
+  out << ", " << "session_id_sign=" << to_string(session_id_sign);
+  out << ", " << "rent_order="; (__isset.rent_order ? (out << to_string(rent_order)) : (out << "<null>"));
+  out << ")";
+}
+
+
+node_list_deeplink_info_req_body::~node_list_deeplink_info_req_body() throw() {
+}
+
+
+void node_list_deeplink_info_req_body::__set_data(const std::string& val) {
+  this->data = val;
+}
+std::ostream& operator<<(std::ostream& out, const node_list_deeplink_info_req_body& obj)
+{
+  obj.printTo(out);
+  return out;
+}
+
+
+uint32_t node_list_deeplink_info_req_body::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+  uint32_t xfer = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  using ::apache::thrift::protocol::TProtocolException;
+
+  bool isset_data = false;
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 1:
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
+          xfer += iprot->readString(this->data);
+          isset_data = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      default:
+        xfer += iprot->skip(ftype);
+        break;
+    }
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  if (!isset_data)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  return xfer;
+}
+
+uint32_t node_list_deeplink_info_req_body::write(::apache::thrift::protocol::TProtocol* oprot) const {
+  uint32_t xfer = 0;
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+  xfer += oprot->writeStructBegin("node_list_deeplink_info_req_body");
+
+  xfer += oprot->writeFieldBegin("data", ::apache::thrift::protocol::T_STRING, 1);
+  xfer += oprot->writeString(this->data);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  return xfer;
+}
+
+void swap(node_list_deeplink_info_req_body &a, node_list_deeplink_info_req_body &b) {
+  using ::std::swap;
+  swap(a.data, b.data);
+}
+
+node_list_deeplink_info_req_body::node_list_deeplink_info_req_body(const node_list_deeplink_info_req_body& other1160) {
+  data = other1160.data;
+}
+node_list_deeplink_info_req_body& node_list_deeplink_info_req_body::operator=(const node_list_deeplink_info_req_body& other1161) {
+  data = other1161.data;
+  return *this;
+}
+void node_list_deeplink_info_req_body::printTo(std::ostream& out) const {
+  using ::apache::thrift::to_string;
+  out << "node_list_deeplink_info_req_body(";
+  out << "data=" << to_string(data);
+  out << ")";
+}
+
+
+node_list_deeplink_info_req::~node_list_deeplink_info_req() throw() {
+}
+
+
+void node_list_deeplink_info_req::__set_body(const node_list_deeplink_info_req_body& val) {
+  this->body = val;
+}
+std::ostream& operator<<(std::ostream& out, const node_list_deeplink_info_req& obj)
+{
+  obj.printTo(out);
+  return out;
+}
+
+
+uint32_t node_list_deeplink_info_req::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+  uint32_t xfer = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  using ::apache::thrift::protocol::TProtocolException;
+
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 1:
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+          xfer += this->body.read(iprot);
+          this->__isset.body = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      default:
+        xfer += iprot->skip(ftype);
+        break;
+    }
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  return xfer;
+}
+
+uint32_t node_list_deeplink_info_req::write(::apache::thrift::protocol::TProtocol* oprot) const {
+  uint32_t xfer = 0;
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+  xfer += oprot->writeStructBegin("node_list_deeplink_info_req");
+
+  xfer += oprot->writeFieldBegin("body", ::apache::thrift::protocol::T_STRUCT, 1);
+  xfer += this->body.write(oprot);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  return xfer;
+}
+
+void swap(node_list_deeplink_info_req &a, node_list_deeplink_info_req &b) {
+  using ::std::swap;
+  swap(a.body, b.body);
+  swap(a.__isset, b.__isset);
+}
+
+node_list_deeplink_info_req::node_list_deeplink_info_req(const node_list_deeplink_info_req& other1162) {
+  body = other1162.body;
+  __isset = other1162.__isset;
+}
+node_list_deeplink_info_req& node_list_deeplink_info_req::operator=(const node_list_deeplink_info_req& other1163) {
+  body = other1163.body;
+  __isset = other1163.__isset;
+  return *this;
+}
+void node_list_deeplink_info_req::printTo(std::ostream& out) const {
+  using ::apache::thrift::to_string;
+  out << "node_list_deeplink_info_req(";
+  out << "body=" << to_string(body);
+  out << ")";
+}
+
+
+node_list_deeplink_info_rsp_body::~node_list_deeplink_info_rsp_body() throw() {
+}
+
+
+void node_list_deeplink_info_rsp_body::__set_data(const std::string& val) {
+  this->data = val;
+}
+std::ostream& operator<<(std::ostream& out, const node_list_deeplink_info_rsp_body& obj)
+{
+  obj.printTo(out);
+  return out;
+}
+
+
+uint32_t node_list_deeplink_info_rsp_body::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+  uint32_t xfer = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  using ::apache::thrift::protocol::TProtocolException;
+
+  bool isset_data = false;
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 1:
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
+          xfer += iprot->readString(this->data);
+          isset_data = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      default:
+        xfer += iprot->skip(ftype);
+        break;
+    }
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  if (!isset_data)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  return xfer;
+}
+
+uint32_t node_list_deeplink_info_rsp_body::write(::apache::thrift::protocol::TProtocol* oprot) const {
+  uint32_t xfer = 0;
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+  xfer += oprot->writeStructBegin("node_list_deeplink_info_rsp_body");
+
+  xfer += oprot->writeFieldBegin("data", ::apache::thrift::protocol::T_STRING, 1);
+  xfer += oprot->writeString(this->data);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  return xfer;
+}
+
+void swap(node_list_deeplink_info_rsp_body &a, node_list_deeplink_info_rsp_body &b) {
+  using ::std::swap;
+  swap(a.data, b.data);
+}
+
+node_list_deeplink_info_rsp_body::node_list_deeplink_info_rsp_body(const node_list_deeplink_info_rsp_body& other1164) {
+  data = other1164.data;
+}
+node_list_deeplink_info_rsp_body& node_list_deeplink_info_rsp_body::operator=(const node_list_deeplink_info_rsp_body& other1165) {
+  data = other1165.data;
+  return *this;
+}
+void node_list_deeplink_info_rsp_body::printTo(std::ostream& out) const {
+  using ::apache::thrift::to_string;
+  out << "node_list_deeplink_info_rsp_body(";
+  out << "data=" << to_string(data);
+  out << ")";
+}
+
+
+node_list_deeplink_info_rsp::~node_list_deeplink_info_rsp() throw() {
+}
+
+
+void node_list_deeplink_info_rsp::__set_body(const node_list_deeplink_info_rsp_body& val) {
+  this->body = val;
+}
+std::ostream& operator<<(std::ostream& out, const node_list_deeplink_info_rsp& obj)
+{
+  obj.printTo(out);
+  return out;
+}
+
+
+uint32_t node_list_deeplink_info_rsp::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+  uint32_t xfer = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  using ::apache::thrift::protocol::TProtocolException;
+
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 1:
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+          xfer += this->body.read(iprot);
+          this->__isset.body = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      default:
+        xfer += iprot->skip(ftype);
+        break;
+    }
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  return xfer;
+}
+
+uint32_t node_list_deeplink_info_rsp::write(::apache::thrift::protocol::TProtocol* oprot) const {
+  uint32_t xfer = 0;
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+  xfer += oprot->writeStructBegin("node_list_deeplink_info_rsp");
+
+  xfer += oprot->writeFieldBegin("body", ::apache::thrift::protocol::T_STRUCT, 1);
+  xfer += this->body.write(oprot);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  return xfer;
+}
+
+void swap(node_list_deeplink_info_rsp &a, node_list_deeplink_info_rsp &b) {
+  using ::std::swap;
+  swap(a.body, b.body);
+  swap(a.__isset, b.__isset);
+}
+
+node_list_deeplink_info_rsp::node_list_deeplink_info_rsp(const node_list_deeplink_info_rsp& other1166) {
+  body = other1166.body;
+  __isset = other1166.__isset;
+}
+node_list_deeplink_info_rsp& node_list_deeplink_info_rsp::operator=(const node_list_deeplink_info_rsp& other1167) {
+  body = other1167.body;
+  __isset = other1167.__isset;
+  return *this;
+}
+void node_list_deeplink_info_rsp::printTo(std::ostream& out) const {
+  using ::apache::thrift::to_string;
+  out << "node_list_deeplink_info_rsp(";
+  out << "body=" << to_string(body);
+  out << ")";
+}
+
+
+node_set_deeplink_info_req_data::~node_set_deeplink_info_req_data() throw() {
+}
+
+
+void node_set_deeplink_info_req_data::__set_peer_nodes_list(const std::vector<std::string> & val) {
+  this->peer_nodes_list = val;
+}
+
+void node_set_deeplink_info_req_data::__set_additional(const std::string& val) {
+  this->additional = val;
+}
+
+void node_set_deeplink_info_req_data::__set_wallet(const std::string& val) {
+  this->wallet = val;
+}
+
+void node_set_deeplink_info_req_data::__set_nonce(const std::string& val) {
+  this->nonce = val;
+}
+
+void node_set_deeplink_info_req_data::__set_sign(const std::string& val) {
+  this->sign = val;
+}
+
+void node_set_deeplink_info_req_data::__set_multisig_wallets(const std::vector<std::string> & val) {
+  this->multisig_wallets = val;
+}
+
+void node_set_deeplink_info_req_data::__set_multisig_threshold(const int32_t val) {
+  this->multisig_threshold = val;
+}
+
+void node_set_deeplink_info_req_data::__set_multisig_signs(const std::vector<multisig_sign_item> & val) {
+  this->multisig_signs = val;
+}
+
+void node_set_deeplink_info_req_data::__set_session_id(const std::string& val) {
+  this->session_id = val;
+}
+
+void node_set_deeplink_info_req_data::__set_session_id_sign(const std::string& val) {
+  this->session_id_sign = val;
+}
+
+void node_set_deeplink_info_req_data::__set_rent_order(const std::string& val) {
+  this->rent_order = val;
+__isset.rent_order = true;
+}
+std::ostream& operator<<(std::ostream& out, const node_set_deeplink_info_req_data& obj)
+{
+  obj.printTo(out);
+  return out;
+}
+
+
+uint32_t node_set_deeplink_info_req_data::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+  uint32_t xfer = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  using ::apache::thrift::protocol::TProtocolException;
+
+  bool isset_peer_nodes_list = false;
+  bool isset_additional = false;
+  bool isset_wallet = false;
+  bool isset_nonce = false;
+  bool isset_sign = false;
+  bool isset_multisig_wallets = false;
+  bool isset_multisig_threshold = false;
+  bool isset_multisig_signs = false;
+  bool isset_session_id = false;
+  bool isset_session_id_sign = false;
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 1:
+        if (ftype == ::apache::thrift::protocol::T_LIST) {
+          {
+            this->peer_nodes_list.clear();
+            uint32_t _size1168;
+            ::apache::thrift::protocol::TType _etype1171;
+            xfer += iprot->readListBegin(_etype1171, _size1168);
+            this->peer_nodes_list.resize(_size1168);
+            uint32_t _i1172;
+            for (_i1172 = 0; _i1172 < _size1168; ++_i1172)
+            {
+              xfer += iprot->readString(this->peer_nodes_list[_i1172]);
+            }
+            xfer += iprot->readListEnd();
+          }
+          isset_peer_nodes_list = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 2:
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
+          xfer += iprot->readString(this->additional);
+          isset_additional = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 3:
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
+          xfer += iprot->readString(this->wallet);
+          isset_wallet = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 4:
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
+          xfer += iprot->readString(this->nonce);
+          isset_nonce = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 5:
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
+          xfer += iprot->readString(this->sign);
+          isset_sign = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 6:
+        if (ftype == ::apache::thrift::protocol::T_LIST) {
+          {
+            this->multisig_wallets.clear();
+            uint32_t _size1173;
+            ::apache::thrift::protocol::TType _etype1176;
+            xfer += iprot->readListBegin(_etype1176, _size1173);
+            this->multisig_wallets.resize(_size1173);
+            uint32_t _i1177;
+            for (_i1177 = 0; _i1177 < _size1173; ++_i1177)
+            {
+              xfer += iprot->readString(this->multisig_wallets[_i1177]);
+            }
+            xfer += iprot->readListEnd();
+          }
+          isset_multisig_wallets = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 7:
+        if (ftype == ::apache::thrift::protocol::T_I32) {
+          xfer += iprot->readI32(this->multisig_threshold);
+          isset_multisig_threshold = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 8:
+        if (ftype == ::apache::thrift::protocol::T_LIST) {
+          {
+            this->multisig_signs.clear();
+            uint32_t _size1178;
+            ::apache::thrift::protocol::TType _etype1181;
+            xfer += iprot->readListBegin(_etype1181, _size1178);
+            this->multisig_signs.resize(_size1178);
+            uint32_t _i1182;
+            for (_i1182 = 0; _i1182 < _size1178; ++_i1182)
+            {
+              xfer += this->multisig_signs[_i1182].read(iprot);
+            }
+            xfer += iprot->readListEnd();
+          }
+          isset_multisig_signs = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 9:
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
+          xfer += iprot->readString(this->session_id);
+          isset_session_id = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 10:
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
+          xfer += iprot->readString(this->session_id_sign);
+          isset_session_id_sign = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      case 11:
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
+          xfer += iprot->readString(this->rent_order);
+          this->__isset.rent_order = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      default:
+        xfer += iprot->skip(ftype);
+        break;
+    }
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  if (!isset_peer_nodes_list)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  if (!isset_additional)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  if (!isset_wallet)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  if (!isset_nonce)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  if (!isset_sign)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  if (!isset_multisig_wallets)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  if (!isset_multisig_threshold)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  if (!isset_multisig_signs)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  if (!isset_session_id)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  if (!isset_session_id_sign)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  return xfer;
+}
+
+uint32_t node_set_deeplink_info_req_data::write(::apache::thrift::protocol::TProtocol* oprot) const {
+  uint32_t xfer = 0;
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+  xfer += oprot->writeStructBegin("node_set_deeplink_info_req_data");
+
+  xfer += oprot->writeFieldBegin("peer_nodes_list", ::apache::thrift::protocol::T_LIST, 1);
+  {
+    xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->peer_nodes_list.size()));
+    std::vector<std::string> ::const_iterator _iter1183;
+    for (_iter1183 = this->peer_nodes_list.begin(); _iter1183 != this->peer_nodes_list.end(); ++_iter1183)
+    {
+      xfer += oprot->writeString((*_iter1183));
+    }
+    xfer += oprot->writeListEnd();
+  }
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("additional", ::apache::thrift::protocol::T_STRING, 2);
+  xfer += oprot->writeString(this->additional);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("wallet", ::apache::thrift::protocol::T_STRING, 3);
+  xfer += oprot->writeString(this->wallet);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("nonce", ::apache::thrift::protocol::T_STRING, 4);
+  xfer += oprot->writeString(this->nonce);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("sign", ::apache::thrift::protocol::T_STRING, 5);
+  xfer += oprot->writeString(this->sign);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("multisig_wallets", ::apache::thrift::protocol::T_LIST, 6);
+  {
+    xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->multisig_wallets.size()));
+    std::vector<std::string> ::const_iterator _iter1184;
+    for (_iter1184 = this->multisig_wallets.begin(); _iter1184 != this->multisig_wallets.end(); ++_iter1184)
+    {
+      xfer += oprot->writeString((*_iter1184));
+    }
+    xfer += oprot->writeListEnd();
+  }
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("multisig_threshold", ::apache::thrift::protocol::T_I32, 7);
+  xfer += oprot->writeI32(this->multisig_threshold);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("multisig_signs", ::apache::thrift::protocol::T_LIST, 8);
+  {
+    xfer += oprot->writeListBegin(::apache::thrift::protocol::T_STRUCT, static_cast<uint32_t>(this->multisig_signs.size()));
+    std::vector<multisig_sign_item> ::const_iterator _iter1185;
+    for (_iter1185 = this->multisig_signs.begin(); _iter1185 != this->multisig_signs.end(); ++_iter1185)
+    {
+      xfer += (*_iter1185).write(oprot);
+    }
+    xfer += oprot->writeListEnd();
+  }
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("session_id", ::apache::thrift::protocol::T_STRING, 9);
+  xfer += oprot->writeString(this->session_id);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldBegin("session_id_sign", ::apache::thrift::protocol::T_STRING, 10);
+  xfer += oprot->writeString(this->session_id_sign);
+  xfer += oprot->writeFieldEnd();
+
+  if (this->__isset.rent_order) {
+    xfer += oprot->writeFieldBegin("rent_order", ::apache::thrift::protocol::T_STRING, 11);
+    xfer += oprot->writeString(this->rent_order);
+    xfer += oprot->writeFieldEnd();
+  }
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  return xfer;
+}
+
+void swap(node_set_deeplink_info_req_data &a, node_set_deeplink_info_req_data &b) {
+  using ::std::swap;
+  swap(a.peer_nodes_list, b.peer_nodes_list);
+  swap(a.additional, b.additional);
+  swap(a.wallet, b.wallet);
+  swap(a.nonce, b.nonce);
+  swap(a.sign, b.sign);
+  swap(a.multisig_wallets, b.multisig_wallets);
+  swap(a.multisig_threshold, b.multisig_threshold);
+  swap(a.multisig_signs, b.multisig_signs);
+  swap(a.session_id, b.session_id);
+  swap(a.session_id_sign, b.session_id_sign);
+  swap(a.rent_order, b.rent_order);
+  swap(a.__isset, b.__isset);
+}
+
+node_set_deeplink_info_req_data::node_set_deeplink_info_req_data(const node_set_deeplink_info_req_data& other1186) {
+  peer_nodes_list = other1186.peer_nodes_list;
+  additional = other1186.additional;
+  wallet = other1186.wallet;
+  nonce = other1186.nonce;
+  sign = other1186.sign;
+  multisig_wallets = other1186.multisig_wallets;
+  multisig_threshold = other1186.multisig_threshold;
+  multisig_signs = other1186.multisig_signs;
+  session_id = other1186.session_id;
+  session_id_sign = other1186.session_id_sign;
+  rent_order = other1186.rent_order;
+  __isset = other1186.__isset;
+}
+node_set_deeplink_info_req_data& node_set_deeplink_info_req_data::operator=(const node_set_deeplink_info_req_data& other1187) {
+  peer_nodes_list = other1187.peer_nodes_list;
+  additional = other1187.additional;
+  wallet = other1187.wallet;
+  nonce = other1187.nonce;
+  sign = other1187.sign;
+  multisig_wallets = other1187.multisig_wallets;
+  multisig_threshold = other1187.multisig_threshold;
+  multisig_signs = other1187.multisig_signs;
+  session_id = other1187.session_id;
+  session_id_sign = other1187.session_id_sign;
+  rent_order = other1187.rent_order;
+  __isset = other1187.__isset;
+  return *this;
+}
+void node_set_deeplink_info_req_data::printTo(std::ostream& out) const {
+  using ::apache::thrift::to_string;
+  out << "node_set_deeplink_info_req_data(";
+  out << "peer_nodes_list=" << to_string(peer_nodes_list);
+  out << ", " << "additional=" << to_string(additional);
+  out << ", " << "wallet=" << to_string(wallet);
+  out << ", " << "nonce=" << to_string(nonce);
+  out << ", " << "sign=" << to_string(sign);
+  out << ", " << "multisig_wallets=" << to_string(multisig_wallets);
+  out << ", " << "multisig_threshold=" << to_string(multisig_threshold);
+  out << ", " << "multisig_signs=" << to_string(multisig_signs);
+  out << ", " << "session_id=" << to_string(session_id);
+  out << ", " << "session_id_sign=" << to_string(session_id_sign);
+  out << ", " << "rent_order="; (__isset.rent_order ? (out << to_string(rent_order)) : (out << "<null>"));
+  out << ")";
+}
+
+
+node_set_deeplink_info_req_body::~node_set_deeplink_info_req_body() throw() {
+}
+
+
+void node_set_deeplink_info_req_body::__set_data(const std::string& val) {
+  this->data = val;
+}
+std::ostream& operator<<(std::ostream& out, const node_set_deeplink_info_req_body& obj)
+{
+  obj.printTo(out);
+  return out;
+}
+
+
+uint32_t node_set_deeplink_info_req_body::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+  uint32_t xfer = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  using ::apache::thrift::protocol::TProtocolException;
+
+  bool isset_data = false;
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 1:
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
+          xfer += iprot->readString(this->data);
+          isset_data = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      default:
+        xfer += iprot->skip(ftype);
+        break;
+    }
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  if (!isset_data)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  return xfer;
+}
+
+uint32_t node_set_deeplink_info_req_body::write(::apache::thrift::protocol::TProtocol* oprot) const {
+  uint32_t xfer = 0;
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+  xfer += oprot->writeStructBegin("node_set_deeplink_info_req_body");
+
+  xfer += oprot->writeFieldBegin("data", ::apache::thrift::protocol::T_STRING, 1);
+  xfer += oprot->writeString(this->data);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  return xfer;
+}
+
+void swap(node_set_deeplink_info_req_body &a, node_set_deeplink_info_req_body &b) {
+  using ::std::swap;
+  swap(a.data, b.data);
+}
+
+node_set_deeplink_info_req_body::node_set_deeplink_info_req_body(const node_set_deeplink_info_req_body& other1188) {
+  data = other1188.data;
+}
+node_set_deeplink_info_req_body& node_set_deeplink_info_req_body::operator=(const node_set_deeplink_info_req_body& other1189) {
+  data = other1189.data;
+  return *this;
+}
+void node_set_deeplink_info_req_body::printTo(std::ostream& out) const {
+  using ::apache::thrift::to_string;
+  out << "node_set_deeplink_info_req_body(";
+  out << "data=" << to_string(data);
+  out << ")";
+}
+
+
+node_set_deeplink_info_req::~node_set_deeplink_info_req() throw() {
+}
+
+
+void node_set_deeplink_info_req::__set_body(const node_set_deeplink_info_req_body& val) {
+  this->body = val;
+}
+std::ostream& operator<<(std::ostream& out, const node_set_deeplink_info_req& obj)
+{
+  obj.printTo(out);
+  return out;
+}
+
+
+uint32_t node_set_deeplink_info_req::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+  uint32_t xfer = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  using ::apache::thrift::protocol::TProtocolException;
+
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 1:
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+          xfer += this->body.read(iprot);
+          this->__isset.body = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      default:
+        xfer += iprot->skip(ftype);
+        break;
+    }
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  return xfer;
+}
+
+uint32_t node_set_deeplink_info_req::write(::apache::thrift::protocol::TProtocol* oprot) const {
+  uint32_t xfer = 0;
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+  xfer += oprot->writeStructBegin("node_set_deeplink_info_req");
+
+  xfer += oprot->writeFieldBegin("body", ::apache::thrift::protocol::T_STRUCT, 1);
+  xfer += this->body.write(oprot);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  return xfer;
+}
+
+void swap(node_set_deeplink_info_req &a, node_set_deeplink_info_req &b) {
+  using ::std::swap;
+  swap(a.body, b.body);
+  swap(a.__isset, b.__isset);
+}
+
+node_set_deeplink_info_req::node_set_deeplink_info_req(const node_set_deeplink_info_req& other1190) {
+  body = other1190.body;
+  __isset = other1190.__isset;
+}
+node_set_deeplink_info_req& node_set_deeplink_info_req::operator=(const node_set_deeplink_info_req& other1191) {
+  body = other1191.body;
+  __isset = other1191.__isset;
+  return *this;
+}
+void node_set_deeplink_info_req::printTo(std::ostream& out) const {
+  using ::apache::thrift::to_string;
+  out << "node_set_deeplink_info_req(";
+  out << "body=" << to_string(body);
+  out << ")";
+}
+
+
+node_set_deeplink_info_rsp_body::~node_set_deeplink_info_rsp_body() throw() {
+}
+
+
+void node_set_deeplink_info_rsp_body::__set_data(const std::string& val) {
+  this->data = val;
+}
+std::ostream& operator<<(std::ostream& out, const node_set_deeplink_info_rsp_body& obj)
+{
+  obj.printTo(out);
+  return out;
+}
+
+
+uint32_t node_set_deeplink_info_rsp_body::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+  uint32_t xfer = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  using ::apache::thrift::protocol::TProtocolException;
+
+  bool isset_data = false;
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 1:
+        if (ftype == ::apache::thrift::protocol::T_STRING) {
+          xfer += iprot->readString(this->data);
+          isset_data = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      default:
+        xfer += iprot->skip(ftype);
+        break;
+    }
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  if (!isset_data)
+    throw TProtocolException(TProtocolException::INVALID_DATA);
+  return xfer;
+}
+
+uint32_t node_set_deeplink_info_rsp_body::write(::apache::thrift::protocol::TProtocol* oprot) const {
+  uint32_t xfer = 0;
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+  xfer += oprot->writeStructBegin("node_set_deeplink_info_rsp_body");
+
+  xfer += oprot->writeFieldBegin("data", ::apache::thrift::protocol::T_STRING, 1);
+  xfer += oprot->writeString(this->data);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  return xfer;
+}
+
+void swap(node_set_deeplink_info_rsp_body &a, node_set_deeplink_info_rsp_body &b) {
+  using ::std::swap;
+  swap(a.data, b.data);
+}
+
+node_set_deeplink_info_rsp_body::node_set_deeplink_info_rsp_body(const node_set_deeplink_info_rsp_body& other1192) {
+  data = other1192.data;
+}
+node_set_deeplink_info_rsp_body& node_set_deeplink_info_rsp_body::operator=(const node_set_deeplink_info_rsp_body& other1193) {
+  data = other1193.data;
+  return *this;
+}
+void node_set_deeplink_info_rsp_body::printTo(std::ostream& out) const {
+  using ::apache::thrift::to_string;
+  out << "node_set_deeplink_info_rsp_body(";
+  out << "data=" << to_string(data);
+  out << ")";
+}
+
+
+node_set_deeplink_info_rsp::~node_set_deeplink_info_rsp() throw() {
+}
+
+
+void node_set_deeplink_info_rsp::__set_body(const node_set_deeplink_info_rsp_body& val) {
+  this->body = val;
+}
+std::ostream& operator<<(std::ostream& out, const node_set_deeplink_info_rsp& obj)
+{
+  obj.printTo(out);
+  return out;
+}
+
+
+uint32_t node_set_deeplink_info_rsp::read(::apache::thrift::protocol::TProtocol* iprot) {
+
+  ::apache::thrift::protocol::TInputRecursionTracker tracker(*iprot);
+  uint32_t xfer = 0;
+  std::string fname;
+  ::apache::thrift::protocol::TType ftype;
+  int16_t fid;
+
+  xfer += iprot->readStructBegin(fname);
+
+  using ::apache::thrift::protocol::TProtocolException;
+
+
+  while (true)
+  {
+    xfer += iprot->readFieldBegin(fname, ftype, fid);
+    if (ftype == ::apache::thrift::protocol::T_STOP) {
+      break;
+    }
+    switch (fid)
+    {
+      case 1:
+        if (ftype == ::apache::thrift::protocol::T_STRUCT) {
+          xfer += this->body.read(iprot);
+          this->__isset.body = true;
+        } else {
+          xfer += iprot->skip(ftype);
+        }
+        break;
+      default:
+        xfer += iprot->skip(ftype);
+        break;
+    }
+    xfer += iprot->readFieldEnd();
+  }
+
+  xfer += iprot->readStructEnd();
+
+  return xfer;
+}
+
+uint32_t node_set_deeplink_info_rsp::write(::apache::thrift::protocol::TProtocol* oprot) const {
+  uint32_t xfer = 0;
+  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+  xfer += oprot->writeStructBegin("node_set_deeplink_info_rsp");
+
+  xfer += oprot->writeFieldBegin("body", ::apache::thrift::protocol::T_STRUCT, 1);
+  xfer += this->body.write(oprot);
+  xfer += oprot->writeFieldEnd();
+
+  xfer += oprot->writeFieldStop();
+  xfer += oprot->writeStructEnd();
+  return xfer;
+}
+
+void swap(node_set_deeplink_info_rsp &a, node_set_deeplink_info_rsp &b) {
+  using ::std::swap;
+  swap(a.body, b.body);
+  swap(a.__isset, b.__isset);
+}
+
+node_set_deeplink_info_rsp::node_set_deeplink_info_rsp(const node_set_deeplink_info_rsp& other1194) {
+  body = other1194.body;
+  __isset = other1194.__isset;
+}
+node_set_deeplink_info_rsp& node_set_deeplink_info_rsp::operator=(const node_set_deeplink_info_rsp& other1195) {
+  body = other1195.body;
+  __isset = other1195.__isset;
+  return *this;
+}
+void node_set_deeplink_info_rsp::printTo(std::ostream& out) const {
+  using ::apache::thrift::to_string;
+  out << "node_set_deeplink_info_rsp(";
+  out << "body=" << to_string(body);
+  out << ")";
+}
+
 } // namespace

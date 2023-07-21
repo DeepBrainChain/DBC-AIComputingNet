@@ -47,6 +47,12 @@ public:
 
     FResult DeleteBareMetalNode(const std::vector<std::string>& ids);
 
+    FResult SetDeepLinkInfo(const std::string& node_id,
+                            const std::string& device_id,
+                            const std::string& device_password);
+
+    void ClearDeepLinkPassword(const std::string& node_id);
+
 private:
     mutable RwMutex m_mtx;
 

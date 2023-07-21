@@ -728,6 +728,40 @@ public:
     void on_node_bare_metal_bootdev_timer(
         const std::shared_ptr<core_timer> &timer);
 
+    // deeplink
+    void rest_deeplink(const network::HTTP_REQUEST_PTR &httpReq,
+                       const std::string &path);
+
+    // list deeplink info
+    void rest_list_deeplink_info(
+        const std::shared_ptr<network::http_request> &httpReq,
+        const std::string &path);
+
+    std::shared_ptr<network::message> create_node_list_deeplink_info_req_msg(
+        const std::string &head_session_id, const req_body &body);
+
+    void on_node_list_deeplink_info_rsp(
+        const std::shared_ptr<network::http_request_context> &hreq_context,
+        const std::shared_ptr<network::message> &rsp_msg);
+
+    void on_node_list_deeplink_info_timer(
+        const std::shared_ptr<core_timer> &timer);
+
+    // set deeplink info
+    void rest_set_deeplink_info(
+        const std::shared_ptr<network::http_request> &httpReq,
+        const std::string &path);
+
+    std::shared_ptr<network::message> create_node_set_deeplink_info_req_msg(
+        const std::string &head_session_id, const req_body &body);
+
+    void on_node_set_deeplink_info_rsp(
+        const std::shared_ptr<network::http_request_context> &hreq_context,
+        const std::shared_ptr<network::message> &rsp_msg);
+
+    void on_node_set_deeplink_info_timer(
+        const std::shared_ptr<core_timer> &timer);
+
 protected:
     void init_timer() override;
 

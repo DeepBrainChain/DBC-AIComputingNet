@@ -142,3 +142,48 @@ FResult BareMetalNodeManager::DeleteBareMetalNode(
     }
     return fret;
 }
+
+FResult BareMetalNodeManager::SetDeepLinkInfo(
+    const std::string& node_id, const std::string& device_id,
+    const std::string& device_password) {
+    FResult fret = {ERR_ERROR, ""};
+    {
+        RwMutex::ReadLock rlock(m_mtx);
+        if (m_bare_metal_nodes.find(node_id) == m_bare_metal_nodes.end()) {
+            fret.errmsg = "node id not existed";
+            return fret;
+        }
+    }
+    RwMutex::WriteLock wlock(m_mtx);
+    auto bm = m_bare_metal_nodes[node_id];
+    bm->__set_deeplink_device_id(device_id);
+    bm->__set_deeplink_device_password(device_password);
+    if (!m_db.write_data(bm)) {
+        fret.errmsg = "write bare metal db error";
+        return fret;
+    }
+    m_bare_metal_nodes[node_id] = bm;
+    fret.errcode = ERR_SUCCESS;
+    fret.errmsg = "ok";
+    return fret;
+}
+
+void BareMetalNodeManager::ClearDeepLinkPassword(const std::string& node_id) {
+    {
+        RwMutex::ReadLock rlock(m_mtx);
+        auto iter = m_bare_metal_nodes.find(node_id);
+        if (iter == m_bare_metal_nodes.end()) return;
+        if (iter->second->deeplink_device_password.empty()) return;
+    }
+    RwMutex::WriteLock wlock(m_mtx);
+    auto bm = m_bare_metal_nodes[node_id];
+    bm->__set_deeplink_device_password("");
+    if (!m_db.write_data(bm)) {
+        LOG_ERROR
+            << "write bare metal db error while clear deeplink device password"
+            << " of " << node_id;
+        return;
+    }
+    m_bare_metal_nodes[node_id] = bm;
+    LOG_INFO << "clear deeplink device password succcess of " << node_id;
+}

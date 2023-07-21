@@ -26,13 +26,15 @@ namespace dbc {
 class db_bare_metal;
 
 typedef struct _db_bare_metal__isset {
-  _db_bare_metal__isset() : os(false), desc(false), ipmi_hostname(false), ipmi_username(false), ipmi_password(false), ipmi_port(false) {}
+  _db_bare_metal__isset() : os(false), desc(false), ipmi_hostname(false), ipmi_username(false), ipmi_password(false), ipmi_port(false), deeplink_device_id(false), deeplink_device_password(false) {}
   bool os :1;
   bool desc :1;
   bool ipmi_hostname :1;
   bool ipmi_username :1;
   bool ipmi_password :1;
   bool ipmi_port :1;
+  bool deeplink_device_id :1;
+  bool deeplink_device_password :1;
 } _db_bare_metal__isset;
 
 class db_bare_metal : public virtual ::apache::thrift::TBase {
@@ -40,7 +42,7 @@ class db_bare_metal : public virtual ::apache::thrift::TBase {
 
   db_bare_metal(const db_bare_metal&);
   db_bare_metal& operator=(const db_bare_metal&);
-  db_bare_metal() : node_id(), node_private_key(), uuid(), ip(), os(), desc(), ipmi_hostname(), ipmi_username(), ipmi_password(), ipmi_port() {
+  db_bare_metal() : node_id(), node_private_key(), uuid(), ip(), os(), desc(), ipmi_hostname(), ipmi_username(), ipmi_password(), ipmi_port(), deeplink_device_id(), deeplink_device_password() {
   }
 
   virtual ~db_bare_metal() throw();
@@ -54,6 +56,8 @@ class db_bare_metal : public virtual ::apache::thrift::TBase {
   std::string ipmi_username;
   std::string ipmi_password;
   std::string ipmi_port;
+  std::string deeplink_device_id;
+  std::string deeplink_device_password;
 
   _db_bare_metal__isset __isset;
 
@@ -76,6 +80,10 @@ class db_bare_metal : public virtual ::apache::thrift::TBase {
   void __set_ipmi_password(const std::string& val);
 
   void __set_ipmi_port(const std::string& val);
+
+  void __set_deeplink_device_id(const std::string& val);
+
+  void __set_deeplink_device_password(const std::string& val);
 
   bool operator == (const db_bare_metal & rhs) const
   {
@@ -110,6 +118,14 @@ class db_bare_metal : public virtual ::apache::thrift::TBase {
     if (__isset.ipmi_port != rhs.__isset.ipmi_port)
       return false;
     else if (__isset.ipmi_port && !(ipmi_port == rhs.ipmi_port))
+      return false;
+    if (__isset.deeplink_device_id != rhs.__isset.deeplink_device_id)
+      return false;
+    else if (__isset.deeplink_device_id && !(deeplink_device_id == rhs.deeplink_device_id))
+      return false;
+    if (__isset.deeplink_device_password != rhs.__isset.deeplink_device_password)
+      return false;
+    else if (__isset.deeplink_device_password && !(deeplink_device_password == rhs.deeplink_device_password))
       return false;
     return true;
   }

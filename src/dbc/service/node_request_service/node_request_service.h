@@ -374,6 +374,24 @@ protected:
         const std::shared_ptr<dbc::node_bare_metal_bootdev_req_data>& data,
         const AuthoriseResult& result);
 
+    // list deeplink info
+    void on_node_list_deeplink_info_req(
+        const std::shared_ptr<network::message>& msg);
+
+    void list_deeplink_info(
+        const network::base_header& header,
+        const std::shared_ptr<dbc::node_list_deeplink_info_req_data>& data,
+        const AuthoriseResult& result);
+
+    // set deeplink info
+    void on_node_set_deeplink_info_req(
+        const std::shared_ptr<network::message>& msg);
+
+    void set_deeplink_info(
+        const network::base_header& header,
+        const std::shared_ptr<dbc::node_set_deeplink_info_req_data>& data,
+        const AuthoriseResult& result);
+
 private:
     bool check_req_header(const std::shared_ptr<network::message>& msg);
 

@@ -334,6 +334,13 @@ void node_request_service::init_invoker() {
     reg_msg_handle(
         NODE_BARE_METAL_BOOTDEV_REQ,
         CALLBACK_1(node_request_service::on_node_bare_metal_bootdev_req, this));
+
+    reg_msg_handle(
+        NODE_LIST_DEEPLINK_INFO_REQ,
+        CALLBACK_1(node_request_service::on_node_list_deeplink_info_req, this));
+    reg_msg_handle(
+        NODE_SET_DEEPLINK_INFO_REQ,
+        CALLBACK_1(node_request_service::on_node_set_deeplink_info_req, this));
 }
 
 HitNodeType node_request_service::hit_node(
@@ -5509,6 +5516,16 @@ void node_request_service::query_bare_metal_node_info(
        << "\"" << info.data_disk << "G\"";
     ss << "}";
 
+    ss << ",\"deeplink\":"
+       << "{";
+    ss << "\"device_id\":"
+       << "\"" << bm->deeplink_device_id << "\"";
+    std::string deeplink_device_password(bm->deeplink_device_password.size(),
+                                         '*');
+    ss << ",\"device_password\":"
+       << "\"" << deeplink_device_password << "\"";
+    ss << "}";
+
     /*
     int32_t count = TaskMgr::instance().GetRunningTaskSize();
     std::string state;
@@ -7070,6 +7087,12 @@ void node_request_service::list_bare_metal(
                << "\"" << it.second->ipmi_password << "\"";
             if (!it.second->ipmi_port.empty())
                 ss << ",\"ipmi_port\":" << it.second->ipmi_port;
+            ss << ",\"deeplink_device_id\":"
+               << "\"" << it.second->deeplink_device_id << "\"";
+            std::string deeplink_device_password(
+                it.second->deeplink_device_password.size(), '*');
+            ss << ",\"deeplink_device_password\":"
+               << "\"" << deeplink_device_password << "\"";
             ss << "}";
 
             count++;
@@ -7578,8 +7601,7 @@ void node_request_service::on_node_bare_metal_power_req(
         params.rent_order = data->rent_order;
         AuthoriseResult result;
         check_authority(params, result);
-        if (!result.success || result.user_role == USER_ROLE::Unknown ||
-            result.user_role == USER_ROLE::Verifier) {
+        if (!result.success || result.user_role == USER_ROLE::Unknown) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_bare_metal_power_rsp>(
                 NODE_BARE_METAL_POWER_RSP, node_req_msg->header, E_DEFAULT,
@@ -7634,6 +7656,10 @@ void node_request_service::bare_metal_power(
 
     auto fret = BareMetalTaskManager::instance().PowerControl(
         data->peer_nodes_list[0], command);
+    // Clear the device password of deeplink every time it is turned on/off
+    if (fret.errcode == ERR_SUCCESS && (command == "on" || command == "off"))
+        BareMetalNodeManager::instance().ClearDeepLinkPassword(
+            data->peer_nodes_list[0]);
     send_response_error<dbc::node_bare_metal_power_rsp>(
         NODE_BARE_METAL_POWER_RSP, header,
         fret.errcode == ERR_SUCCESS ? 0 : E_DEFAULT, fret.errmsg,
@@ -7785,6 +7811,316 @@ void node_request_service::bare_metal_bootdev(
         data->peer_nodes_list[0], device);
     send_response_error<dbc::node_bare_metal_bootdev_rsp>(
         NODE_BARE_METAL_BOOTDEV_RSP, header,
+        fret.errcode == ERR_SUCCESS ? 0 : E_DEFAULT, fret.errmsg,
+        data->peer_nodes_list[0]);
+}
+
+// list deeplink info
+void node_request_service::on_node_list_deeplink_info_req(
+    const std::shared_ptr<network::message>& msg) {
+    auto node_req_msg =
+        std::dynamic_pointer_cast<dbc::node_list_deeplink_info_req>(
+            msg->get_content());
+    if (node_req_msg == nullptr) {
+        return;
+    }
+
+    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
+        return;
+    }
+
+    if (Server::NodeType != NODE_TYPE::ComputeNode &&
+        Server::NodeType != NODE_TYPE::BareMetalNode) {
+        node_req_msg->header.path.push_back(
+            ConfManager::instance().GetNodeId());
+        network::connection_manager::instance().broadcast_message(
+            msg, msg->header.src_sid);
+        return;
+    }
+
+    if (!check_req_header(msg)) {
+        LOG_ERROR << "request header check failed";
+        node_req_msg->header.path.push_back(
+            ConfManager::instance().GetNodeId());
+        network::connection_manager::instance().broadcast_message(
+            msg, msg->header.src_sid);
+        return;
+    }
+
+    // decrypt
+    std::string pub_key = node_req_msg->header.exten_info["pub_key"];
+    std::string priv_key = ConfManager::instance().GetPrivKey();
+    if (pub_key.empty() || priv_key.empty()) {
+        LOG_ERROR << "pub_key or priv_key is empty";
+        node_req_msg->header.path.push_back(
+            ConfManager::instance().GetNodeId());
+        network::connection_manager::instance().broadcast_message(
+            msg, msg->header.src_sid);
+        return;
+    }
+
+    std::shared_ptr<dbc::node_list_deeplink_info_req_data> data =
+        std::make_shared<dbc::node_list_deeplink_info_req_data>();
+    try {
+        std::string ori_message;
+        bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key,
+                                 ori_message);
+        if (!succ || ori_message.empty()) {
+            node_req_msg->header.path.push_back(
+                ConfManager::instance().GetNodeId());
+            network::connection_manager::instance().broadcast_message(
+                msg, msg->header.src_sid);
+            return;
+        }
+
+        std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
+        task_buf->write_to_byte_buf(ori_message.c_str(), ori_message.size());
+        network::binary_protocol proto(task_buf.get());
+        data->read(&proto);
+    } catch (std::exception& e) {
+        node_req_msg->header.path.push_back(
+            ConfManager::instance().GetNodeId());
+        network::connection_manager::instance().broadcast_message(
+            msg, msg->header.src_sid);
+        return;
+    }
+
+    std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
+    HitNodeType hit_self =
+        hit_node(req_peer_nodes, ConfManager::instance().GetNodeId());
+    if (hit_self == HitBareMetal) {
+        AuthorityParams params;
+        params.wallet = data->wallet;
+        params.nonce = data->nonce;
+        params.sign = data->sign;
+        params.multisig_wallets = data->multisig_wallets;
+        params.multisig_threshold = data->multisig_threshold;
+        params.multisig_signs = data->multisig_signs;
+        params.session_id = data->session_id;
+        params.session_id_sign = data->session_id_sign;
+        params.machine_id = data->peer_nodes_list[0];
+        params.rent_order = data->rent_order;
+        AuthoriseResult result;
+        check_authority(params, result);
+        if (!result.success || result.user_role == USER_ROLE::Unknown) {
+            LOG_ERROR << "check authority failed: " << result.errmsg;
+            send_response_error<dbc::node_list_deeplink_info_rsp>(
+                NODE_LIST_DEEPLINK_INFO_RSP, node_req_msg->header, E_DEFAULT,
+                "check authority failed: " + result.errmsg,
+                data->peer_nodes_list[0]);
+            return;
+        }
+
+        list_deeplink_info(node_req_msg->header, data, result);
+    } else if (hit_self == HitComputer || hit_self == HitBareMetalManager) {
+        send_response_error<dbc::node_list_deeplink_info_rsp>(
+            NODE_LIST_DEEPLINK_INFO_RSP, node_req_msg->header, E_DEFAULT,
+            "Not supported", data->peer_nodes_list[0]);
+    } else {
+        node_req_msg->header.path.push_back(
+            ConfManager::instance().GetNodeId());
+        network::connection_manager::instance().broadcast_message(
+            msg, msg->header.src_sid);
+    }
+}
+
+void node_request_service::list_deeplink_info(
+    const network::base_header& header,
+    const std::shared_ptr<dbc::node_list_deeplink_info_req_data>& data,
+    const AuthoriseResult& result) {
+    std::stringstream ss;
+    {
+        auto bm = BareMetalNodeManager::instance().getBareMetalNode(
+            data->peer_nodes_list[0]);
+        if (bm) {
+            ss << "{";
+            ss << "\"errcode\":0";
+            ss << ", \"message\":{";
+            ss << "\"device_id\":"
+               << "\"" << bm->deeplink_device_id << "\"";
+            ss << ",\"device_password\":"
+               << "\"" << bm->deeplink_device_password << "\"";
+            ss << "}";
+            ss << "}";
+        } else {
+            ss << "{";
+            ss << "\"errcode\":1";
+            ss << ", \"message\":\"node id not existed\"";
+            ss << "}";
+        }
+    }
+
+    const std::map<std::string, std::string>& mp = header.exten_info;
+    auto it = mp.find("pub_key");
+    if (it != mp.end()) {
+        std::string pub_key = it->second;
+        std::string priv_key = ConfManager::instance().GetPrivKey();
+
+        if (!pub_key.empty() && !priv_key.empty()) {
+            std::string s_data =
+                encrypt_data((unsigned char*)ss.str().c_str(), ss.str().size(),
+                             pub_key, priv_key);
+            send_response_json<dbc::node_list_deeplink_info_rsp>(
+                NODE_LIST_DEEPLINK_INFO_RSP, header, s_data,
+                data->peer_nodes_list[0]);
+        } else {
+            LOG_ERROR << "pub_key or priv_key is empty";
+            send_response_error<dbc::node_list_deeplink_info_rsp>(
+                NODE_LIST_DEEPLINK_INFO_RSP, header, E_DEFAULT,
+                "pub_key or priv_key is empty", data->peer_nodes_list[0]);
+        }
+    } else {
+        LOG_ERROR << "request no pub_key";
+        send_response_error<dbc::node_list_deeplink_info_rsp>(
+            NODE_LIST_DEEPLINK_INFO_RSP, header, E_DEFAULT,
+            "request no pub_key", data->peer_nodes_list[0]);
+    }
+}
+
+// set deeplink info
+void node_request_service::on_node_set_deeplink_info_req(
+    const std::shared_ptr<network::message>& msg) {
+    auto node_req_msg =
+        std::dynamic_pointer_cast<dbc::node_set_deeplink_info_req>(
+            msg->get_content());
+    if (node_req_msg == nullptr) {
+        return;
+    }
+
+    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
+        return;
+    }
+
+    if (Server::NodeType != NODE_TYPE::ComputeNode &&
+        Server::NodeType != NODE_TYPE::BareMetalNode) {
+        node_req_msg->header.path.push_back(
+            ConfManager::instance().GetNodeId());
+        network::connection_manager::instance().broadcast_message(
+            msg, msg->header.src_sid);
+        return;
+    }
+
+    if (!check_req_header(msg)) {
+        LOG_ERROR << "request header check failed";
+        node_req_msg->header.path.push_back(
+            ConfManager::instance().GetNodeId());
+        network::connection_manager::instance().broadcast_message(
+            msg, msg->header.src_sid);
+        return;
+    }
+
+    // decrypt
+    std::string pub_key = node_req_msg->header.exten_info["pub_key"];
+    std::string priv_key = ConfManager::instance().GetPrivKey();
+    if (pub_key.empty() || priv_key.empty()) {
+        LOG_ERROR << "pub_key or priv_key is empty";
+        node_req_msg->header.path.push_back(
+            ConfManager::instance().GetNodeId());
+        network::connection_manager::instance().broadcast_message(
+            msg, msg->header.src_sid);
+        return;
+    }
+
+    std::shared_ptr<dbc::node_set_deeplink_info_req_data> data =
+        std::make_shared<dbc::node_set_deeplink_info_req_data>();
+    try {
+        std::string ori_message;
+        bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key,
+                                 ori_message);
+        if (!succ || ori_message.empty()) {
+            node_req_msg->header.path.push_back(
+                ConfManager::instance().GetNodeId());
+            network::connection_manager::instance().broadcast_message(
+                msg, msg->header.src_sid);
+            return;
+        }
+
+        std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
+        task_buf->write_to_byte_buf(ori_message.c_str(), ori_message.size());
+        network::binary_protocol proto(task_buf.get());
+        data->read(&proto);
+    } catch (std::exception& e) {
+        node_req_msg->header.path.push_back(
+            ConfManager::instance().GetNodeId());
+        network::connection_manager::instance().broadcast_message(
+            msg, msg->header.src_sid);
+        return;
+    }
+
+    std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
+    HitNodeType hit_self =
+        hit_node(req_peer_nodes, ConfManager::instance().GetNodeId());
+    if (hit_self == HitBareMetal) {
+        AuthorityParams params;
+        params.wallet = data->wallet;
+        params.nonce = data->nonce;
+        params.sign = data->sign;
+        params.multisig_wallets = data->multisig_wallets;
+        params.multisig_threshold = data->multisig_threshold;
+        params.multisig_signs = data->multisig_signs;
+        params.session_id = data->session_id;
+        params.session_id_sign = data->session_id_sign;
+        params.machine_id = data->peer_nodes_list[0];
+        params.rent_order = data->rent_order;
+        AuthoriseResult result;
+        check_authority(params, result);
+        if (!result.success || result.user_role == USER_ROLE::Unknown ||
+            result.user_role == USER_ROLE::Verifier) {
+            LOG_ERROR << "check authority failed: " << result.errmsg;
+            send_response_error<dbc::node_set_deeplink_info_rsp>(
+                NODE_SET_DEEPLINK_INFO_RSP, node_req_msg->header, E_DEFAULT,
+                "check authority failed: " + result.errmsg,
+                data->peer_nodes_list[0]);
+            return;
+        }
+
+        set_deeplink_info(node_req_msg->header, data, result);
+    } else if (hit_self == HitComputer || hit_self == HitBareMetalManager) {
+        send_response_error<dbc::node_set_deeplink_info_rsp>(
+            NODE_SET_DEEPLINK_INFO_RSP, node_req_msg->header, E_DEFAULT,
+            "Not supported", data->peer_nodes_list[0]);
+    } else {
+        node_req_msg->header.path.push_back(
+            ConfManager::instance().GetNodeId());
+        network::connection_manager::instance().broadcast_message(
+            msg, msg->header.src_sid);
+    }
+}
+
+void node_request_service::set_deeplink_info(
+    const network::base_header& header,
+    const std::shared_ptr<dbc::node_set_deeplink_info_req_data>& data,
+    const AuthoriseResult& result) {
+    if (data->additional.empty()) {
+        send_response_error<dbc::node_set_deeplink_info_rsp>(
+            NODE_SET_DEEPLINK_INFO_RSP, header, E_DEFAULT,
+            "additional is empty", data->peer_nodes_list[0]);
+        return;
+    }
+
+    rapidjson::Document doc;
+    doc.Parse(data->additional.c_str());
+    if (!doc.IsObject()) {
+        send_response_error<dbc::node_set_deeplink_info_rsp>(
+            NODE_SET_DEEPLINK_INFO_RSP, header, E_DEFAULT,
+            "additional parse failed", data->peer_nodes_list[0]);
+        return;
+    }
+
+    std::string device_id, device_password;
+    JSON_PARSE_STRING(doc, "device_id", device_id);
+    JSON_PARSE_STRING(doc, "device_password", device_password);
+    if (device_id.empty() && device_password.empty()) {
+        send_response_error<dbc::node_set_deeplink_info_rsp>(
+            NODE_SET_DEEPLINK_INFO_RSP, header, E_DEFAULT, "invalid device",
+            data->peer_nodes_list[0]);
+        return;
+    }
+
+    auto fret = BareMetalNodeManager::instance().SetDeepLinkInfo(
+        data->peer_nodes_list[0], device_id, device_password);
+    send_response_error<dbc::node_set_deeplink_info_rsp>(
+        NODE_SET_DEEPLINK_INFO_RSP, header,
         fret.errcode == ERR_SUCCESS ? 0 : E_DEFAULT, fret.errmsg,
         data->peer_nodes_list[0]);
 }
