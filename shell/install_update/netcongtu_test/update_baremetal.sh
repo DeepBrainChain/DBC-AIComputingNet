@@ -219,7 +219,7 @@ for ((i=1;i<=$dir_num;i++)); do
   sed -i "s/net_listen_port=${new_net_listen_port}/net_listen_port=${old_net_listen_port}/" $install_dir/conf/core.conf
   sed -i "s/http_ip=${new_http_ip}/http_ip=${old_http_ip}/" $install_dir/conf/core.conf
   sed -i "s/http_port=${new_http_port}/http_port=${old_http_port}/" $install_dir/conf/core.conf
-  sed -i "/http_ip=0.0.0.0/c http_ip=127.0.0.1" $install_dir/conf/core.conf
+  sed -i "/http_ip=127.0.0.1/c http_ip=0.0.0.0" $install_dir/conf/core.conf
   sed -i '/dbc_monitor_server=/d' $install_dir/conf/core.conf
   if [ -n "$old_dbc_monitor_server" ]; then
     echo "dbc_monitor_server=${old_dbc_monitor_server}" >> $install_dir/conf/core.conf

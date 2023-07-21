@@ -135,7 +135,7 @@ sed -i "/net_type=/c net_type=netcongtu" $install_dir/conf/core.conf
 sed -i "/net_flag=/c net_flag=0xF1E1B0E8" $install_dir/conf/core.conf
 sed -i "s/net_listen_port=${old_tcp_listen_port}/net_listen_port=${new_tcp_listen_port}/" $install_dir/conf/core.conf
 sed -i "s/http_port=${old_http_listen_port}/http_port=${new_http_listen_port}/" $install_dir/conf/core.conf
-sed -i "/http_ip=0.0.0.0/c http_ip=127.0.0.1" $install_dir/conf/core.conf
+sed -i "/http_ip=127.0.0.1/c http_ip=0.0.0.0" $install_dir/conf/core.conf
 sed -i '/dbc_chain_domain=/d' $install_dir/conf/core.conf
 echo "dbc_chain_domain=congtuhttps.dbcwallet.io:7788" >> $install_dir/conf/core.conf
 
