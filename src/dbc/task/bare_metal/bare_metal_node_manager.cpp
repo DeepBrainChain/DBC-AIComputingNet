@@ -143,6 +143,31 @@ FResult BareMetalNodeManager::DeleteBareMetalNode(
     return fret;
 }
 
+FResult BareMetalNodeManager::ModifyBareMetalNode(
+    const std::string& node_id, std::shared_ptr<dbc::db_bare_metal> bm) {
+    RwMutex::WriteLock wlock(m_mtx);
+    FResult fret = {ERR_ERROR, ""};
+    if (m_bare_metal_nodes.find(node_id) == m_bare_metal_nodes.end()) {
+        fret.errmsg = "node id not existed";
+        return fret;
+    }
+    if (!m_db.write_data(bm)) {
+        fret.errmsg = "write bare metal db error";
+        LOG_ERROR << fret.errmsg;
+        return fret;
+    }
+    m_bare_metal_nodes[node_id] = bm;
+    fret.errcode = ERR_SUCCESS;
+    LOG_INFO << "modify bare metal node successful, uuid: " << bm->uuid
+             << ", ip: " << bm->ip << ", os: " << bm->os
+             << ", desc: " << bm->desc
+             << ", ipmi hostname: " << bm->ipmi_hostname
+             << ", ipmi username: " << bm->ipmi_username
+             << ", ipmi password: " << bm->ipmi_password
+             << ", ipmi port: " << bm->ipmi_port;
+    return fret;
+}
+
 FResult BareMetalNodeManager::SetDeepLinkInfo(
     const std::string& node_id, const std::string& device_id,
     const std::string& device_password) {

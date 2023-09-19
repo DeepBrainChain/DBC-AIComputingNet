@@ -329,6 +329,9 @@ void node_request_service::init_invoker() {
         NODE_DELETE_BARE_METAL_REQ,
         CALLBACK_1(node_request_service::on_node_delete_bare_metal_req, this));
     reg_msg_handle(
+        NODE_MODIFY_BARE_METAL_REQ,
+        CALLBACK_1(node_request_service::on_node_modify_bare_metal_req, this));
+    reg_msg_handle(
         NODE_BARE_METAL_POWER_REQ,
         CALLBACK_1(node_request_service::on_node_bare_metal_power_req, this));
     reg_msg_handle(
@@ -7511,6 +7514,151 @@ void node_request_service::delete_bare_metal(
     FResult fret = BareMetalNodeManager::instance().DeleteBareMetalNode(ids);
     send_response_error<dbc::node_delete_bare_metal_rsp>(
         NODE_DELETE_BARE_METAL_RSP, header, fret.errcode > 0 ? 0 : -1,
+        fret.errmsg, data->peer_nodes_list[0]);
+}
+
+// modify bare metal
+void node_request_service::on_node_modify_bare_metal_req(
+    const std::shared_ptr<network::message>& msg) {
+    auto node_req_msg =
+        std::dynamic_pointer_cast<dbc::node_modify_bare_metal_req>(
+            msg->get_content());
+    if (node_req_msg == nullptr) {
+        return;
+    }
+
+    if (!check_req_header_nonce(node_req_msg->header.nonce)) {
+        return;
+    }
+
+    if (Server::NodeType != NODE_TYPE::ComputeNode &&
+        Server::NodeType != NODE_TYPE::BareMetalNode) {
+        node_req_msg->header.path.push_back(
+            ConfManager::instance().GetNodeId());
+        network::connection_manager::instance().broadcast_message(
+            msg, msg->header.src_sid);
+        return;
+    }
+
+    if (!check_req_header(msg)) {
+        LOG_ERROR << "request header check failed";
+        node_req_msg->header.path.push_back(
+            ConfManager::instance().GetNodeId());
+        network::connection_manager::instance().broadcast_message(
+            msg, msg->header.src_sid);
+        return;
+    }
+
+    // decrypt
+    std::string pub_key = node_req_msg->header.exten_info["pub_key"];
+    std::string priv_key = ConfManager::instance().GetPrivKey();
+    if (pub_key.empty() || priv_key.empty()) {
+        LOG_ERROR << "pub_key or priv_key is empty";
+        node_req_msg->header.path.push_back(
+            ConfManager::instance().GetNodeId());
+        network::connection_manager::instance().broadcast_message(
+            msg, msg->header.src_sid);
+        return;
+    }
+
+    std::shared_ptr<dbc::node_modify_bare_metal_req_data> data =
+        std::make_shared<dbc::node_modify_bare_metal_req_data>();
+    try {
+        std::string ori_message;
+        bool succ = decrypt_data(node_req_msg->body.data, pub_key, priv_key,
+                                 ori_message);
+        if (!succ || ori_message.empty()) {
+            node_req_msg->header.path.push_back(
+                ConfManager::instance().GetNodeId());
+            network::connection_manager::instance().broadcast_message(
+                msg, msg->header.src_sid);
+            return;
+        }
+
+        std::shared_ptr<byte_buf> task_buf = std::make_shared<byte_buf>();
+        task_buf->write_to_byte_buf(ori_message.c_str(), ori_message.size());
+        network::binary_protocol proto(task_buf.get());
+        data->read(&proto);
+    } catch (std::exception& e) {
+        node_req_msg->header.path.push_back(
+            ConfManager::instance().GetNodeId());
+        network::connection_manager::instance().broadcast_message(
+            msg, msg->header.src_sid);
+        return;
+    }
+
+    std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
+    HitNodeType hit_self =
+        hit_node(req_peer_nodes, ConfManager::instance().GetNodeId());
+    if (hit_self == HitBareMetalManager) {
+        modify_bare_metal(node_req_msg->header, data);
+    } else if (hit_self == HitComputer || hit_self == HitBareMetal) {
+        send_response_error<dbc::node_modify_bare_metal_rsp>(
+            NODE_MODIFY_BARE_METAL_RSP, node_req_msg->header, E_DEFAULT,
+            "Not supported", data->peer_nodes_list[0]);
+    } else {
+        node_req_msg->header.path.push_back(
+            ConfManager::instance().GetNodeId());
+        network::connection_manager::instance().broadcast_message(
+            msg, msg->header.src_sid);
+    }
+}
+
+void node_request_service::modify_bare_metal(
+    const network::base_header& header,
+    const std::shared_ptr<dbc::node_modify_bare_metal_req_data>& data) {
+    // send_response_error<dbc::node_modify_bare_metal_rsp>(
+    //     NODE_MODIFY_BARE_METAL_RSP, header, ERR_SUCCESS, "olleh world",
+    //     data->peer_nodes_list[0]);
+    if (data->additional.empty()) {
+        send_response_error<dbc::node_modify_bare_metal_rsp>(
+            NODE_MODIFY_BARE_METAL_RSP, header, E_DEFAULT,
+            "additional is empty", data->peer_nodes_list[0]);
+        return;
+    }
+
+    rapidjson::Document doc;
+    doc.Parse(data->additional.c_str());
+    if (!doc.IsObject()) {
+        send_response_error<dbc::node_modify_bare_metal_rsp>(
+            NODE_MODIFY_BARE_METAL_RSP, header, E_DEFAULT,
+            "additional parse failed", data->peer_nodes_list[0]);
+        return;
+    }
+
+    std::shared_ptr<dbc::db_bare_metal> bm =
+        BareMetalNodeManager::instance().getBareMetalNode(data->node_id);
+    if (!bm) {
+        send_response_error<dbc::node_modify_bare_metal_rsp>(
+            NODE_MODIFY_BARE_METAL_RSP, header, E_DEFAULT,
+            "node id not existed", data->peer_nodes_list[0]);
+        return;
+    }
+
+    if (doc.HasMember("uuid") && doc["uuid"].IsString())
+        bm->__set_uuid(doc["uuid"].GetString());
+    if (doc.HasMember("ip") && doc["ip"].IsString())
+        bm->__set_ip(doc["ip"].GetString());
+    if (doc.HasMember("os") && doc["os"].IsString())
+        bm->__set_os(doc["os"].GetString());
+    if (doc.HasMember("desc") && doc["desc"].IsString())
+        bm->__set_desc(doc["desc"].GetString());
+    if (doc.HasMember("ipmi_hostname") && doc["ipmi_hostname"].IsString())
+        bm->__set_ipmi_hostname(doc["ipmi_hostname"].GetString());
+    if (doc.HasMember("ipmi_username") && doc["ipmi_username"].IsString())
+        bm->__set_ipmi_username(doc["ipmi_username"].GetString());
+    if (doc.HasMember("ipmi_password") && doc["ipmi_password"].IsString())
+        bm->__set_ipmi_password(doc["ipmi_password"].GetString());
+    if (doc.HasMember("ipmi_port") && doc["ipmi_port"].IsUint()) {
+        uint32_t port = doc["ipmi_port"].GetUint();
+        if (port > 0 && port <= 65535)
+            bm->__set_ipmi_port(std::to_string(port));
+    }
+
+    FResult fret =
+        BareMetalNodeManager::instance().ModifyBareMetalNode(data->node_id, bm);
+    send_response_error<dbc::node_modify_bare_metal_rsp>(
+        NODE_MODIFY_BARE_METAL_RSP, header, fret.errcode == 0 ? 0 : -1,
         fret.errmsg, data->peer_nodes_list[0]);
 }
 

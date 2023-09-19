@@ -356,6 +356,14 @@ protected:
         const network::base_header& header,
         const std::shared_ptr<dbc::node_delete_bare_metal_req_data>& data);
 
+    // modify bare metal
+    void on_node_modify_bare_metal_req(
+        const std::shared_ptr<network::message>& msg);
+
+    void modify_bare_metal(
+        const network::base_header& header,
+        const std::shared_ptr<dbc::node_modify_bare_metal_req_data>& data);
+
     // bare metal power
     void on_node_bare_metal_power_req(
         const std::shared_ptr<network::message>& msg);

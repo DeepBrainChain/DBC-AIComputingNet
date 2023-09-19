@@ -1306,6 +1306,40 @@ struct node_delete_bare_metal_rsp {
 }
 
 //////////////////////////////////////////////////////////////////////////
+// modify task
+// request
+struct node_modify_bare_metal_req_data {
+  1: required string node_id,
+  2: required list<string> peer_nodes_list,
+  3: required string additional,
+  4: required string wallet,
+  5: required string nonce,
+  6: required string sign,
+  7: required list<string> multisig_wallets,
+  8: required i32 multisig_threshold,
+  9: required list<multisig_sign_item> multisig_signs,
+  10: required string session_id,
+  11: required string session_id_sign,
+  12: optional string rent_order
+}
+
+struct node_modify_bare_metal_req_body {
+    1: required string data
+}
+
+struct node_modify_bare_metal_req {
+  1: node_modify_bare_metal_req_body body
+}
+// response
+struct node_modify_bare_metal_rsp_body {
+  1: required string data,
+}
+
+struct node_modify_bare_metal_rsp {
+  1: node_modify_bare_metal_rsp_body body
+}
+
+//////////////////////////////////////////////////////////////////////////
 // bare metal power control
 // request
 struct node_bare_metal_power_req_data {

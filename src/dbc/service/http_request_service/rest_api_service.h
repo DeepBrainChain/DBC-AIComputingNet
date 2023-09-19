@@ -698,6 +698,21 @@ public:
     void on_node_delete_bare_metal_timer(
         const std::shared_ptr<core_timer> &timer);
 
+    // modify bare metal server
+    void rest_modify_bare_metal(
+        const std::shared_ptr<network::http_request> &httpReq,
+        const std::string &path);
+
+    std::shared_ptr<network::message> create_node_modify_bare_metal_req_msg(
+        const std::string &head_session_id, const req_body &body);
+
+    void on_node_modify_bare_metal_rsp(
+        const std::shared_ptr<network::http_request_context> &hreq_context,
+        const std::shared_ptr<network::message> &rsp_msg);
+
+    void on_node_modify_bare_metal_timer(
+        const std::shared_ptr<core_timer> &timer);
+
     // bare metal power on/off/reset
     void rest_bare_metal_power(
         const std::shared_ptr<network::http_request> &httpReq,

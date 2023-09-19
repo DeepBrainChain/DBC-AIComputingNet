@@ -209,6 +209,11 @@
 #define NODE_DELETE_BARE_METAL_RSP   "node_delete_bare_metal_rsp"
 #define NODE_DELETE_BARE_METAL_TIMER "node_delete_bare_metal_timer"
 
+// modify bare metal
+#define NODE_MODIFY_BARE_METAL_REQ   "node_modify_bare_metal_req"
+#define NODE_MODIFY_BARE_METAL_RSP   "node_modify_bare_metal_rsp"
+#define NODE_MODIFY_BARE_METAL_TIMER "node_modify_bare_metal_timer"
+
 // bare metal power
 #define NODE_BARE_METAL_POWER_REQ   "node_bare_metal_power_req"
 #define NODE_BARE_METAL_POWER_RSP   "node_bare_metal_power_rsp"

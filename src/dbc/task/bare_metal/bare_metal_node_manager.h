@@ -47,6 +47,9 @@ public:
 
     FResult DeleteBareMetalNode(const std::vector<std::string>& ids);
 
+    FResult ModifyBareMetalNode(const std::string& node_id,
+                                std::shared_ptr<dbc::db_bare_metal> bm);
+
     FResult SetDeepLinkInfo(const std::string& node_id,
                             const std::string& device_id,
                             const std::string& device_password);
