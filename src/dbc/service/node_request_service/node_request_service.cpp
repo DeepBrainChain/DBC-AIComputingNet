@@ -7049,6 +7049,9 @@ void node_request_service::list_bare_metal(
     // header, ERR_SUCCESS, "HELLO world", data->peer_nodes_list[0]);
     std::stringstream ss;
     {
+        FResult fret = check_nonce(data->wallet, data->nonce, data->sign);
+        bool verified = (data->wallet == ConfManager::instance().GetNodeId()) &&
+                        (fret.errcode == ERR_SUCCESS);
         std::map<std::string, std::shared_ptr<dbc::db_bare_metal>>
             bare_metal_nodes;
         const std::map<std::string, std::shared_ptr<dbc::db_bare_metal>>
@@ -7072,8 +7075,15 @@ void node_request_service::list_bare_metal(
             ss << "{";
             ss << "\"node_id\":"
                << "\"" << it.second->node_id << "\"";
-            ss << ",\"node_private_key\":"
-               << "\"" << it.second->node_private_key << "\"";
+            if (verified) {
+                ss << ",\"node_private_key\":"
+                   << "\"" << it.second->node_private_key << "\"";
+            } else {
+                ss << ",\"node_private_key\":"
+                   << "\""
+                   << std::string(it.second->node_private_key.size(), '*')
+                   << "\"";
+            }
             ss << ",\"uuid\":"
                << "\"" << it.second->uuid << "\"";
             ss << ",\"ip\":"
@@ -7092,10 +7102,16 @@ void node_request_service::list_bare_metal(
                 ss << ",\"ipmi_port\":" << it.second->ipmi_port;
             ss << ",\"deeplink_device_id\":"
                << "\"" << it.second->deeplink_device_id << "\"";
-            std::string deeplink_device_password(
-                it.second->deeplink_device_password.size(), '*');
-            ss << ",\"deeplink_device_password\":"
-               << "\"" << deeplink_device_password << "\"";
+            if (verified) {
+                ss << ",\"deeplink_device_password\":"
+                   << "\"" << it.second->deeplink_device_password << "\"";
+            } else {
+                ss << ",\"deeplink_device_password\":"
+                   << "\""
+                   << std::string(it.second->deeplink_device_password.size(),
+                                  '*')
+                   << "\"";
+            }
             ss << "}";
 
             count++;
@@ -7204,6 +7220,14 @@ void node_request_service::on_node_add_bare_metal_req(
     HitNodeType hit_self =
         hit_node(req_peer_nodes, ConfManager::instance().GetNodeId());
     if (hit_self == HitBareMetalManager) {
+        FResult fret = check_nonce(data->wallet, data->nonce, data->sign);
+        if (data->wallet != ConfManager::instance().GetNodeId() ||
+            fret.errcode != ERR_SUCCESS) {
+            send_response_error<dbc::node_add_bare_metal_rsp>(
+                NODE_ADD_BARE_METAL_RSP, node_req_msg->header, E_DEFAULT,
+                "verify sign failed", data->peer_nodes_list[0]);
+            return;
+        }
         add_bare_metal(node_req_msg->header, data);
     } else if (hit_self == HitComputer || hit_self == HitBareMetal) {
         send_response_error<dbc::node_add_bare_metal_rsp>(
@@ -7439,6 +7463,14 @@ void node_request_service::on_node_delete_bare_metal_req(
     HitNodeType hit_self =
         hit_node(req_peer_nodes, ConfManager::instance().GetNodeId());
     if (hit_self == HitBareMetalManager) {
+        FResult fret = check_nonce(data->wallet, data->nonce, data->sign);
+        if (data->wallet != ConfManager::instance().GetNodeId() ||
+            fret.errcode != ERR_SUCCESS) {
+            send_response_error<dbc::node_delete_bare_metal_rsp>(
+                NODE_DELETE_BARE_METAL_RSP, node_req_msg->header, E_DEFAULT,
+                "verify sign failed", data->peer_nodes_list[0]);
+            return;
+        }
         delete_bare_metal(node_req_msg->header, data);
     } else if (hit_self == HitComputer || hit_self == HitBareMetal) {
         send_response_error<dbc::node_delete_bare_metal_rsp>(
@@ -7591,6 +7623,14 @@ void node_request_service::on_node_modify_bare_metal_req(
     HitNodeType hit_self =
         hit_node(req_peer_nodes, ConfManager::instance().GetNodeId());
     if (hit_self == HitBareMetalManager) {
+        FResult fret = check_nonce(data->wallet, data->nonce, data->sign);
+        if (data->wallet != ConfManager::instance().GetNodeId() ||
+            fret.errcode != ERR_SUCCESS) {
+            send_response_error<dbc::node_modify_bare_metal_rsp>(
+                NODE_MODIFY_BARE_METAL_RSP, node_req_msg->header, E_DEFAULT,
+                "verify sign failed", data->peer_nodes_list[0]);
+            return;
+        }
         modify_bare_metal(node_req_msg->header, data);
     } else if (hit_self == HitComputer || hit_self == HitBareMetal) {
         send_response_error<dbc::node_modify_bare_metal_rsp>(

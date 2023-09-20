@@ -106,6 +106,7 @@ FResult BareMetalNodeManager::AddBareMetalNodes(
     }
 
     fret.errcode = ERR_SUCCESS;
+    fret.errmsg = "ok";
     return fret;
 }
 

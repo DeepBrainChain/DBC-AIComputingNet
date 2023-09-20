@@ -11907,7 +11907,7 @@ void rest_api_service::rest_bare_metal(const network::HTTP_REQUEST_PTR& httpReq,
 
 void bare_metal_list(
     const std::map<std::string, std::shared_ptr<dbc::db_bare_metal>>& nodes,
-    std::string& data_json) {
+    std::string& data_json, bool verified) {
     std::stringstream ss;
     ss << "{";
     ss << "\"errcode\":0";
@@ -11920,8 +11920,14 @@ void bare_metal_list(
         ss << "{";
         ss << "\"node_id\":"
            << "\"" << it.second->node_id << "\"";
-        ss << ",\"node_private_key\":"
-           << "\"" << it.second->node_private_key << "\"";
+        if (verified) {
+            ss << ",\"node_private_key\":"
+               << "\"" << it.second->node_private_key << "\"";
+        } else {
+            ss << ",\"node_private_key\":"
+               << "\"" << std::string(it.second->node_private_key.size(), '*')
+               << "\"";
+        }
         ss << ",\"uuid\":"
            << "\"" << it.second->uuid << "\"";
         ss << ",\"ip\":"
@@ -11940,8 +11946,15 @@ void bare_metal_list(
             ss << ",\"ipmi_port\":" << it.second->ipmi_port;
         ss << ",\"deeplink_device_id\":"
            << "\"" << it.second->deeplink_device_id << "\"";
-        ss << ",\"deeplink_device_password\":"
-           << "\"" << it.second->deeplink_device_password << "\"";
+        if (verified) {
+            ss << ",\"deeplink_device_password\":"
+               << "\"" << it.second->deeplink_device_password << "\"";
+        } else {
+            ss << ",\"deeplink_device_password\":"
+               << "\""
+               << std::string(it.second->deeplink_device_password.size(), '*')
+               << "\"";
+        }
         ss << "}";
 
         count++;
@@ -12033,7 +12046,10 @@ void rest_api_service::rest_list_bare_metal(
                     bare_metal_nodes.insert({iter.first, iter.second});
             }
         }
-        bare_metal_list(bare_metal_nodes, data_json);
+        bare_metal_list(
+            bare_metal_nodes, data_json,
+            body.wallet == ConfManager::instance().GetNodeId() &&
+                util::verify_sign(body.sign, body.nonce, body.wallet));
         httpReq->reply_comm_rest_succ2(data_json);
     } else {
         // node request
@@ -12299,11 +12315,26 @@ void rest_api_service::rest_add_bare_metal(
         return;
     }
 
+    if (!check_wallet_sign(body)) {
+        LOG_ERROR << "invalid wallet sign";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS,
+                                     "invalid wallet sign");
+        return;
+    }
+
     if (body.peer_nodes_list.empty() ||
         ConfManager::instance().GetNodeId() == body.peer_nodes_list[0]) {
         if (Server::NodeType != NODE_TYPE::BareMetalNode) {
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST,
                                          "only bare metal node support");
+            return;
+        }
+
+        if (body.wallet != ConfManager::instance().GetNodeId() ||
+            !util::verify_sign(body.sign, body.nonce, body.wallet)) {
+            LOG_ERROR << "verify sign failed";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS,
+                                         "verify sign failed");
             return;
         }
 
@@ -12687,12 +12718,27 @@ void rest_api_service::rest_delete_bare_metal(
         return;
     }
 
+    if (!check_wallet_sign(body)) {
+        LOG_ERROR << "invalid wallet sign";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS,
+                                     "invalid wallet sign");
+        return;
+    }
+
     // all peer_nodes
     if (body.peer_nodes_list.empty() ||
         ConfManager::instance().GetNodeId() == body.peer_nodes_list[0]) {
         if (Server::NodeType != NODE_TYPE::BareMetalNode) {
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST,
                                          "only bare metal node support");
+            return;
+        }
+
+        if (body.wallet != ConfManager::instance().GetNodeId() ||
+            !util::verify_sign(body.sign, body.nonce, body.wallet)) {
+            LOG_ERROR << "verify sign failed";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS,
+                                         "verify sign failed");
             return;
         }
 
@@ -13009,6 +13055,13 @@ void rest_api_service::rest_modify_bare_metal(
         return;
     }
 
+    if (!check_wallet_sign(body)) {
+        LOG_ERROR << "invalid wallet sign";
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS,
+                                     "invalid wallet sign");
+        return;
+    }
+
     body.node_id = path_list[1];
 
     // all peer_nodes
@@ -13017,6 +13070,14 @@ void rest_api_service::rest_modify_bare_metal(
         if (Server::NodeType != NODE_TYPE::BareMetalNode) {
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST,
                                          "only bare metal node support");
+            return;
+        }
+
+        if (body.wallet != ConfManager::instance().GetNodeId() ||
+            !util::verify_sign(body.sign, body.nonce, body.wallet)) {
+            LOG_ERROR << "verify sign failed";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS,
+                                         "verify sign failed");
             return;
         }
 
@@ -13284,6 +13345,12 @@ void rest_api_service::rest_bare_metal_power(
         LOG_ERROR << "http request is not post";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST,
                                      "only support POST request");
+        return;
+    }
+
+    if (Server::NodeType == NODE_TYPE::BareMetalNode) {
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST,
+                                     "only client node support");
         return;
     }
 
@@ -13594,6 +13661,12 @@ void rest_api_service::rest_bare_metal_bootdev(
         LOG_ERROR << "http request is not post";
         httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST,
                                      "only support POST request");
+        return;
+    }
+
+    if (Server::NodeType == NODE_TYPE::BareMetalNode) {
+        httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST,
+                                     "only client node support");
         return;
     }
 
@@ -13919,15 +13992,21 @@ void rest_api_service::rest_deeplink(const network::HTTP_REQUEST_PTR& httpReq,
 }
 
 void list_deeplink_info(const std::shared_ptr<dbc::db_bare_metal>& node,
-                        std::string& data_json) {
+                        std::string& data_json, bool verified) {
     std::stringstream ss;
     ss << "{";
     ss << "\"errcode\":0";
     ss << ", \"message\":{";
     ss << "\"device_id\":"
        << "\"" << node->deeplink_device_id << "\"";
-    ss << ",\"device_password\":"
-       << "\"" << node->deeplink_device_password << "\"";
+    if (verified) {
+        ss << ",\"device_password\":"
+           << "\"" << node->deeplink_device_password << "\"";
+    } else {
+        ss << ",\"device_password\":"
+           << "\"" << std::string(node->deeplink_device_password.size(), '*')
+           << "\"";
+    }
     ss << "}";
     ss << "}";
     data_json = ss.str();
@@ -13995,7 +14074,10 @@ void rest_api_service::rest_list_deeplink_info(
         }
 
         std::string data_json;
-        list_deeplink_info(bare_metal, data_json);
+        list_deeplink_info(
+            bare_metal, data_json,
+            body.wallet == bare_metal->node_id &&
+                util::verify_sign(body.sign, body.nonce, body.wallet));
         httpReq->reply_comm_rest_succ2(data_json);
         return;
     }
@@ -14312,6 +14394,14 @@ void rest_api_service::rest_set_deeplink_info(
         if (Server::NodeType != NODE_TYPE::BareMetalNode) {
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST,
                                          "only bare metal node support");
+            return;
+        }
+
+        if (body.wallet != body.peer_nodes_list[0] ||
+            !util::verify_sign(body.sign, body.nonce, body.wallet)) {
+            LOG_ERROR << "verify sign failed";
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS,
+                                         "verify sign failed");
             return;
         }
 
