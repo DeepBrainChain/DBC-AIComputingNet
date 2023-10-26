@@ -144,14 +144,39 @@ FResult BareMetalNodeManager::DeleteBareMetalNode(
     return fret;
 }
 
-FResult BareMetalNodeManager::ModifyBareMetalNode(
-    const std::string& node_id, std::shared_ptr<dbc::db_bare_metal> bm) {
-    RwMutex::WriteLock wlock(m_mtx);
+FResult BareMetalNodeManager::ModifyBareMetalNode(const std::string& node_id,
+                                                  const bare_metal_info& bmi) {
     FResult fret = {ERR_ERROR, ""};
-    if (m_bare_metal_nodes.find(node_id) == m_bare_metal_nodes.end()) {
-        fret.errmsg = "node id not existed";
-        return fret;
+    {
+        RwMutex::ReadLock rlock(m_mtx);
+        bool bExisted = false;
+        for (const auto& iter : m_bare_metal_nodes) {
+            if (iter.first == node_id) {
+                bExisted = true;
+                continue;
+            }
+            if (iter.second->uuid == bmi.uuid) {
+                fret.errmsg =
+                    "bare metal node uuid " + bmi.uuid + " already existed";
+                return fret;
+            }
+        }
+        if (!bExisted) {
+            fret.errmsg = "node id not existed";
+            return fret;
+        }
     }
+    RwMutex::WriteLock wlock(m_mtx);
+    auto bm = m_bare_metal_nodes[node_id];
+    if (!bmi.uuid.empty()) bm->__set_uuid(bmi.uuid);
+    if (!bmi.ip.empty()) bm->__set_ip(bmi.ip);
+    if (!bmi.os.empty()) bm->__set_os(bmi.os);
+    if (!bmi.desc.empty()) bm->__set_desc(bmi.desc);
+    if (!bmi.ipmi_hostname.empty()) bm->__set_ipmi_hostname(bmi.ipmi_hostname);
+    if (!bmi.ipmi_username.empty()) bm->__set_ipmi_username(bmi.ipmi_username);
+    if (!bmi.ipmi_password.empty()) bm->__set_ipmi_password(bmi.ipmi_password);
+    if (bmi.ipmi_port > 0 && bmi.ipmi_port <= 65535)
+        bm->__set_ipmi_port(std::to_string(bmi.ipmi_port));
     if (!m_db.write_data(bm)) {
         fret.errmsg = "write bare metal db error";
         LOG_ERROR << fret.errmsg;

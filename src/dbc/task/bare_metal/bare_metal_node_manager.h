@@ -16,6 +16,9 @@ struct bare_metal_info {
 
     bool validate() const {
         if (uuid.empty()) return false;
+        for (const auto& ch : uuid) {
+            if (!isalnum(ch) && ch != '-') return false;
+        }
         if (ip.empty()) return false;
         if (ipmi_hostname.empty()) return false;
         if (ipmi_username.empty()) return false;
@@ -48,7 +51,7 @@ public:
     FResult DeleteBareMetalNode(const std::vector<std::string>& ids);
 
     FResult ModifyBareMetalNode(const std::string& node_id,
-                                std::shared_ptr<dbc::db_bare_metal> bm);
+                                const bare_metal_info& bmi);
 
     FResult SetDeepLinkInfo(const std::string& node_id,
                             const std::string& device_id,

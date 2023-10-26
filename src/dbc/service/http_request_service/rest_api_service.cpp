@@ -13089,40 +13089,52 @@ void rest_api_service::rest_modify_bare_metal(
             return;
         }
 
-        std::shared_ptr<dbc::db_bare_metal> bm =
-            BareMetalNodeManager::instance().getBareMetalNode(body.node_id);
-        if (!bm) {
+        if (!BareMetalNodeManager::instance().ExistNodeID(body.node_id)) {
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_PARAMS,
                                          "node id not existed");
             return;
         }
 
-        if (v_additional.HasMember("uuid") && v_additional["uuid"].IsString())
-            bm->__set_uuid(v_additional["uuid"].GetString());
+        bare_metal_info info;
+        if (v_additional.HasMember("uuid") && v_additional["uuid"].IsString()) {
+            info.uuid = v_additional["uuid"].GetString();
+            for (const auto& ch : info.uuid) {
+                if (!isalnum(ch) && ch != '-') {
+                    httpReq->reply_comm_rest_err(
+                        HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid uuid");
+                    return;
+                }
+            }
+        }
         if (v_additional.HasMember("ip") && v_additional["ip"].IsString())
-            bm->__set_ip(v_additional["ip"].GetString());
+            info.ip = v_additional["ip"].GetString();
         if (v_additional.HasMember("os") && v_additional["os"].IsString())
-            bm->__set_os(v_additional["os"].GetString());
+            info.os = v_additional["os"].GetString();
         if (v_additional.HasMember("desc") && v_additional["desc"].IsString())
-            bm->__set_desc(v_additional["desc"].GetString());
+            info.desc = v_additional["desc"].GetString();
         if (v_additional.HasMember("ipmi_hostname") &&
             v_additional["ipmi_hostname"].IsString())
-            bm->__set_ipmi_hostname(v_additional["ipmi_hostname"].GetString());
+            info.ipmi_hostname = v_additional["ipmi_hostname"].GetString();
         if (v_additional.HasMember("ipmi_username") &&
             v_additional["ipmi_username"].IsString())
-            bm->__set_ipmi_username(v_additional["ipmi_username"].GetString());
+            info.ipmi_username = v_additional["ipmi_username"].GetString();
         if (v_additional.HasMember("ipmi_password") &&
             v_additional["ipmi_password"].IsString())
-            bm->__set_ipmi_password(v_additional["ipmi_password"].GetString());
+            info.ipmi_password = v_additional["ipmi_password"].GetString();
         if (v_additional.HasMember("ipmi_port") &&
             v_additional["ipmi_port"].IsUint()) {
             uint32_t port = v_additional["ipmi_port"].GetUint();
-            if (port > 0 && port <= 65535)
-                bm->__set_ipmi_port(std::to_string(port));
+            if (port > 0 && port <= 65535) {
+                info.ipmi_port = port;
+            } else {
+                httpReq->reply_comm_rest_err(
+                    HTTP_BADREQUEST, RPC_INVALID_PARAMS, "invalid ipmi port");
+                return;
+            }
         }
 
         FResult fret = BareMetalNodeManager::instance().ModifyBareMetalNode(
-            body.node_id, bm);
+            body.node_id, info);
         if (fret.errcode == 0)
             httpReq->reply_comm_rest_succ2("{\"errcode\": 0,\"message\": \"" +
                                            fret.errmsg + "\"}");

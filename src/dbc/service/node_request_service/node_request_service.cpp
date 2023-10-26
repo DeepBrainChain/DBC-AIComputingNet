@@ -7060,8 +7060,14 @@ void node_request_service::list_bare_metal(
             bare_metal_nodes.insert(origin_nodes.begin(), origin_nodes.end());
         } else {
             auto iter = origin_nodes.find(data->node_id);
-            if (iter != origin_nodes.end())
+            if (iter != origin_nodes.end()) {
                 bare_metal_nodes.insert({iter->first, iter->second});
+            } else {
+                for (auto& bm : origin_nodes) {
+                    if (bm.second->uuid == data->node_id)
+                        bare_metal_nodes.insert({bm.first, bm.second});
+                }
+            }
         }
 
         ss << "{";
@@ -7666,37 +7672,51 @@ void node_request_service::modify_bare_metal(
         return;
     }
 
-    std::shared_ptr<dbc::db_bare_metal> bm =
-        BareMetalNodeManager::instance().getBareMetalNode(data->node_id);
-    if (!bm) {
+    if (!BareMetalNodeManager::instance().ExistNodeID(data->node_id)) {
         send_response_error<dbc::node_modify_bare_metal_rsp>(
             NODE_MODIFY_BARE_METAL_RSP, header, E_DEFAULT,
             "node id not existed", data->peer_nodes_list[0]);
         return;
     }
 
-    if (doc.HasMember("uuid") && doc["uuid"].IsString())
-        bm->__set_uuid(doc["uuid"].GetString());
+    bare_metal_info info;
+    if (doc.HasMember("uuid") && doc["uuid"].IsString()) {
+        info.uuid = doc["uuid"].GetString();
+        for (const auto& ch : info.uuid) {
+            if (!isalnum(ch) && ch != '-') {
+                send_response_error<dbc::node_modify_bare_metal_rsp>(
+                    NODE_MODIFY_BARE_METAL_RSP, header, E_DEFAULT,
+                    "invalid uuid", data->peer_nodes_list[0]);
+                return;
+            }
+        }
+    }
     if (doc.HasMember("ip") && doc["ip"].IsString())
-        bm->__set_ip(doc["ip"].GetString());
+        info.ip = doc["ip"].GetString();
     if (doc.HasMember("os") && doc["os"].IsString())
-        bm->__set_os(doc["os"].GetString());
+        info.os = doc["os"].GetString();
     if (doc.HasMember("desc") && doc["desc"].IsString())
-        bm->__set_desc(doc["desc"].GetString());
+        info.desc = doc["desc"].GetString();
     if (doc.HasMember("ipmi_hostname") && doc["ipmi_hostname"].IsString())
-        bm->__set_ipmi_hostname(doc["ipmi_hostname"].GetString());
+        info.ipmi_hostname = doc["ipmi_hostname"].GetString();
     if (doc.HasMember("ipmi_username") && doc["ipmi_username"].IsString())
-        bm->__set_ipmi_username(doc["ipmi_username"].GetString());
+        info.ipmi_username = doc["ipmi_username"].GetString();
     if (doc.HasMember("ipmi_password") && doc["ipmi_password"].IsString())
-        bm->__set_ipmi_password(doc["ipmi_password"].GetString());
+        info.ipmi_password = doc["ipmi_password"].GetString();
     if (doc.HasMember("ipmi_port") && doc["ipmi_port"].IsUint()) {
         uint32_t port = doc["ipmi_port"].GetUint();
-        if (port > 0 && port <= 65535)
-            bm->__set_ipmi_port(std::to_string(port));
+        if (port > 0 && port <= 65535) {
+            info.ipmi_port = port;
+        } else {
+            send_response_error<dbc::node_modify_bare_metal_rsp>(
+                NODE_MODIFY_BARE_METAL_RSP, header, E_DEFAULT,
+                "invalid ipmi port", data->peer_nodes_list[0]);
+            return;
+        }
     }
 
-    FResult fret =
-        BareMetalNodeManager::instance().ModifyBareMetalNode(data->node_id, bm);
+    FResult fret = BareMetalNodeManager::instance().ModifyBareMetalNode(
+        data->node_id, info);
     send_response_error<dbc::node_modify_bare_metal_rsp>(
         NODE_MODIFY_BARE_METAL_RSP, header, fret.errcode == 0 ? 0 : -1,
         fret.errmsg, data->peer_nodes_list[0]);
