@@ -162,6 +162,15 @@ void node_request_service::add_self_to_servicelist(const std::string& node_id) {
     }
     kvs["state"] = state;
     */
+    if (node_id == ConfManager::instance().GetNodeId()) {
+        if (Server::NodeType == NODE_TYPE::ComputeNode)
+            kvs["node_type"] = std::to_string((int)HitNodeType::HitComputer);
+        else
+            kvs["node_type"] =
+                std::to_string((int)HitNodeType::HitBareMetalManager);
+    } else {
+        kvs["node_type"] = std::to_string((int)HitNodeType::HitBareMetal);
+    }
 
     kvs["pub_key"] = ConfManager::instance().GetPubKey();
     info->__set_kvs(kvs);
@@ -5285,6 +5294,8 @@ void node_request_service::query_node_info(
        << "{";
     ss << "\"version\":"
        << "\"" << dbcversion() << "\"";
+    ss << ",\"node_type\":"
+       << "\"" << (int)HitNodeType::HitComputer << "\"";
     ss << ",\"ip\":"
        << "\"" << hide_ip_addr(SystemInfo::instance().GetPublicip()) << "\"";
     ss << ",\"os\":"
@@ -5444,15 +5455,16 @@ void node_request_service::query_bare_metal_node_info(
     // send_response_error<dbc::node_query_node_info_rsp>(NODE_QUERY_NODE_INFO_RSP,
     // header, ERR_SUCCESS, "bare metal node has no machine info for now",
     // data->peer_nodes_list[0]);
-    CommitteeUploadInfo info;
-    if (!HttpDBCChainClient::instance().getCommitteeUploadInfo(
-            data->peer_nodes_list[0], info)) {
-        send_response_error<dbc::node_query_node_info_rsp>(
-            NODE_QUERY_NODE_INFO_RSP, header, E_DEFAULT,
-            "query committee upload info of bare metal node failed",
-            data->peer_nodes_list[0]);
-        return;
-    }
+
+    // CommitteeUploadInfo info;
+    // if (!HttpDBCChainClient::instance().getCommitteeUploadInfo(
+    //         data->peer_nodes_list[0], info)) {
+    //     send_response_error<dbc::node_query_node_info_rsp>(
+    //         NODE_QUERY_NODE_INFO_RSP, header, E_DEFAULT,
+    //         "query committee upload info of bare metal node failed",
+    //         data->peer_nodes_list[0]);
+    //     return;
+    // }
 
     std::shared_ptr<dbc::db_bare_metal> bm =
         BareMetalNodeManager::instance().getBareMetalNode(
@@ -5471,11 +5483,14 @@ void node_request_service::query_bare_metal_node_info(
        << "{";
     ss << "\"version\":"
        << "\"" << dbcversion() << "\"";
+    ss << ",\"node_type\":"
+       << "\"" << (int)HitNodeType::HitBareMetal << "\"";
     ss << ",\"ip\":"
        << "\"" << bm->ip << "\"";
     ss << ",\"os\":"
        << "\"" << bm->os << "\"";
 
+    /*
     ss << ",\"cpu\":"
        << "{";
     ss << "\"type\":"
@@ -5518,6 +5533,7 @@ void node_request_service::query_bare_metal_node_info(
     ss << "\"size\":"
        << "\"" << info.data_disk << "G\"";
     ss << "}";
+    */
 
     ss << ",\"deeplink\":"
        << "{";
@@ -6041,6 +6057,14 @@ void node_request_service::on_timer_service_broadcast(
         */
         ServiceInfoManager::instance().update(
             ConfManager::instance().GetNodeId(), "version", dbcversion());
+        if (Server::NodeType == NODE_TYPE::ComputeNode)
+            ServiceInfoManager::instance().update(
+                ConfManager::instance().GetNodeId(), "node_type",
+                std::to_string((int)HitNodeType::HitComputer));
+        else
+            ServiceInfoManager::instance().update(
+                ConfManager::instance().GetNodeId(), "node_type",
+                std::to_string((int)HitNodeType::HitBareMetalManager));
         ServiceInfoManager::instance().update_time_stamp(
             ConfManager::instance().GetNodeId());
 
@@ -6051,6 +6075,9 @@ void node_request_service::on_timer_service_broadcast(
             for (const auto& iter : bare_metal_nodes) {
                 ServiceInfoManager::instance().update(iter.first, "version",
                                                       dbcversion());
+                ServiceInfoManager::instance().update(
+                    iter.first, "node_type",
+                    std::to_string((int)HitNodeType::HitBareMetal));
                 ServiceInfoManager::instance().update_time_stamp(iter.first);
             }
         }
@@ -7028,9 +7055,9 @@ void node_request_service::on_node_list_bare_metal_req(
     std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
     HitNodeType hit_self =
         hit_node(req_peer_nodes, ConfManager::instance().GetNodeId());
-    if (hit_self == HitBareMetalManager) {
+    if (hit_self == HitBareMetalManager || hit_self == HitBareMetal) {
         list_bare_metal(node_req_msg->header, data);
-    } else if (hit_self == HitComputer || hit_self == HitBareMetal) {
+    } else if (hit_self == HitComputer) {
         send_response_error<dbc::node_list_bare_metal_rsp>(
             NODE_LIST_BARE_METAL_RSP, node_req_msg->header, E_DEFAULT,
             "Not supported", data->peer_nodes_list[0]);
@@ -7054,18 +7081,28 @@ void node_request_service::list_bare_metal(
                         (fret.errcode == ERR_SUCCESS);
         std::map<std::string, std::shared_ptr<dbc::db_bare_metal>>
             bare_metal_nodes;
-        const std::map<std::string, std::shared_ptr<dbc::db_bare_metal>>
-            origin_nodes = BareMetalNodeManager::instance().getBareMetalNodes();
-        if (data->node_id.empty()) {
-            bare_metal_nodes.insert(origin_nodes.begin(), origin_nodes.end());
+        if (BareMetalNodeManager::instance().ExistNodeID(
+                data->peer_nodes_list[0])) {
+            bare_metal_nodes.insert(
+                {data->peer_nodes_list[0],
+                 BareMetalNodeManager::instance().getBareMetalNode(
+                     data->peer_nodes_list[0])});
         } else {
-            auto iter = origin_nodes.find(data->node_id);
-            if (iter != origin_nodes.end()) {
-                bare_metal_nodes.insert({iter->first, iter->second});
+            const std::map<std::string, std::shared_ptr<dbc::db_bare_metal>>
+                origin_nodes =
+                    BareMetalNodeManager::instance().getBareMetalNodes();
+            if (data->node_id.empty()) {
+                bare_metal_nodes.insert(origin_nodes.begin(),
+                                        origin_nodes.end());
             } else {
-                for (auto& bm : origin_nodes) {
-                    if (bm.second->uuid == data->node_id)
-                        bare_metal_nodes.insert({bm.first, bm.second});
+                auto iter = origin_nodes.find(data->node_id);
+                if (iter != origin_nodes.end()) {
+                    bare_metal_nodes.insert({iter->first, iter->second});
+                } else {
+                    for (auto& bm : origin_nodes) {
+                        if (bm.second->uuid == data->node_id)
+                            bare_metal_nodes.insert({bm.first, bm.second});
+                    }
                 }
             }
         }

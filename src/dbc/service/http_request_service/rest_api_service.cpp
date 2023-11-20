@@ -7892,6 +7892,10 @@ void reply_node_list(
     ss << "\"mining_nodes\":[";
     int service_count = 0;
     for (auto it : service_list) {
+        int node_type = 0;
+        if (it.second->kvs.count("node_type"))
+            node_type = atoi(it.second->kvs["node_type"]);
+        if (node_type < 0 || node_type > 1) continue;
         if (service_count > 0) ss << ",";
         ss << "{";
         /*
@@ -11905,6 +11909,53 @@ void rest_api_service::rest_bare_metal(const network::HTTP_REQUEST_PTR& httpReq,
                                  "invalid requests uri");
 }
 
+// list bare metal node
+void bare_metal_node_list(
+    const std::map<std::string, std::shared_ptr<dbc::node_service_info>>&
+        service_list,
+    std::string& data_json) {
+    std::stringstream ss;
+    ss << "{";
+    ss << "\"errcode\":0";
+    ss << ", \"message\":{";
+    ss << "\"bare_metal_nodes\":[";
+    int service_count = 0;
+    for (auto it : service_list) {
+        int node_type = 0;
+        if (it.second->kvs.count("node_type"))
+            node_type = atoi(it.second->kvs["node_type"]);
+        if (node_type != 2) continue;
+        if (service_count > 0) ss << ",";
+        ss << "{";
+        /*
+        std::string service_list;
+        for (int i = 0; i < it.second->service_list.size(); i++) {
+            if (i > 0) service_list += ",";
+            service_list += it.second->service_list[i];
+        }
+        ss << "\"service_list\":" << "\"" << service_list << "\"";
+        */
+        std::string node_id = it.first;
+        node_id = util::rtrim(node_id, '\n');
+        ss << "\"node_id\":"
+           << "\"" << node_id << "\"";
+        ss << ",\"name\":"
+           << "\"" << it.second->name << "\"";
+        std::string ver =
+            it.second->kvs.count("version") ? it.second->kvs["version"] : "N/A";
+        ss << ",\"version\":"
+           << "\"" << ver << "\"";
+        // ss << ",\"state\":" << "\"" << it.second.kvs["state"] << "\"";
+        ss << "}";
+
+        service_count++;
+    }
+    ss << "]}";
+    ss << "}";
+
+    data_json = ss.str();
+}
+
 void bare_metal_list(
     const std::map<std::string, std::shared_ptr<dbc::db_bare_metal>>& nodes,
     std::string& data_json, bool verified) {
@@ -12026,31 +12077,38 @@ void rest_api_service::rest_list_bare_metal(
     // all peer_nodes
     if (body.peer_nodes_list.empty() ||
         ConfManager::instance().GetNodeId() == body.peer_nodes_list[0]) {
-        if (Server::NodeType != NODE_TYPE::BareMetalNode) {
+        if (Server::NodeType == NODE_TYPE::ClientNode) {
+            auto& id_2_services = ServiceInfoManager::instance().get_all();
+            std::string data_json;
+            bare_metal_node_list(id_2_services, data_json);
+            httpReq->reply_comm_rest_succ2(data_json);
+        } else if (Server::NodeType == NODE_TYPE::BareMetalNode) {
+            std::string data_json;
+            std::map<std::string, std::shared_ptr<dbc::db_bare_metal>>
+                bare_metal_nodes;
+            const std::map<std::string, std::shared_ptr<dbc::db_bare_metal>>
+                origin_nodes =
+                    BareMetalNodeManager::instance().getBareMetalNodes();
+            if (body.node_id.empty()) {
+                bare_metal_nodes.insert(origin_nodes.begin(),
+                                        origin_nodes.end());
+            } else {
+                for (auto& iter : origin_nodes) {
+                    if (iter.first == body.node_id ||
+                        iter.second->uuid == body.node_id)
+                        bare_metal_nodes.insert({iter.first, iter.second});
+                }
+            }
+            bare_metal_list(
+                bare_metal_nodes, data_json,
+                body.wallet == ConfManager::instance().GetNodeId() &&
+                    util::verify_sign(body.sign, body.nonce, body.wallet));
+            httpReq->reply_comm_rest_succ2(data_json);
+        } else {
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST,
-                                         "only bare metal node support");
+                                         "not support");
             return;
         }
-
-        std::string data_json;
-        std::map<std::string, std::shared_ptr<dbc::db_bare_metal>>
-            bare_metal_nodes;
-        const std::map<std::string, std::shared_ptr<dbc::db_bare_metal>>
-            origin_nodes = BareMetalNodeManager::instance().getBareMetalNodes();
-        if (body.node_id.empty()) {
-            bare_metal_nodes.insert(origin_nodes.begin(), origin_nodes.end());
-        } else {
-            for (auto& iter : origin_nodes) {
-                if (iter.first == body.node_id ||
-                    iter.second->uuid == body.node_id)
-                    bare_metal_nodes.insert({iter.first, iter.second});
-            }
-        }
-        bare_metal_list(
-            bare_metal_nodes, data_json,
-            body.wallet == ConfManager::instance().GetNodeId() &&
-                util::verify_sign(body.sign, body.nonce, body.wallet));
-        httpReq->reply_comm_rest_succ2(data_json);
     } else {
         // node request
         std::string head_session_id = util::create_session_id();
