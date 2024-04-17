@@ -11989,10 +11989,19 @@ void bare_metal_list(
            << "\"" << it.second->desc << "\"";
         ss << ",\"ipmi_hostname\":"
            << "\"" << it.second->ipmi_hostname << "\"";
-        ss << ",\"ipmi_username\":"
-           << "\"" << it.second->ipmi_username << "\"";
-        ss << ",\"ipmi_password\":"
-           << "\"" << it.second->ipmi_password << "\"";
+        if (verified) {
+            ss << ",\"ipmi_username\":"
+               << "\"" << it.second->ipmi_username << "\"";
+            ss << ",\"ipmi_password\":"
+               << "\"" << it.second->ipmi_password << "\"";
+        } else {
+            ss << ",\"ipmi_username\":"
+               << "\"" << std::string(it.second->ipmi_username.size(), '*')
+               << "\"";
+            ss << ",\"ipmi_password\":"
+               << "\"" << std::string(it.second->ipmi_password.size(), '*')
+               << "\"";
+        }
         if (!it.second->ipmi_port.empty())
             ss << ",\"ipmi_port\":" << it.second->ipmi_port;
         ss << ",\"deeplink_device_id\":"

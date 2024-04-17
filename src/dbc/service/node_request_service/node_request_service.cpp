@@ -7111,6 +7111,7 @@ void node_request_service::list_bare_metal(
         ss << "\"errcode\":0";
         ss << ", \"message\":{";
         ss << "\"bare_metal_nodes\":[";
+        bool only_one = bare_metal_nodes.size() == 1;
         int count = 0;
         for (auto& it : bare_metal_nodes) {
             if (count > 50) break;
@@ -7137,12 +7138,28 @@ void node_request_service::list_bare_metal(
                << "\"" << it.second->desc << "\"";
             ss << ",\"ipmi_hostname\":"
                << "\"" << it.second->ipmi_hostname << "\"";
-            ss << ",\"ipmi_username\":"
-               << "\"" << it.second->ipmi_username << "\"";
-            ss << ",\"ipmi_password\":"
-               << "\"" << it.second->ipmi_password << "\"";
+            if (verified) {
+                ss << ",\"ipmi_username\":"
+                   << "\"" << it.second->ipmi_username << "\"";
+                ss << ",\"ipmi_password\":"
+                   << "\"" << it.second->ipmi_password << "\"";
+            } else {
+                ss << ",\"ipmi_username\":"
+                   << "\"" << std::string(it.second->ipmi_username.size(), '*')
+                   << "\"";
+                ss << ",\"ipmi_password\":"
+                   << "\"" << std::string(it.second->ipmi_password.size(), '*')
+                   << "\"";
+            }
             if (!it.second->ipmi_port.empty())
                 ss << ",\"ipmi_port\":" << it.second->ipmi_port;
+            if (only_one) {
+                auto fret2 = BareMetalTaskManager::instance().PowerControl(
+                    it.second->node_id, "status");
+                if (fret2.errcode == ERR_SUCCESS) {
+                    ss << ",\"power_status\":\"" << fret2.errmsg << "\"";
+                }
+            }
             ss << ",\"deeplink_device_id\":"
                << "\"" << it.second->deeplink_device_id << "\"";
             if (verified) {

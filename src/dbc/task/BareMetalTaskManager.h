@@ -19,6 +19,8 @@ public:
     FResult SetBootDeviceOrder(const std::string& node_id,
                                const std::string& device);
 
+    void PowerOffOnce(const std::string& node_id);
+
     void PruneNode(const std::string& node_id);
 
     void PruneNodes();
@@ -26,6 +28,7 @@ public:
 protected:
     bool stopped_;
     std::shared_ptr<BareMetalClientBase> bare_metal_client_;
+    std::map<std::string, bool> poweroff_once_;
 };
 
 #endif  // DBC_BARE_METAL_TASK_MANAGER_H

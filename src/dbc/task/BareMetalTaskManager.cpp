@@ -49,6 +49,15 @@ FResult BareMetalTaskManager::SetBootDeviceOrder(const std::string& node_id,
     return FResult(ERR_ERROR, "bare metal client not existed");
 }
 
+void BareMetalTaskManager::PowerOffOnce(const std::string& node_id) {
+    if (poweroff_once_.count(node_id) > 0 && !poweroff_once_[node_id]) {
+        FResult fret = PowerControl(node_id, "off");
+        if (fret.errcode == ERR_SUCCESS) {
+            poweroff_once_[node_id] = true;
+        }
+    }
+}
+
 void BareMetalTaskManager::PruneNode(const std::string& node_id) {
     MACHINE_STATUS machine_status =
         HttpDBCChainClient::instance().request_machine_status(node_id);
@@ -63,10 +72,12 @@ void BareMetalTaskManager::PruneNode(const std::string& node_id) {
              << ", current renter is " << cur_renter << ", rent end is "
              << cur_rent_end << ", cur block is " << cur_block;
     if (machine_status == MACHINE_STATUS::Online) {
-        PowerControl(node_id, "off");
+        PowerOffOnce(node_id);
     } else if (machine_status == MACHINE_STATUS::Rented) {
         if (cur_rent_end > 0 && cur_block > cur_rent_end) {
-            PowerControl(node_id, "off");
+            PowerOffOnce(node_id);
+        } else {
+            poweroff_once_[node_id] = false;
         }
     }
 }
@@ -83,6 +94,7 @@ void BareMetalTaskManager::PruneNodes() {
     }
 
     for (const auto& id : ids) {
+        if (poweroff_once_.count(id) == 0) poweroff_once_[id] = false;
         if (stopped_) break;
         PruneNode(id);
         sleep(3);
