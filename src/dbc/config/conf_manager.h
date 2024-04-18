@@ -46,7 +46,7 @@ public:
     }
 
     bool IsTerminatingRental() const {
-        m_chain_additional_field == "terminatingRental";
+        return m_chain_additional_field == "terminatingRental";
     }
 
     const std::map<std::string, ImageServer*>& GetImageServers() const {
