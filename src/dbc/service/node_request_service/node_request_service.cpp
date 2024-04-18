@@ -7055,8 +7055,32 @@ void node_request_service::on_node_list_bare_metal_req(
     std::vector<std::string> req_peer_nodes = data->peer_nodes_list;
     HitNodeType hit_self =
         hit_node(req_peer_nodes, ConfManager::instance().GetNodeId());
-    if (hit_self == HitBareMetalManager || hit_self == HitBareMetal) {
-        list_bare_metal(node_req_msg->header, data);
+    if (hit_self == HitBareMetalManager) {
+        list_bare_metal_manager(node_req_msg->header, data);
+    } else if (hit_self == HitBareMetal) {
+        AuthorityParams params;
+        params.wallet = data->wallet;
+        params.nonce = data->nonce;
+        params.sign = data->sign;
+        params.multisig_wallets = data->multisig_wallets;
+        params.multisig_threshold = data->multisig_threshold;
+        params.multisig_signs = data->multisig_signs;
+        params.session_id = data->session_id;
+        params.session_id_sign = data->session_id_sign;
+        params.machine_id = data->peer_nodes_list[0];
+        params.rent_order = data->rent_order;
+        AuthoriseResult result;
+        check_authority(params, result);
+        if (!result.success || result.user_role == USER_ROLE::Unknown) {
+            LOG_ERROR << "check authority failed: " << result.errmsg;
+            send_response_error<dbc::node_list_bare_metal_rsp>(
+                NODE_LIST_BARE_METAL_RSP, node_req_msg->header, E_DEFAULT,
+                "check authority failed: " + result.errmsg,
+                data->peer_nodes_list[0]);
+            return;
+        }
+
+        list_bare_metal(node_req_msg->header, data, result);
     } else if (hit_self == HitComputer) {
         send_response_error<dbc::node_list_bare_metal_rsp>(
             NODE_LIST_BARE_METAL_RSP, node_req_msg->header, E_DEFAULT,
@@ -7069,7 +7093,7 @@ void node_request_service::on_node_list_bare_metal_req(
     }
 }
 
-void node_request_service::list_bare_metal(
+void node_request_service::list_bare_metal_manager(
     const network::base_header& header,
     const std::shared_ptr<dbc::node_list_bare_metal_req_data>& data) {
     // send_response_error<dbc::node_list_bare_metal_rsp>(NODE_LIST_BARE_METAL_RSP,
@@ -7179,6 +7203,77 @@ void node_request_service::list_bare_metal(
         ss << "]}";
         ss << "}";
     }
+
+    const std::map<std::string, std::string>& mp = header.exten_info;
+    auto it = mp.find("pub_key");
+    if (it != mp.end()) {
+        std::string pub_key = it->second;
+        std::string priv_key = ConfManager::instance().GetPrivKey();
+
+        if (!pub_key.empty() && !priv_key.empty()) {
+            std::string s_data =
+                encrypt_data((unsigned char*)ss.str().c_str(), ss.str().size(),
+                             pub_key, priv_key);
+            send_response_json<dbc::node_list_bare_metal_rsp>(
+                NODE_LIST_BARE_METAL_RSP, header, s_data,
+                data->peer_nodes_list[0]);
+        } else {
+            LOG_ERROR << "pub_key or priv_key is empty";
+            send_response_error<dbc::node_list_bare_metal_rsp>(
+                NODE_LIST_BARE_METAL_RSP, header, E_DEFAULT,
+                "pub_key or priv_key is empty", data->peer_nodes_list[0]);
+        }
+    } else {
+        LOG_ERROR << "request no pub_key";
+        send_response_error<dbc::node_list_bare_metal_rsp>(
+            NODE_LIST_BARE_METAL_RSP, header, E_DEFAULT, "request no pub_key",
+            data->peer_nodes_list[0]);
+    }
+}
+
+void node_request_service::list_bare_metal(
+    const network::base_header& header,
+    const std::shared_ptr<dbc::node_list_bare_metal_req_data>& data,
+    const AuthoriseResult& result) {
+    // send_response_error<dbc::node_list_bare_metal_rsp>(NODE_LIST_BARE_METAL_RSP,
+    // header, ERR_SUCCESS, "HELLO world", data->peer_nodes_list[0]);
+    std::shared_ptr<dbc::db_bare_metal> bm =
+        BareMetalNodeManager::instance().getBareMetalNode(
+            data->peer_nodes_list[0]);
+    if (!bm) {
+        send_response_error<dbc::node_list_bare_metal_rsp>(
+            NODE_LIST_BARE_METAL_RSP, header, E_DEFAULT,
+            "get bare metal node info failed", data->peer_nodes_list[0]);
+        return;
+    }
+
+    std::stringstream ss;
+    ss << "{";
+    ss << "\"errcode\":0";
+    ss << ", \"message\":{";
+
+    ss << "\"version\":"
+       << "\"" << dbcversion() << "\"";
+    ss << ",\"ip\":"
+       << "\"" << bm->ip << "\"";
+    ss << ",\"os\":"
+       << "\"" << bm->os << "\"";
+    ss << ",\"description\":"
+       << "\"" << bm->desc << "\"";
+
+    auto fret =
+        BareMetalTaskManager::instance().PowerControl(bm->node_id, "status");
+    if (fret.errcode == ERR_SUCCESS) {
+        ss << ",\"power_status\":\"" << fret.errmsg << "\"";
+    }
+
+    ss << ",\"deeplink_device_id\":"
+       << "\"" << bm->deeplink_device_id << "\"";
+    ss << ",\"deeplink_device_password\":"
+       << "\"" << bm->deeplink_device_password << "\"";
+
+    ss << "}";
+    ss << "}";
 
     const std::map<std::string, std::string>& mp = header.exten_info;
     auto it = mp.find("pub_key");

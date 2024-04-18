@@ -336,9 +336,14 @@ protected:
     void on_node_list_bare_metal_req(
         const std::shared_ptr<network::message>& msg);
 
-    void list_bare_metal(
+    void list_bare_metal_manager(
         const network::base_header& header,
         const std::shared_ptr<dbc::node_list_bare_metal_req_data>& data);
+
+    void list_bare_metal(
+        const network::base_header& header,
+        const std::shared_ptr<dbc::node_list_bare_metal_req_data>& data,
+        const AuthoriseResult& result);
 
     // add bare metal
     void on_node_add_bare_metal_req(
