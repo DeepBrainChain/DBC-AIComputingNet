@@ -2,6 +2,7 @@
 
 #include "bare_metal/cloud_cybercafe_client.h"
 #include "bare_metal/ipmitool_client.h"
+#include "bare_metal/power_manager.h"
 #include "config/conf_manager.h"
 #include "server/server.h"
 #include "task/HttpDBCChainClient.h"
@@ -22,7 +23,11 @@ FResult BareMetalTaskManager::Init() {
 
     std::string cloud_cybercafe_server =
         ConfManager::instance().GetCloudCybercafeServer();
-    if (cloud_cybercafe_server.empty())
+    std::string power_manager_tool =
+        ConfManager::instance().GetNetbarPowerManager();
+    if (!power_manager_tool.empty())
+        bare_metal_client_ = std::make_shared<fool::PowerManager>();
+    else if (cloud_cybercafe_server.empty())
         bare_metal_client_ = std::make_shared<IpmiToolClient>();
     else
         bare_metal_client_ = std::make_shared<CloudCybercafeClient>();

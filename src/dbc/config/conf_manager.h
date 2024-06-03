@@ -78,6 +78,8 @@ public:
         return m_cloud_cybercafe_server;
     }
 
+    std::string GetNetbarPowerManager() const { return m_netbar_power_manager; }
+
     const std::vector<std::string>& GetPeers() { return m_peers; }
 
     const std::vector<std::string>& GetInternalIpSeeds() {
@@ -132,6 +134,7 @@ private:
     int32_t m_multicast_port;
     uint32_t m_check_vm_expiration_timer_frequency;
     std::string m_cloud_cybercafe_server;
+    std::string m_netbar_power_manager;
 
     std::vector<std::string> m_peers;
     std::vector<std::string> m_internal_ip_seeds;

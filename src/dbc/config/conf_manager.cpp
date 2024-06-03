@@ -94,7 +94,8 @@ ERRCODE ConfManager::ParseConf() {
         ("multicast_address", bpo::value<std::string>()->default_value("239.255.0.1"), "")
         ("multicast_port", bpo::value<int32_t>()->default_value(30001), "")
         ("check_vm_expiration_timer_frequency", bpo::value<uint32_t>()->default_value(900), "in seconds")
-        ("dbc_cloud_cybercafe", bpo::value<std::string>(), "");
+        ("dbc_cloud_cybercafe", bpo::value<std::string>(), "")
+        ("netbar_power_manager", bpo::value<std::string>(), "");
     // clang-format on
 
     const boost::filesystem::path& conf_path =
@@ -163,6 +164,11 @@ ERRCODE ConfManager::ParseConf() {
     if (core_args.count("dbc_cloud_cybercafe") > 0) {
         m_cloud_cybercafe_server =
             core_args["dbc_cloud_cybercafe"].as<std::string>();
+    }
+
+    if (core_args.count("netbar_power_manager") > 0) {
+        m_netbar_power_manager =
+            core_args["netbar_power_manager"].as<std::string>();
     }
 
     variables_map peer_args;
