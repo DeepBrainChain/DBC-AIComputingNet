@@ -2,7 +2,7 @@
 #define DBC_VERSION_H
 
 // major_version.minor_version.revision_version.build_version
-#define CORE_VERSION    0x00040104
+#define CORE_VERSION    0x00040105
 #define PROTOCO_VERSION 0x00000001
 
 #endif
