@@ -11,3 +11,7 @@
 /output/
 
 /deployment/package/
+
+/tool/netbar_power_manager/build/
+/tool/netbar_power_manager/dist/
+/tool/netbar_power_manager/*.spec

@@ -8,7 +8,7 @@
 
 static std::string GetBareMetalInfo(std::shared_ptr<dbc::db_bare_metal> bm) {
     std::stringstream ss;
-    ss << "'{";
+    ss << "{";
     ss << "\"node_id\":"
        << "\"" << bm->node_id << "\"";
     ss << ",\"uuid\":"
@@ -26,7 +26,7 @@ static std::string GetBareMetalInfo(std::shared_ptr<dbc::db_bare_metal> bm) {
     ss << ",\"ipmi_password\":"
        << "\"" << bm->ipmi_password << "\"";
     if (!bm->ipmi_port.empty()) ss << ",\"ipmi_port\":" << bm->ipmi_port;
-    ss << "}'";
+    ss << "}";
     return ss.str();
 }
 
@@ -36,8 +36,9 @@ static FResult RunPowerCommand(const std::string& file,
     std::string result;
     try {
         boost::process::ipstream is;  // reading pipe-stream
-        std::vector<std::string> args{command, machine};
-        boost::process::child c(file, args, boost::process::std_out > is,
+        // std::vector<std::string> args{command, machine};
+        boost::process::child c(file, boost::process::args({command, machine}),
+                                boost::process::std_out > is,
                                 boost::process::std_err > boost::process::null);
 
         std::string line;
@@ -91,10 +92,10 @@ FResult PowerManager::PowerControl(const std::string& node_id,
     }
     std::string arg2 = GetBareMetalInfo(bm);
 
-    FResult fret = RunPowerCommand(power_manager_tool_, arg1, arg2);
-    LOG_INFO << "run netbar power manager tool (" << power_manager_tool_ << " "
-             << arg1 << " " << arg2 << ") return " << fret.errcode << " with "
-             << fret.errmsg;
+    FResult fret = RunPowerCommand(power_manager_tool_, "--" + arg1, arg2);
+    LOG_INFO << "run netbar power manager tool (" << power_manager_tool_
+             << " --" << arg1 << " " << arg2 << ") return " << fret.errcode
+             << " with " << fret.errmsg;
     return fret;
 }
 
