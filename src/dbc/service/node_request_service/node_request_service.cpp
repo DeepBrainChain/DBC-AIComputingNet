@@ -5312,6 +5312,8 @@ void node_request_service::query_node_info(
     ss << ",\"used_usage\":"
        << "\"" << f2s(SystemInfo::instance().GetCpuUsage() * 100) << "%"
        << "\"";
+    ss << ",\"physical_cpus\":"
+       << "\"" << tmp_cpuinfo.physical_cpus << "\"";
     ss << "}";
 
     ss << ",\"gpu\":"
