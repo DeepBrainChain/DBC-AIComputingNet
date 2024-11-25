@@ -53,11 +53,11 @@ public:
     FResult ModifyBareMetalNode(const std::string& node_id,
                                 const bare_metal_info& bmi);
 
-    FResult SetDeepLinkInfo(const std::string& node_id,
-                            const std::string& device_id,
-                            const std::string& device_password);
+    [[deprecated]] FResult SetDeepLinkInfo(const std::string& node_id,
+                                           const std::string& device_id,
+                                           const std::string& device_password);
 
-    void ClearDeepLinkPassword(const std::string& node_id);
+    [[deprecated]] void ClearDeepLinkPassword(const std::string& node_id);
 
 private:
     mutable RwMutex m_mtx;

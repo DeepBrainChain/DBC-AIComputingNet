@@ -20,6 +20,7 @@
 #include "service/peer_request_service/p2p_net_service.h"
 #include "service_info/ServiceInfoManager.h"
 #include "task/bare_metal/bare_metal_node_manager.h"
+#include "task/bare_metal/deeplink_lan_service.h"
 #include "task/detail/VxlanManager.h"
 #include "task/detail/image/ImageManager.h"
 #include "timer/time_tick_notification.h"
@@ -12004,16 +12005,20 @@ void bare_metal_list(
         }
         if (!it.second->ipmi_port.empty())
             ss << ",\"ipmi_port\":" << it.second->ipmi_port;
-        ss << ",\"deeplink_device_id\":"
-           << "\"" << it.second->deeplink_device_id << "\"";
-        if (verified) {
-            ss << ",\"deeplink_device_password\":"
-               << "\"" << it.second->deeplink_device_password << "\"";
-        } else {
-            ss << ",\"deeplink_device_password\":"
-               << "\""
-               << std::string(it.second->deeplink_device_password.size(), '*')
-               << "\"";
+        std::string dlk_device_id, dlk_device_password;
+        FResult fret = deeplink_lan_service::instance().get_device_info(
+            it.second->ip, dlk_device_id, dlk_device_password);
+        if (fret.errcode == ERR_SUCCESS) {
+            ss << ",\"deeplink_device_id\":"
+               << "\"" << dlk_device_id << "\"";
+            if (verified) {
+                ss << ",\"deeplink_device_password\":"
+                   << "\"" << dlk_device_password << "\"";
+            } else {
+                ss << ",\"deeplink_device_password\":"
+                   << "\"" << std::string(dlk_device_password.size(), '*')
+                   << "\"";
+            }
         }
         ss << "}";
 
@@ -14070,27 +14075,6 @@ void rest_api_service::rest_deeplink(const network::HTTP_REQUEST_PTR& httpReq,
                                  "invalid requests uri");
 }
 
-void list_deeplink_info(const std::shared_ptr<dbc::db_bare_metal>& node,
-                        std::string& data_json, bool verified) {
-    std::stringstream ss;
-    ss << "{";
-    ss << "\"errcode\":0";
-    ss << ", \"message\":{";
-    ss << "\"device_id\":"
-       << "\"" << node->deeplink_device_id << "\"";
-    if (verified) {
-        ss << ",\"device_password\":"
-           << "\"" << node->deeplink_device_password << "\"";
-    } else {
-        ss << ",\"device_password\":"
-           << "\"" << std::string(node->deeplink_device_password.size(), '*')
-           << "\"";
-    }
-    ss << "}";
-    ss << "}";
-    data_json = ss.str();
-}
-
 // list deeplink info
 void rest_api_service::rest_list_deeplink_info(
     const std::shared_ptr<network::http_request>& httpReq,
@@ -14152,12 +14136,33 @@ void rest_api_service::rest_list_deeplink_info(
             return;
         }
 
-        std::string data_json;
-        list_deeplink_info(
-            bare_metal, data_json,
-            body.wallet == bare_metal->node_id &&
-                util::verify_sign(body.sign, body.nonce, body.wallet));
-        httpReq->reply_comm_rest_succ2(data_json);
+        std::string dlk_device_id, dlk_device_password;
+        FResult fret = deeplink_lan_service::instance().get_device_info(
+            bare_metal->ip, dlk_device_id, dlk_device_password);
+        if (fret.errcode != ERR_SUCCESS) {
+            httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST,
+                                         fret.errmsg);
+            return;
+        }
+
+        std::stringstream ss;
+        ss << "{";
+        ss << "\"errcode\":0";
+        ss << ", \"message\":{";
+        ss << "\"device_id\":"
+           << "\"" << dlk_device_id << "\"";
+        if (body.wallet == bare_metal->node_id &&
+            util::verify_sign(body.sign, body.nonce, body.wallet)) {
+            ss << ",\"device_password\":"
+               << "\"" << dlk_device_password << "\"";
+        } else {
+            ss << ",\"device_password\":"
+               << "\"" << std::string(dlk_device_password.size(), '*') << "\"";
+        }
+        ss << "}";
+        ss << "}";
+
+        httpReq->reply_comm_rest_succ2(ss.str());
         return;
     }
 
@@ -14469,7 +14474,9 @@ void rest_api_service::rest_set_deeplink_info(
         return;
     }
 
-    if (BareMetalNodeManager::instance().ExistNodeID(body.peer_nodes_list[0])) {
+    auto bare_metal = BareMetalNodeManager::instance().getBareMetalNode(
+        body.peer_nodes_list[0]);
+    if (bare_metal) {
         if (Server::NodeType != NODE_TYPE::BareMetalNode) {
             httpReq->reply_comm_rest_err(HTTP_BADREQUEST, RPC_INVALID_REQUEST,
                                          "only bare metal node support");
@@ -14484,8 +14491,8 @@ void rest_api_service::rest_set_deeplink_info(
             return;
         }
 
-        FResult fret = BareMetalNodeManager::instance().SetDeepLinkInfo(
-            body.peer_nodes_list[0], device_id, device_password);
+        FResult fret = deeplink_lan_service::instance().set_device_info(
+            bare_metal->ip, device_id, device_password);
         if (fret.errcode == ERR_SUCCESS)
             httpReq->reply_comm_rest_succ2("{\"errcode\": 0,\"message\": \"" +
                                            fret.errmsg + "\"}");

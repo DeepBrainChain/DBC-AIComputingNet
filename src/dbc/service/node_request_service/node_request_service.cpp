@@ -15,6 +15,7 @@
 #include "service/node_monitor_service/node_monitor_service.h"
 #include "task/BareMetalTaskManager.h"
 #include "task/bare_metal/bare_metal_node_manager.h"
+#include "task/bare_metal/deeplink_lan_service.h"
 #include "task/detail/VxlanManager.h"
 #include "task/detail/rent_order/RentOrderManager.h"
 #include "task/detail/wallet_session_id/WalletSessionIDManager.h"
@@ -5537,15 +5538,19 @@ void node_request_service::query_bare_metal_node_info(
     ss << "}";
     */
 
-    ss << ",\"deeplink\":"
-       << "{";
-    ss << "\"device_id\":"
-       << "\"" << bm->deeplink_device_id << "\"";
-    std::string deeplink_device_password(bm->deeplink_device_password.size(),
-                                         '*');
-    ss << ",\"device_password\":"
-       << "\"" << deeplink_device_password << "\"";
-    ss << "}";
+    std::string dlk_device_id, dlk_device_password;
+    FResult fret = deeplink_lan_service::instance().get_device_info(
+        bm->ip, dlk_device_id, dlk_device_password);
+    if (fret.errcode == ERR_SUCCESS) {
+        ss << ",\"deeplink\":"
+           << "{";
+        ss << "\"device_id\":"
+           << "\"" << dlk_device_id << "\"";
+        std::string deeplink_device_password(dlk_device_password.size(), '*');
+        ss << ",\"device_password\":"
+           << "\"" << deeplink_device_password << "\"";
+        ss << "}";
+    }
 
     /*
     int32_t count = TaskMgr::instance().GetRunningTaskSize();
@@ -7186,17 +7191,20 @@ void node_request_service::list_bare_metal_manager(
                     ss << ",\"power_status\":\"" << fret2.errmsg << "\"";
                 }
             }
-            ss << ",\"deeplink_device_id\":"
-               << "\"" << it.second->deeplink_device_id << "\"";
-            if (verified) {
-                ss << ",\"deeplink_device_password\":"
-                   << "\"" << it.second->deeplink_device_password << "\"";
-            } else {
-                ss << ",\"deeplink_device_password\":"
-                   << "\""
-                   << std::string(it.second->deeplink_device_password.size(),
-                                  '*')
-                   << "\"";
+            std::string dlk_device_id, dlk_device_password;
+            FResult fret = deeplink_lan_service::instance().get_device_info(
+                it.second->ip, dlk_device_id, dlk_device_password);
+            if (fret.errcode == ERR_SUCCESS) {
+                ss << ",\"deeplink_device_id\":"
+                   << "\"" << dlk_device_id << "\"";
+                if (verified) {
+                    ss << ",\"deeplink_device_password\":"
+                       << "\"" << dlk_device_password << "\"";
+                } else {
+                    ss << ",\"deeplink_device_password\":"
+                       << "\"" << std::string(dlk_device_password.size(), '*')
+                       << "\"";
+                }
             }
             ss << "}";
 
@@ -7263,16 +7271,21 @@ void node_request_service::list_bare_metal(
     ss << ",\"description\":"
        << "\"" << bm->desc << "\"";
 
-    auto fret =
+    FResult fret =
         BareMetalTaskManager::instance().PowerControl(bm->node_id, "status");
     if (fret.errcode == ERR_SUCCESS) {
         ss << ",\"power_status\":\"" << fret.errmsg << "\"";
     }
 
-    ss << ",\"deeplink_device_id\":"
-       << "\"" << bm->deeplink_device_id << "\"";
-    ss << ",\"deeplink_device_password\":"
-       << "\"" << bm->deeplink_device_password << "\"";
+    std::string dlk_device_id, dlk_device_password;
+    fret = deeplink_lan_service::instance().get_device_info(
+        bm->ip, dlk_device_id, dlk_device_password);
+    if (fret.errcode == ERR_SUCCESS) {
+        ss << ",\"deeplink_device_id\":"
+           << "\"" << dlk_device_id << "\"";
+        ss << ",\"deeplink_device_password\":"
+           << "\"" << dlk_device_password << "\"";
+    }
 
     ss << "}";
     ss << "}";
@@ -8292,15 +8305,25 @@ void node_request_service::list_deeplink_info(
         auto bm = BareMetalNodeManager::instance().getBareMetalNode(
             data->peer_nodes_list[0]);
         if (bm) {
-            ss << "{";
-            ss << "\"errcode\":0";
-            ss << ", \"message\":{";
-            ss << "\"device_id\":"
-               << "\"" << bm->deeplink_device_id << "\"";
-            ss << ",\"device_password\":"
-               << "\"" << bm->deeplink_device_password << "\"";
-            ss << "}";
-            ss << "}";
+            std::string dlk_device_id, dlk_device_password;
+            FResult fret = deeplink_lan_service::instance().get_device_info(
+                bm->ip, dlk_device_id, dlk_device_password);
+            if (fret.errcode != ERR_SUCCESS) {
+                ss << "{";
+                ss << "\"errcode\":1";
+                ss << ", \"message\":\"" << fret.errmsg << "\"";
+                ss << "}";
+            } else {
+                ss << "{";
+                ss << "\"errcode\":0";
+                ss << ", \"message\":{";
+                ss << "\"device_id\":"
+                   << "\"" << dlk_device_id << "\"";
+                ss << ",\"device_password\":"
+                   << "\"" << dlk_device_password << "\"";
+                ss << "}";
+                ss << "}";
+            }
         } else {
             ss << "{";
             ss << "\"errcode\":1";
@@ -8476,8 +8499,17 @@ void node_request_service::set_deeplink_info(
         return;
     }
 
-    auto fret = BareMetalNodeManager::instance().SetDeepLinkInfo(
-        data->peer_nodes_list[0], device_id, device_password);
+    auto bm = BareMetalNodeManager::instance().getBareMetalNode(
+        data->peer_nodes_list[0]);
+    if (!bm) {
+        send_response_error<dbc::node_set_deeplink_info_rsp>(
+            NODE_SET_DEEPLINK_INFO_RSP, header, E_DEFAULT,
+            "node id not existed", data->peer_nodes_list[0]);
+        return;
+    }
+
+    auto fret = deeplink_lan_service::instance().set_device_info(
+        bm->ip, device_id, device_password);
     send_response_error<dbc::node_set_deeplink_info_rsp>(
         NODE_SET_DEEPLINK_INFO_RSP, header,
         fret.errcode == ERR_SUCCESS ? 0 : E_DEFAULT, fret.errmsg,
