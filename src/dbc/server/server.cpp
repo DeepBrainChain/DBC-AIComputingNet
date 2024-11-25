@@ -17,6 +17,7 @@
 #include "service/peer_request_service/p2p_net_service.h"
 #include "task/HttpDBCChainClient.h"
 #include "task/bare_metal/bare_metal_node_manager.h"
+#include "task/bare_metal/deeplink_lan_service.h"
 #include "task/detail/VxlanManager.h"
 #include "task/detail/image/ImageManager.h"
 #include "util/crypto/key.h"
@@ -119,6 +120,15 @@ ERRCODE Server::Init(int argc, char *argv[]) {
         return err;
     }
     LOG_INFO << "init vxlan network manager successful";
+
+    // deeplink lan service
+    LOG_INFO << "begin to init deeplink lan service";
+    err = deeplink_lan_service::instance().init();
+    if (ERR_SUCCESS != err) {
+        LOG_ERROR << "init deeplink lan service failed";
+        return err;
+    }
+    LOG_INFO << "init deeplink lan service successful";
 
     // node_request_service
     LOG_INFO << "begin to init node_request_service";

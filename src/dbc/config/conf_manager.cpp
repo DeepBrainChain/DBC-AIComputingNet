@@ -86,6 +86,8 @@ ERRCODE ConfManager::ParseConf() {
         ("max_connect_count", bpo::value<int32_t>()->default_value(1024), "")
         ("http_ip", bpo::value<std::string>()->default_value("127.0.0.1"), "")
         ("http_port", bpo::value<int32_t>()->default_value(5050), "")
+        ("deeplink_listen_ip", bpo::value<std::string>()->default_value("0.0.0.0"), "")
+        ("deeplink_listen_port", bpo::value<int32_t>()->default_value(5060), "")
         ("dbc_chain_domain", bpo::value<std::vector<std::string>>(), "")
         ("chain_additional_field", bpo::value<std::string>(), "")
         ("image_server", bpo::value<std::vector<std::string>>(), "")
@@ -119,6 +121,15 @@ ERRCODE ConfManager::ParseConf() {
     m_max_connect_count = core_args["max_connect_count"].as<int32_t>();
     m_http_listen_ip = core_args["http_ip"].as<std::string>();
     m_http_listen_port = core_args["http_port"].as<int32_t>();
+
+    if (core_args.count("deeplink_listen_ip") > 0) {
+        m_deeplink_listen_ip =
+            core_args["deeplink_listen_ip"].as<std::string>();
+    }
+    if (core_args.count("deeplink_listen_port") > 0) {
+        m_deeplink_listen_port =
+            core_args["deeplink_listen_port"].as<int32_t>();
+    }
 
     if (core_args.count("dbc_chain_domain") > 0) {
         m_dbc_chain_domain =

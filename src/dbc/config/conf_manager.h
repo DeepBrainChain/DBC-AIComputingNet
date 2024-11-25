@@ -37,6 +37,10 @@ public:
 
     int32_t GetHttpListenPort() const { return m_http_listen_port; }
 
+    std::string GetDeeplinkListenIp() const { return m_deeplink_listen_ip; }
+
+    int32_t GetDeeplinkListenPort() const { return m_deeplink_listen_port; }
+
     std::vector<std::string> GetDbcChainDomain() const {
         return m_dbc_chain_domain;
     }
@@ -125,6 +129,8 @@ private:
     int32_t m_max_connect_count = 1024;
     std::string m_http_listen_ip = "127.0.0.1";
     int32_t m_http_listen_port = 5050;
+    std::string m_deeplink_listen_ip = "0.0.0.0";
+    int32_t m_deeplink_listen_port = 5060;
     std::vector<std::string> m_dbc_chain_domain;
     std::string m_chain_additional_field;
     std::map<std::string, ImageServer*> m_image_server;
