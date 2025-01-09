@@ -3453,7 +3453,7 @@ void TaskManager::prune_task_thread_func() {
                             close_task(task_id);
                             int64_t wallet_rent_end = it.second->getRentEnd();
                             int64_t reserve_end =
-                                wallet_rent_end + 120 * 24 * 10;  //保留10天
+                                wallet_rent_end + 600 * 24 * 10;  //保留10天
                             if (cur_block > 0 && reserve_end < cur_block) {
                                 TASK_LOG_INFO(task_id,
                                               "order id is empty too long "
@@ -3465,7 +3465,7 @@ void TaskManager::prune_task_thread_func() {
                                 RentOrderManager::instance().GetRentEnd(
                                     taskinfo->getOrderId(), it.first);
                             if (order_rent_end > 0) {
-                                if (cur_block > order_rent_end + 120 * 24 * 3) {
+                                if (cur_block > order_rent_end + 600 * 24 * 3) {
                                     delete_task(task_id);
                                     TASK_LOG_INFO(
                                         task_id,
@@ -3509,10 +3509,10 @@ void TaskManager::prune_task_thread_func() {
                         clear_task_public_ip(task_id);
                     }
 
-                    // 1小时出120个块
+                    // 1小时出600个块
                     int64_t wallet_rent_end = it.second->getRentEnd();
                     int64_t reserve_end =
-                        wallet_rent_end + 120 * 24 * 10;  //保留10天
+                        wallet_rent_end + 600 * 24 * 10;  //保留10天
                     if (cur_block > 0 && wallet_rent_end > 0 &&
                         reserve_end < cur_block) {
                         ids = it.second->getTaskIds();

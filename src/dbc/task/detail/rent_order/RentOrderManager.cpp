@@ -1,4 +1,5 @@
 #include "RentOrderManager.h"
+
 #include "log/log.h"
 #include "task/HttpDBCChainClient.h"
 
@@ -7,7 +8,8 @@ RentOrderManager::RentOrderManager() = default;
 RentOrderManager::~RentOrderManager() = default;
 
 FResult RentOrderManager::Init() {
-    bool ret = db_.init_db(EnvManager::instance().get_db_path(), "rent_order.db");
+    bool ret =
+        db_.init_db(EnvManager::instance().get_db_path(), "rent_order.db");
     if (!ret) {
         return FResult(ERR_ERROR, "init rent_order_db failed");
     }
@@ -16,9 +18,7 @@ FResult RentOrderManager::Init() {
     return FResultOk;
 }
 
-void RentOrderManager::Exit() {
-
-}
+void RentOrderManager::Exit() {}
 
 const RentOrder::RentOrderMap RentOrderManager::GetRentOrders() const {
     RwMutex::ReadLock rlock(mutex_);
@@ -26,8 +26,9 @@ const RentOrder::RentOrderMap RentOrderManager::GetRentOrders() const {
 }
 
 void RentOrderManager::UpdateRentOrder(const std::string& machine_id,
-        const std::string& rent_order) {
-    auto pro = HttpDBCChainClient::instance().getRentOrder(machine_id, rent_order);
+                                       const std::string& rent_order) {
+    auto pro =
+        HttpDBCChainClient::instance().getRentOrder(machine_id, rent_order);
     if (pro) {
         {
             // 租用到期或未确认订单信息会发生变化，像rent_end会变成0。
@@ -35,26 +36,30 @@ void RentOrderManager::UpdateRentOrder(const std::string& machine_id,
             RwMutex::ReadLock rlock(mutex_);
             if (rent_orders_.count(pro->id) > 0) {
                 auto old = rent_orders_[pro->id];
-                // 5C4hrfjw9DjXZTzV3MwzrrAr9P1MJhSrvWGWqi1eSuyUpnhM 是链上的默认钱包
+                // 5C4hrfjw9DjXZTzV3MwzrrAr9P1MJhSrvWGWqi1eSuyUpnhM
+                // 是链上的默认钱包
                 // 实际就是全0编码后的值，当租用到期或者没有租用人时就是这个值
-                if (pro->renter == "5C4hrfjw9DjXZTzV3MwzrrAr9P1MJhSrvWGWqi1eSuyUpnhM")
+                if (pro->renter ==
+                    "5C4hrfjw9DjXZTzV3MwzrrAr9P1MJhSrvWGWqi1eSuyUpnhM")
                     pro->__set_renter(old->renter);
                 if (pro->rent_end == 0) pro->__set_rent_end(old->rent_end);
-                if (pro->gpu_index.empty()) pro->__set_gpu_index(old->gpu_index);
+                if (pro->gpu_index.empty())
+                    pro->__set_gpu_index(old->gpu_index);
                 if (pro->gpu_num == 0) pro->__set_gpu_num(old->gpu_num);
             }
         }
         RwMutex::WriteLock wlock(mutex_);
-        if (rent_orders_.count(pro->id) == 0 || *rent_orders_[pro->id] != *pro) {
+        if (rent_orders_.count(pro->id) == 0 ||
+            *rent_orders_[pro->id] != *pro) {
             std::string gpu_index;
             for (const auto& index : pro->gpu_index)
                 gpu_index.append(" " + std::to_string(index));
             LOG_INFO << "update rent order, " << pro->id
-                << ", rent_wallet: " << pro->renter
-                << ", rent end: " << pro->rent_end
-                << ", rent status: " << pro->rent_status
-                << ", gpu num: " << pro->gpu_num
-                << ", gpu index:" << gpu_index;
+                     << ", rent_wallet: " << pro->renter
+                     << ", rent end: " << pro->rent_end
+                     << ", rent status: " << pro->rent_status
+                     << ", gpu num: " << pro->gpu_num
+                     << ", gpu index:" << gpu_index;
             rent_orders_[pro->id] = pro;
             db_.write_data(pro);
         }
@@ -69,8 +74,8 @@ void RentOrderManager::UpdateRentOrders(const std::string& machine_id) {
     }
 }
 
-RentOrder::RentStatus RentOrderManager::GetRentStatus(const std::string& rent_order,
-        const std::string& wallet) const {
+RentOrder::RentStatus RentOrderManager::GetRentStatus(
+    const std::string& rent_order, const std::string& wallet) const {
     RwMutex::ReadLock rlock(mutex_);
     auto iter = rent_orders_.find(rent_order.empty() ? wallet : rent_order);
     if (iter == rent_orders_.end()) return RentOrder::RentStatus::None;
@@ -78,13 +83,13 @@ RentOrder::RentStatus RentOrderManager::GetRentStatus(const std::string& rent_or
     if (iter->second->rent_status == "rentExpired")
         return RentOrder::RentStatus::RentExpired;
     if (iter->second->rent_status == "renting" ||
-            iter->second->rent_status == "waitingVerifying")
+        iter->second->rent_status == "waitingVerifying")
         return RentOrder::RentStatus::Renting;
     return RentOrder::RentStatus::None;
 }
 
 uint64_t RentOrderManager::GetRentEnd(const std::string& rent_order,
-        const std::string& wallet) const {
+                                      const std::string& wallet) const {
     RwMutex::ReadLock rlock(mutex_);
     auto iter = rent_orders_.find(rent_order.empty() ? wallet : rent_order);
     if (iter == rent_orders_.end()) return 0;
@@ -92,8 +97,8 @@ uint64_t RentOrderManager::GetRentEnd(const std::string& rent_order,
     return iter->second->rent_end;
 }
 
-std::vector<int32_t> RentOrderManager::GetRentedGpuIndex(const std::string& rent_order,
-        const std::string& wallet) const {
+std::vector<int32_t> RentOrderManager::GetRentedGpuIndex(
+    const std::string& rent_order, const std::string& wallet) const {
     std::vector<int32_t> index;
     RwMutex::ReadLock rlock(mutex_);
     auto iter = rent_orders_.find(rent_order.empty() ? wallet : rent_order);
@@ -122,18 +127,17 @@ void RentOrderManager::ClearExpiredRentOrder(uint64_t cur_block) {
         RwMutex::ReadLock rlock(mutex_);
         for (const auto& iter : rent_orders_) {
             if (iter.second->rent_status != "rentExpired") continue;
-            if (cur_block - iter.second->rent_end > 120 * 24 * 30) {
+            if (cur_block - iter.second->rent_end > 600 * 24 * 30) {
                 ids.push_back(iter.first);
                 LOG_INFO << "rent order " << iter.first
-                    << " is out of date for a long time, rent end:"
-                    << iter.second->rent_end << ", wallet: "
-                    << iter.second->renter;
+                         << " is out of date for a long time, rent end:"
+                         << iter.second->rent_end
+                         << ", wallet: " << iter.second->renter;
             }
         }
     }
     RwMutex::WriteLock wlock(mutex_);
     for (const auto& id : ids) {
-        if (db_.delete_data(id))
-            rent_orders_.erase(id);
+        if (db_.delete_data(id)) rent_orders_.erase(id);
     }
 }

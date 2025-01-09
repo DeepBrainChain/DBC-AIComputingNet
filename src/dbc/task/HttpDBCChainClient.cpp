@@ -175,14 +175,14 @@ bool HttpDBCChainClient::in_verify_time(const std::string& node_id,
             if (!v_verifyTime.IsArray()) break;
             if (v_verifyTime.Size() != 3) break;
 
-            // 是否在验证时间内
+            // 是否在验证时间内，4 个小时
             int64_t v1 = v_verifyTime[0].GetInt64();
             int64_t v2 = v_verifyTime[1].GetInt64();
             int64_t v3 = v_verifyTime[2].GetInt64();
 
-            in_time = (cur_block > v1 && cur_block <= v1 + 480) ||
-                      (cur_block > v2 && cur_block <= v2 + 480) ||
-                      (cur_block > v3 && cur_block <= v3 + 480);
+            in_time = (cur_block > v1 && cur_block <= v1 + 2400) ||
+                      (cur_block > v2 && cur_block <= v2 + 2400) ||
+                      (cur_block > v3 && cur_block <= v3 + 2400);
 
             break;
         }
