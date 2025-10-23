@@ -2,10 +2,10 @@
 Computing Network
 Artificial Intelligence Computing Platform Driven By BlockChain
 
-If you want to add a machine to the DBC network to obtain DBC revenue, go straight to the “ https://deepbrainchain.github.io/DBC-Wiki/install_and_update_dbc/install_dbc_compute_node.html ”
+If you want to add a machine to the DBC network to obtain DBC revenue, go straight to the “ [https://deepbrainchain.github.io/DBC-Wiki/install_and_update_dbc/install_dbc_compute_node.html](https://deepbrainchain.github.io/DBC-Wiki/en/install-update-dbc-node/install-update-dbc/install-dbc-compute-node.html) ”
 
-如果你想要添加机器到DBC网络中获得DBC收益，直接查看文档：https://deepbrainchain.github.io/DBC-Wiki/install_and_update_dbc/install_dbc_compute_node.html
-
+如果你想要添加机器到DBC网络中获得DBC收益，直接查看文档：[https://deepbrainchain.github.io/DBC-Wiki/install_and_update_dbc/install_dbc_compute_node.html
+](https://deepbrainchain.github.io/DBC-Wiki/install-update-dbc-node/install-update-dbc/install-dbc-compute-node.html)
 # build dbc in linux os
 **deps:** boost >= 1.66
 ```
