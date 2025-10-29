@@ -1,5 +1,6 @@
 #include "TaskManager.h"
 
+#include "common/error.h"
 #include <shadow.h>
 
 #include <boost/format.hpp>
@@ -34,7 +35,7 @@ FResult TaskManager::init() {
 
     fret = TaskInfoMgr::instance().init();
     if (fret.errcode != ERR_SUCCESS) {
-        return FResult(ERR_ERROR, "taskinfo manager init failed");
+        return FResult(E701_DATABASE_ERROR, "taskinfo manager init failed");
     }
 
     auto taskinfos = TaskInfoMgr::instance().getAllTaskInfos();
@@ -45,28 +46,28 @@ FResult TaskManager::init() {
     std::vector<std::string> taskids = TaskInfoMgr::instance().getAllTaskIds();
     fret = TaskDiskMgr::instance().init(taskids);
     if (fret.errcode != ERR_SUCCESS) {
-        return FResult(ERR_ERROR, "taskdisk manager init failed");
+        return FResult(E701_DATABASE_ERROR, "taskdisk manager init failed");
     }
 
     fret = TaskGpuMgr::instance().init(taskids);
     if (fret.errcode != ERR_SUCCESS) {
-        return FResult(ERR_ERROR, "taskgpu manager init failed");
+        return FResult(E701_DATABASE_ERROR, "taskgpu manager init failed");
     }
 
     fret = TaskIptableMgr::instance().init();
     if (fret.errcode != ERR_SUCCESS) {
-        return FResult(ERR_ERROR, "taskiptable manager init failed");
+        return FResult(E701_DATABASE_ERROR, "taskiptable manager init failed");
     }
 
     fret = WalletRentTaskMgr::instance().init();
     if (fret.errcode != ERR_SUCCESS) {
-        return FResult(ERR_ERROR, "wallet_renttask manager init failed");
+        return FResult(E701_DATABASE_ERROR, "wallet_renttask manager init failed");
     }
 
     // 重启时恢复running_tasks、初始化task状态
     fret = this->init_tasks_status();
     if (fret.errcode != ERR_SUCCESS) {
-        return FResult(ERR_ERROR, "restore tasks failed");
+        return FResult(E302_TASK_CREATE_FAILED, "restore tasks failed");
     }
 
     // 删除iptable中的reject规则
@@ -754,13 +755,13 @@ FResult TaskManager::parse_create_params(const std::string& additional,
                                          const std::string& wallet,
                                          const std::string& rent_order) {
     if (additional.empty()) {
-        return FResult(ERR_ERROR, "additional is empty");
+        return FResult(E803_JSON_PARSE_ERROR, "additional is empty");
     }
 
     rapidjson::Document doc;
     doc.Parse(additional.c_str());
     if (!doc.IsObject()) {
-        return FResult(ERR_ERROR, "additional parse failed");
+        return FResult(E802_DEFAULT_ERROR, "additional parse failed");
     }
 
     std::string image_name, desc, operation_system, bios_mode, s_ssh_port,
@@ -801,14 +802,14 @@ FResult TaskManager::parse_create_params(const std::string& additional,
         for (int i = 0; i < sys_gpu_count; i++) order_gpu_index.push_back(i);
     }
     if (order_gpu_index.empty())
-        return FResult(ERR_ERROR, "order gpu index is empty");
+        return FResult(E802_DEFAULT_ERROR, "order gpu index is empty");
 
     // "gpu_count"
     JSON_PARSE_STRING(doc, "gpu_count", s_gpu_count);
     // check
     gpu_count = atoi(s_gpu_count.c_str());
     if (gpu_count < 0) {
-        return FResult(ERR_ERROR,
+        return FResult(E802_DEFAULT_ERROR,
                        "gpu_count is invalid (usage: gpu_count >= 0)");
     }
     if (role == USER_ROLE::Verifier) {
@@ -816,16 +817,16 @@ FResult TaskManager::parse_create_params(const std::string& additional,
     }
 
     if (gpu_count > order_gpu_index.size()) {
-        return FResult(ERR_ERROR, "gpu_count exceeds number of leases");
+        return FResult(E802_DEFAULT_ERROR, "gpu_count exceeds number of leases");
     }
 
     float percent = 1.0f;
     if (in_order) {
         size_t sys_gpu_count = SystemInfo::instance().GetGpuInfo().size();
-        if (sys_gpu_count < 1) return FResult(ERR_ERROR, "get gpu info failed");
+        if (sys_gpu_count < 1) return FResult(E802_DEFAULT_ERROR, "get gpu info failed");
         if (order_gpu_index.size() != sys_gpu_count) {
             if (gpu_count != order_gpu_index.size())
-                return FResult(ERR_ERROR,
+                return FResult(E802_DEFAULT_ERROR,
                                "only use the number what you exactly rented");
             percent = (float)gpu_count / sys_gpu_count;
         }
@@ -833,7 +834,7 @@ FResult TaskManager::parse_create_params(const std::string& additional,
 
     // 分配资源
     if (!allocate_gpu(gpu_count, gpus, order_gpu_index)) {
-        return FResult(ERR_ERROR, "allocate gpu failed");
+        return FResult(E802_DEFAULT_ERROR, "allocate gpu failed");
     }
 
     // "desc"
@@ -884,7 +885,7 @@ FResult TaskManager::parse_create_params(const std::string& additional,
                 str += image_files[i];
             }
 
-            return FResult(ERR_ERROR, str);
+            return FResult(E802_DEFAULT_ERROR, str);
         }
     }
 
@@ -967,14 +968,14 @@ FResult TaskManager::parse_create_params(const std::string& additional,
     // check
     cpu_cores = atoi(s_cpu_cores.c_str());
     if (cpu_cores <= 0) {
-        return FResult(ERR_ERROR, "cpu_cores is invalid");
+        return FResult(E802_DEFAULT_ERROR, "cpu_cores is invalid");
     }
     if (role == USER_ROLE::Verifier)
         cpu_cores = SystemInfo::instance().GetCpuInfo().cores;
 
     // 分配资源
     if (!allocate_cpu(cpu_cores, sockets, cores, threads, "", percent)) {
-        return FResult(ERR_ERROR, "allocate cpu failed");
+        return FResult(E802_DEFAULT_ERROR, "allocate cpu failed");
     }
 
     // "mem_size" (G)
@@ -982,7 +983,7 @@ FResult TaskManager::parse_create_params(const std::string& additional,
     // check
     mem_size_k = atoi(s_mem_size.c_str()) * 1024L * 1024L;
     if (mem_size_k <= 0) {
-        return FResult(ERR_ERROR, "mem_size is invalid");
+        return FResult(E802_DEFAULT_ERROR, "mem_size is invalid");
     }
     if (role == USER_ROLE::Verifier)
         mem_size_k = SystemInfo::instance().GetMemInfo().free;
@@ -992,7 +993,7 @@ FResult TaskManager::parse_create_params(const std::string& additional,
         run_shell("echo 3 > /proc/sys/vm/drop_caches");
 
         if (!allocate_mem(mem_size_k, "", percent)) {
-            return FResult(ERR_ERROR, "allocate mem failed");
+            return FResult(E802_DEFAULT_ERROR, "allocate mem failed");
         }
     }
 
@@ -1002,7 +1003,7 @@ FResult TaskManager::parse_create_params(const std::string& additional,
         // check
         disk_size_k = atoi(s_disk_size.c_str()) * 1024L * 1024L;
         if (disk_size_k <= 0) {
-            return FResult(ERR_ERROR,
+            return FResult(E802_DEFAULT_ERROR,
                            "disk_size is invalid (usage: disk_size > 0)");
         }
 
@@ -1020,7 +1021,7 @@ FResult TaskManager::parse_create_params(const std::string& additional,
 
         // 分配资源
         if (!allocate_disk(disk_size_k)) {
-            return FResult(ERR_ERROR, "allocate disk failed");
+            return FResult(E802_DEFAULT_ERROR, "allocate disk failed");
         }
 
         // "data_file_name"
@@ -1029,7 +1030,7 @@ FResult TaskManager::parse_create_params(const std::string& additional,
         if (!data_file_name.empty()) {
             bfs::path data_path("/data/" + data_file_name);
             if (!boost::filesystem::exists(data_path)) {
-                return FResult(ERR_ERROR,
+                return FResult(E802_DEFAULT_ERROR,
                                "data_file_name is not exist, path: /data/" +
                                    data_file_name);
             }
@@ -1115,7 +1116,7 @@ FResult TaskManager::parse_create_params(const std::string& additional,
         interface_model_type = "virtio";
     } else if (interface_model_type != "e1000" &&
                interface_model_type != "rtl8139") {
-        return FResult(ERR_ERROR, "invalid interface model type");
+        return FResult(E802_DEFAULT_ERROR, "invalid interface model type");
     }
 
     // password
@@ -1158,39 +1159,39 @@ FResult TaskManager::parse_create_params(const std::string& additional,
 
 FResult TaskManager::check_task_id(const std::string& task_id) {
     if (task_id.length() < 20 || task_id.length() > 22)
-        return FResult(ERR_ERROR, "wrong task id length");
+        return FResult(E802_DEFAULT_ERROR, "wrong task id length");
     for (const auto& ch : task_id) {
         if (!isalnum(ch))
             return FResult(
-                ERR_ERROR,
+                E802_DEFAULT_ERROR,
                 "task id requires a combination of letters or numbers");
     }
     auto taskinfos = TaskInfoMgr::instance().getAllTaskInfos();
     if (taskinfos.find(task_id) != taskinfos.end())
-        return FResult(ERR_ERROR, "task id already existed");
+        return FResult(E802_DEFAULT_ERROR, "task id already existed");
     return FResultOk;
 }
 
 FResult TaskManager::check_image(const std::string& image_name) {
     if (image_name.empty()) {
-        return FResult(ERR_ERROR, "image_name is empty");
+        return FResult(E802_DEFAULT_ERROR, "image_name is empty");
     }
 
     if (bfs::path(image_name).extension().string() != ".qcow2") {
-        return FResult(ERR_ERROR, "'image_name' extension name is invalid");
+        return FResult(E802_DEFAULT_ERROR, "'image_name' extension name is invalid");
     }
 
     // 镜像必须都存储在/data目录下
     bfs::path image_path("/data/" + image_name);
     if (!bfs::exists(image_path)) {
-        return FResult(ERR_ERROR, "'image_name' is not exist (path:" +
+        return FResult(E802_DEFAULT_ERROR, "'image_name' is not exist (path:" +
                                       image_path.string() + ")");
     }
 
     if (ImageManager::instance().isDownloading(image_name) ||
         ImageManager::instance().isUploading(image_name)) {
         return FResult(
-            ERR_ERROR,
+            E802_DEFAULT_ERROR,
             "'image_name':" + image_name +
                 " in downloading or uploading, please try again later");
     }
@@ -1200,26 +1201,26 @@ FResult TaskManager::check_image(const std::string& image_name) {
 
 FResult TaskManager::check_operation_system(const std::string& os) {
     if (os.empty()) {
-        return FResult(ERR_ERROR, "operation_system is emtpy");
+        return FResult(E802_DEFAULT_ERROR, "operation_system is emtpy");
     }
 
     if (isLinuxOS(os) || isWindowsOS(os)) {
         return FResultOk;
     } else {
-        return FResult(ERR_ERROR, "unsupported operation system: " + os +
+        return FResult(E802_DEFAULT_ERROR, "unsupported operation system: " + os +
                                       " (usage: 'linux' 'windows')");
     }
 }
 
 FResult TaskManager::check_bios_mode(const std::string& bios_mode) {
     if (bios_mode.empty()) {
-        return FResult(ERR_ERROR, "bios_mode is emtpy");
+        return FResult(E802_DEFAULT_ERROR, "bios_mode is emtpy");
     }
 
     if (bios_mode == "legacy" || bios_mode == "uefi" || bios_mode == "pxe") {
         return FResultOk;
     } else {
-        return FResult(ERR_ERROR,
+        return FResult(E802_DEFAULT_ERROR,
                        "unsupported bios mode: " + bios_mode +
                            " (usage: 'legacy(default)'、'uefi'、'pxe')");
     }
@@ -1231,9 +1232,9 @@ FResult TaskManager::check_public_ip(const std::string& public_ip,
     ip_validator ip_vdr;
     variable_value val_ip(public_ip, false);
     if (!ip_vdr.validate(val_ip))
-        return FResult(ERR_ERROR, "invalid public ip");
+        return FResult(E802_DEFAULT_ERROR, "invalid public ip");
     if (SystemInfo::instance().GetDefaultRouteIp() == public_ip)
-        return FResult(ERR_ERROR, "public ip being used");
+        return FResult(E802_DEFAULT_ERROR, "public ip being used");
     bool bFind = false;
     auto taskinfos = TaskInfoMgr::instance().getAllTaskInfos();
     for (const auto& iter : taskinfos) {
@@ -1243,17 +1244,17 @@ FResult TaskManager::check_public_ip(const std::string& public_ip,
             break;
         }
     }
-    if (bFind) return FResult(ERR_ERROR, "public ip being used");
+    if (bFind) return FResult(E802_DEFAULT_ERROR, "public ip being used");
     return FResultOk;
 }
 
 FResult TaskManager::check_ssh_port(const std::string& s_port) {
     if (s_port.empty()) {
-        return FResult(ERR_ERROR, "ssh_port is empty");
+        return FResult(E802_DEFAULT_ERROR, "ssh_port is empty");
     }
 
     if (!util::is_digits(s_port)) {
-        return FResult(ERR_ERROR, "ssh_port is not digit");
+        return FResult(E802_DEFAULT_ERROR, "ssh_port is not digit");
     }
 
     return FResultOk;
@@ -1261,11 +1262,11 @@ FResult TaskManager::check_ssh_port(const std::string& s_port) {
 
 FResult TaskManager::check_rdp_port(const std::string& s_port) {
     if (s_port.empty()) {
-        return FResult(ERR_ERROR, "rdp_port is empty");
+        return FResult(E802_DEFAULT_ERROR, "rdp_port is empty");
     }
 
     if (!util::is_digits(s_port)) {
-        return FResult(ERR_ERROR, "rdp_port is not digit");
+        return FResult(E802_DEFAULT_ERROR, "rdp_port is not digit");
     }
 
     return FResultOk;
@@ -1273,16 +1274,16 @@ FResult TaskManager::check_rdp_port(const std::string& s_port) {
 
 FResult TaskManager::check_vnc_port(const std::string& s_port) {
     if (s_port.empty()) {
-        return FResult(ERR_ERROR, "vnc_port is empty");
+        return FResult(E802_DEFAULT_ERROR, "vnc_port is empty");
     }
 
     if (!util::is_digits(s_port)) {
-        return FResult(ERR_ERROR, "vnc_port is not digit");
+        return FResult(E802_DEFAULT_ERROR, "vnc_port is not digit");
     }
 
     uint16_t n_port = (uint16_t)atoi(s_port.c_str());
     if (n_port < 5900 || n_port > 65535) {
-        return FResult(ERR_ERROR, "vnc_port is invalid (usage: [5900, 65535])");
+        return FResult(E802_DEFAULT_ERROR, "vnc_port is invalid (usage: [5900, 65535])");
     }
 
     return FResultOk;
@@ -1305,7 +1306,7 @@ FResult TaskManager::check_port_conflict(
 
         // VNC server 占用的是宿主机的端口，虚拟机有公网IP也不能冲突
         if (iter.second->getVncPort() == port) {
-            fret = FResult(ERR_ERROR, "port conflict, exist vnc_port = " +
+            fret = FResult(E802_DEFAULT_ERROR, "port conflict, exist vnc_port = " +
                                           std::to_string(port));
             break;
         }
@@ -1313,11 +1314,11 @@ FResult TaskManager::check_port_conflict(
         if (!iter.second->getPublicIP().empty()) continue;
 
         if (iter.second->getSSHPort() == port) {
-            fret = FResult(ERR_ERROR, "port conflict, exist ssh_port = " +
+            fret = FResult(E802_DEFAULT_ERROR, "port conflict, exist ssh_port = " +
                                           std::to_string(port));
             break;
         } else if (iter.second->getRDPPort() == port) {
-            fret = FResult(ERR_ERROR, "port conflict, exist rdp_port = " +
+            fret = FResult(E802_DEFAULT_ERROR, "port conflict, exist rdp_port = " +
                                           std::to_string(port));
             break;
         }
@@ -1331,19 +1332,19 @@ FResult TaskManager::check_multicast(
     for (const auto& address : multicast) {
         std::vector<std::string> vecSplit = util::split(address, ":");
         if (vecSplit.size() != 2) {
-            return FResult(ERR_ERROR, "multicast format: ip:port");
+            return FResult(E802_DEFAULT_ERROR, "multicast format: ip:port");
         }
 
         boost::asio::ip::address addrip =
             boost::asio::ip::address_v4::from_string(vecSplit[0]);
         if (!addrip.is_multicast()) {
-            return FResult(ERR_ERROR, "address is not a multicast address");
+            return FResult(E802_DEFAULT_ERROR, "address is not a multicast address");
         }
 
         port_validator port_vdr;
         variable_value val_port(vecSplit[1], false);
         if (!port_vdr.validate(val_port)) {
-            return FResult(ERR_ERROR, "invalid multicast port");
+            return FResult(E802_DEFAULT_ERROR, "invalid multicast port");
         }
     }
 
@@ -1493,11 +1494,11 @@ FResult TaskManager::startTask(const std::string& wallet,
                                const std::string& task_id) {
     auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
     if (taskinfo == nullptr) {
-        return FResult(ERR_ERROR, "task not exist");
+        return FResult(E300_TASK_NOT_FOUND, "task not exist");
     }
 
     if (!VmClient::instance().IsExistDomain(task_id)) {
-        return FResult(ERR_ERROR, "task not exist");
+        return FResult(E300_TASK_NOT_FOUND, "task not exist");
     }
 
     // check resource
@@ -1516,7 +1517,7 @@ FResult TaskManager::startTask(const std::string& wallet,
 
         return FResultOk;
     } else {
-        return FResult(ERR_ERROR, "task is " + vm_status_string(vm_status));
+        return FResult(E306_TASK_STATUS_INVALID, "task is " + vm_status_string(vm_status));
     }
 }
 
@@ -1528,7 +1529,7 @@ FResult TaskManager::check_cpu(int32_t sockets, int32_t cores, int32_t threads,
         sockets > SystemInfo::instance().GetCpuInfo().physical_cpus ||
         cores > SystemInfo::instance().GetCpuInfo().physical_cores_per_cpu ||
         threads > SystemInfo::instance().GetCpuInfo().threads_per_cpu) {
-        return FResult(ERR_ERROR, "check cpu failed");
+        return FResult(E802_DEFAULT_ERROR, "check cpu failed");
     }
 
     int32_t used_cpus = 0;
@@ -1551,7 +1552,7 @@ FResult TaskManager::check_cpu(int32_t sockets, int32_t cores, int32_t threads,
     }
 
     if (used_cpus + cpu_cores > SystemInfo::instance().GetCpuInfo().cores)
-        return FResult(ERR_ERROR, "cpu count exceeds the maximum");
+        return FResult(E802_DEFAULT_ERROR, "cpu count exceeds the maximum");
 
     std::vector<unsigned int> cpuset;
     if (VmClient::instance().GetCpuTune(task_id, cpuset) > 0) {
@@ -1562,7 +1563,7 @@ FResult TaskManager::check_cpu(int32_t sockets, int32_t cores, int32_t threads,
             }
         }
     } else {
-        return FResult(ERR_ERROR, "get cpu tune failed");
+        return FResult(E802_DEFAULT_ERROR, "get cpu tune failed");
     }
     if (!cpu_conflict) return FResultOk;
 
@@ -1594,7 +1595,7 @@ FResult TaskManager::check_gpu(
     for (auto& it : gpus) {
         auto it_gpu = can_use_gpu.find(it.first);
         if (it_gpu == can_use_gpu.end()) {
-            fret = FResult(ERR_ERROR, "gpu " + it.first + " is already in use");
+            fret = FResult(E802_DEFAULT_ERROR, "gpu " + it.first + " is already in use");
             break;
         }
 
@@ -1604,7 +1605,7 @@ FResult TaskManager::check_gpu(
             auto found = std::find(can_use_devices.begin(),
                                    can_use_devices.end(), it_device);
             if (found == can_use_devices.end()) {
-                fret = FResult(ERR_ERROR, "gpu device " + it_device +
+                fret = FResult(E802_DEFAULT_ERROR, "gpu device " + it_device +
                                               " not found in system");
                 break;
             }
@@ -1646,7 +1647,7 @@ FResult TaskManager::check_resource(const std::shared_ptr<TaskInfo>& taskinfo,
     auto gpus = TaskGpuMgr::instance().getTaskGpus(taskinfo->getTaskId());
     fret = check_gpu(gpus, taskinfo->getTaskId());
     if (fret.errcode != ERR_SUCCESS) {
-        return FResult(ERR_ERROR, "check gpu failed");
+        return FResult(E802_DEFAULT_ERROR, "check gpu failed");
     }
 
     // mem
@@ -1658,7 +1659,7 @@ FResult TaskManager::check_resource(const std::shared_ptr<TaskInfo>& taskinfo,
 
             fret = check_mem(mem_size_k);
             if (fret.errcode != ERR_SUCCESS) {
-                return FResult(ERR_ERROR, "check memory failed");
+                return FResult(E802_DEFAULT_ERROR, "check memory failed");
             }
         }
     }
@@ -1668,26 +1669,26 @@ FResult TaskManager::check_resource(const std::shared_ptr<TaskInfo>& taskinfo,
         fret =
             check_port_conflict(taskinfo->getSSHPort(), taskinfo->getTaskId());
         if (fret.errcode != ERR_SUCCESS) {
-            return FResult(ERR_ERROR, "check ssh_port failed");
+            return FResult(E802_DEFAULT_ERROR, "check ssh_port failed");
         }
     } else if (isWindowsOS(taskinfo->getOperationSystem())) {
         fret =
             check_port_conflict(taskinfo->getRDPPort(), taskinfo->getTaskId());
         if (fret.errcode != ERR_SUCCESS) {
-            return FResult(ERR_ERROR, "check rdp_port failed");
+            return FResult(E802_DEFAULT_ERROR, "check rdp_port failed");
         }
     }
 
     // vnc_port
     fret = check_port_conflict(taskinfo->getVncPort(), taskinfo->getTaskId());
     if (fret.errcode != ERR_SUCCESS) {
-        return FResult(ERR_ERROR, "check vnc_port failed");
+        return FResult(E802_DEFAULT_ERROR, "check vnc_port failed");
     }
 
     // public_ip
     fret = check_public_ip(taskinfo->getPublicIP(), taskinfo->getTaskId());
     if (fret.errcode != ERR_SUCCESS) {
-        return FResult(ERR_ERROR, fret.errmsg);
+        return FResult(E802_DEFAULT_ERROR, fret.errmsg);
     }
 
     return FResultOk;
@@ -1699,11 +1700,11 @@ FResult TaskManager::shutdownTask(const std::string& wallet,
                                   const std::string& task_id) {
     auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
     if (taskinfo == nullptr) {
-        return FResult(ERR_ERROR, "task not exist");
+        return FResult(E802_DEFAULT_ERROR, "task not exist");
     }
 
     if (!VmClient::instance().IsExistDomain(task_id)) {
-        return FResult(ERR_ERROR, "task not exist");
+        return FResult(E802_DEFAULT_ERROR, "task not exist");
     }
 
     virDomainState vm_status = VmClient::instance().GetDomainStatus(task_id);
@@ -1715,7 +1716,7 @@ FResult TaskManager::shutdownTask(const std::string& wallet,
 
         return FResultOk;
     } else {
-        return FResult(ERR_ERROR, "task is " + vm_status_string(vm_status));
+        return FResult(E802_DEFAULT_ERROR, "task is " + vm_status_string(vm_status));
     }
 }
 
@@ -1725,11 +1726,11 @@ FResult TaskManager::poweroffTask(const std::string& wallet,
                                   const std::string& task_id) {
     auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
     if (taskinfo == nullptr) {
-        return FResult(ERR_ERROR, "task not exist");
+        return FResult(E802_DEFAULT_ERROR, "task not exist");
     }
 
     if (!VmClient::instance().IsExistDomain(task_id)) {
-        return FResult(ERR_ERROR, "task not exist");
+        return FResult(E802_DEFAULT_ERROR, "task not exist");
     }
 
     virDomainState vm_status = VmClient::instance().GetDomainStatus(task_id);
@@ -1741,7 +1742,7 @@ FResult TaskManager::poweroffTask(const std::string& wallet,
 
         return FResultOk;
     } else {
-        return FResult(ERR_ERROR, "task is " + vm_status_string(vm_status));
+        return FResult(E802_DEFAULT_ERROR, "task is " + vm_status_string(vm_status));
     }
 }
 
@@ -1752,11 +1753,11 @@ FResult TaskManager::restartTask(const std::string& wallet,
                                  bool force_reboot) {
     auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
     if (taskinfo == nullptr) {
-        return FResult(ERR_ERROR, "task not exist");
+        return FResult(E802_DEFAULT_ERROR, "task not exist");
     }
 
     if (!VmClient::instance().IsExistDomain(task_id)) {
-        return FResult(ERR_ERROR, "task not exist");
+        return FResult(E802_DEFAULT_ERROR, "task not exist");
     }
 
     // check resource
@@ -1780,7 +1781,7 @@ FResult TaskManager::restartTask(const std::string& wallet,
 
         return FResultOk;
     } else {
-        return FResult(ERR_ERROR, "task is " + vm_status_string(vm_status));
+        return FResult(E802_DEFAULT_ERROR, "task is " + vm_status_string(vm_status));
     }
 }
 
@@ -1790,11 +1791,11 @@ FResult TaskManager::resetTask(const std::string& wallet,
                                const std::string& task_id) {
     auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
     if (taskinfo == nullptr) {
-        return FResult(ERR_ERROR, "task not exist");
+        return FResult(E802_DEFAULT_ERROR, "task not exist");
     }
 
     if (!VmClient::instance().IsExistDomain(task_id)) {
-        return FResult(ERR_ERROR, "task not exist");
+        return FResult(E802_DEFAULT_ERROR, "task not exist");
     }
 
     virDomainState vm_status = VmClient::instance().GetDomainStatus(task_id);
@@ -1806,7 +1807,7 @@ FResult TaskManager::resetTask(const std::string& wallet,
 
         return FResultOk;
     } else {
-        return FResult(ERR_ERROR, "task is " + vm_status_string(vm_status));
+        return FResult(E802_DEFAULT_ERROR, "task is " + vm_status_string(vm_status));
     }
 }
 
@@ -1816,11 +1817,11 @@ FResult TaskManager::deleteTask(const std::string& wallet,
                                 const std::string& task_id) {
     auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
     if (taskinfo == nullptr) {
-        return FResult(ERR_ERROR, "task not exist");
+        return FResult(E802_DEFAULT_ERROR, "task not exist");
     }
 
     if (!VmClient::instance().IsExistDomain(task_id)) {
-        return FResult(ERR_ERROR, "task not exist");
+        return FResult(E802_DEFAULT_ERROR, "task not exist");
     }
 
     taskinfo->setTaskStatus(TaskStatus::TS_Task_Deleting);
@@ -1838,16 +1839,16 @@ FResult TaskManager::modifyTask(
     std::string task_id = data->task_id;
     auto taskinfoPtr = TaskInfoManager::instance().getTaskInfo(task_id);
     if (taskinfoPtr == nullptr) {
-        return FResult(ERR_ERROR, "task not exist");
+        return FResult(E802_DEFAULT_ERROR, "task not exist");
     }
 
     if (!VmClient::instance().IsExistDomain(task_id)) {
-        return FResult(ERR_ERROR, "task not exist");
+        return FResult(E802_DEFAULT_ERROR, "task not exist");
     }
 
     // virDomainState vm_status = VmClient::instance().GetDomainStatus(task_id);
     // if (vm_status != VIR_DOMAIN_SHUTOFF) {
-    //     return FResult(ERR_ERROR, "task is running, please close it first");
+    //     return FResult(E802_DEFAULT_ERROR, "task is running, please close it first");
     // }
 
     std::string rent_order = taskinfoPtr->getOrderId();
@@ -1860,7 +1861,7 @@ FResult TaskManager::modifyTask(
     float percent = 1.0f;
     if (!rent_all_machine) {
         if (order_gpu_index.empty())
-            return FResult(ERR_ERROR, "gpu rent order is empty");
+            return FResult(E802_DEFAULT_ERROR, "gpu rent order is empty");
         percent = (float)order_gpu_index.size() / sys_gpu_count;
     }
 
@@ -1871,7 +1872,7 @@ FResult TaskManager::modifyTask(
     rapidjson::Document doc;
     doc.Parse(data->additional.c_str());
     if (!doc.IsObject()) {
-        return FResult(ERR_ERROR, "additional parse failed");
+        return FResult(E802_DEFAULT_ERROR, "additional parse failed");
     }
 
     std::string new_public_ip;
@@ -1893,7 +1894,7 @@ FResult TaskManager::modifyTask(
             taskIptablePtr->setPublicIP(new_public_ip);
             TaskIptableManager::instance().update(taskIptablePtr);
         } else {
-            return FResult(ERR_ERROR,
+            return FResult(E802_DEFAULT_ERROR,
                            "can not find iptable info when modify public ip");
         }
     }
@@ -1904,13 +1905,13 @@ FResult TaskManager::modifyTask(
     if (!s_new_ssh_port.empty()) {
         new_ssh_port = (uint16_t)atoi(s_new_ssh_port.c_str());
         if (new_ssh_port <= 0) {
-            return FResult(ERR_ERROR, "new_ssh_port " + s_new_ssh_port +
+            return FResult(E802_DEFAULT_ERROR, "new_ssh_port " + s_new_ssh_port +
                                           " is invalid! (usage: > 0)");
         }
 
         fret = check_port_conflict(new_ssh_port, task_id);
         if (taskinfoPtr->getPublicIP().empty() && fret.errcode != ERR_SUCCESS) {
-            return FResult(ERR_ERROR, "new_ssh_port " + s_new_ssh_port +
+            return FResult(E802_DEFAULT_ERROR, "new_ssh_port " + s_new_ssh_port +
                                           " has been used!");
         }
 
@@ -1931,7 +1932,7 @@ FResult TaskManager::modifyTask(
                                            << new_ssh_port);
             } else {
                 return FResult(
-                    ERR_ERROR,
+                    E802_DEFAULT_ERROR,
                     "can not find iptable info when modify ssh port");
             }
         }
@@ -1943,13 +1944,13 @@ FResult TaskManager::modifyTask(
     if (!s_new_rdp_port.empty()) {
         new_rdp_port = (uint16_t)atoi(s_new_rdp_port.c_str());
         if (new_rdp_port <= 0) {
-            return FResult(ERR_ERROR, "new_rdp_port " + s_new_rdp_port +
+            return FResult(E802_DEFAULT_ERROR, "new_rdp_port " + s_new_rdp_port +
                                           " is invalid! (usage: > 0)");
         }
 
         fret = check_port_conflict(new_rdp_port, task_id);
         if (taskinfoPtr->getPublicIP().empty() && fret.errcode != ERR_SUCCESS) {
-            return FResult(ERR_ERROR, "new_rdp_port " + s_new_rdp_port +
+            return FResult(E802_DEFAULT_ERROR, "new_rdp_port " + s_new_rdp_port +
                                           " has been used!");
         }
 
@@ -1970,7 +1971,7 @@ FResult TaskManager::modifyTask(
                 TaskIptableManager::instance().update(taskIptablePtr);
             } else {
                 return FResult(
-                    ERR_ERROR,
+                    E802_DEFAULT_ERROR,
                     "can not find iptable info when modify rdp port");
             }
         }
@@ -1978,7 +1979,7 @@ FResult TaskManager::modifyTask(
 
     if (!s_new_ssh_port.empty() && !s_new_rdp_port.empty() &&
         new_ssh_port == new_rdp_port) {
-        return FResult(ERR_ERROR,
+        return FResult(E802_DEFAULT_ERROR,
                        "new_ssh_port and new_rdp_port are the same!");
     }
 
@@ -2004,7 +2005,7 @@ FResult TaskManager::modifyTask(
                     TASK_LOG_INFO(task_id, "modify task custom port");
                 } else {
                     return FResult(
-                        ERR_ERROR,
+                        E802_DEFAULT_ERROR,
                         "can not find iptable info when modify custom port");
                 }
             }
@@ -2037,7 +2038,7 @@ FResult TaskManager::modifyTask(
                 ERRCODE ret =
                     VmClient::instance().DefineNWFilter(task_id, new_nwfiter);
                 if (ret != ERR_SUCCESS) {
-                    return FResult(ERR_ERROR, "modify network filter error");
+                    return FResult(E802_DEFAULT_ERROR, "modify network filter error");
                 }
             }
         }
@@ -2048,14 +2049,14 @@ FResult TaskManager::modifyTask(
     if (!s_new_vnc_port.empty()) {
         uint16_t new_vnc_port = atoi(s_new_vnc_port.c_str());
         if (new_vnc_port < 5900 || new_vnc_port > 65535) {
-            return FResult(ERR_ERROR,
+            return FResult(E802_DEFAULT_ERROR,
                            "new_vnc_port " + s_new_vnc_port +
                                " is invalid! (usage: 5900 =< port <= 65535)");
         }
 
         fret = check_port_conflict(new_vnc_port, task_id);
         if (fret.errcode != ERR_SUCCESS) {
-            return FResult(ERR_ERROR, "new_vnc_port " + s_new_vnc_port +
+            return FResult(E802_DEFAULT_ERROR, "new_vnc_port " + s_new_vnc_port +
                                           " has been used!");
         }
 
@@ -2074,9 +2075,9 @@ FResult TaskManager::modifyTask(
     JSON_PARSE_STRING(doc, "new_gpu_count", new_gpu_count);
     if (!new_gpu_count.empty()) {
         if (!rent_all_machine)
-            return FResult(ERR_ERROR, "can not modify gpu count");
+            return FResult(E802_DEFAULT_ERROR, "can not modify gpu count");
         int count = (uint16_t)atoi(new_gpu_count.c_str());
-        if (count < 0) return FResult(ERR_ERROR, "new gpu count is invalid");
+        if (count < 0) return FResult(E802_DEFAULT_ERROR, "new gpu count is invalid");
 
         int old_gpu_count = TaskGpuMgr::instance().getTaskGpusCount(task_id);
         if (count != old_gpu_count) {
@@ -2099,7 +2100,7 @@ FResult TaskManager::modifyTask(
                 need_reboot_vm = true;
                 need_redefine_vm = true;
             } else {
-                return FResult(ERR_ERROR, "allocate gpu failed");
+                return FResult(E802_DEFAULT_ERROR, "allocate gpu failed");
             }
         }
     }
@@ -2108,7 +2109,7 @@ FResult TaskManager::modifyTask(
     JSON_PARSE_STRING(doc, "new_cpu_cores", s_new_cpu_cores);
     if (!s_new_cpu_cores.empty()) {
         if (!rent_all_machine)
-            return FResult(ERR_ERROR, "can not modify cpu cores");
+            return FResult(E802_DEFAULT_ERROR, "can not modify cpu cores");
         int32_t new_cpu_cores = atoi(s_new_cpu_cores);
         int32_t cpu_sockets = 1, cpu_cores = 1, cpu_threads = 2;
         if (allocate_cpu(new_cpu_cores, cpu_sockets, cpu_cores, cpu_threads,
@@ -2133,7 +2134,7 @@ FResult TaskManager::modifyTask(
                                   << ", threads per core: " << cpu_threads);
             }
         } else {
-            return FResult(ERR_ERROR, "allocate cpu failed");
+            return FResult(E802_DEFAULT_ERROR, "allocate cpu failed");
         }
     }
 
@@ -2141,7 +2142,7 @@ FResult TaskManager::modifyTask(
     JSON_PARSE_STRING(doc, "new_mem_size", new_mem_size);
     if (!new_mem_size.empty()) {
         if (!rent_all_machine)
-            return FResult(ERR_ERROR, "can not modify mem size");
+            return FResult(E802_DEFAULT_ERROR, "can not modify mem size");
         int64_t ksize = atoi(new_mem_size.c_str()) * 1024L * 1024L;
         if (allocate_mem(ksize, task_id, percent)) {
             if (ksize != taskinfoPtr->getMemSize()) {
@@ -2167,7 +2168,7 @@ FResult TaskManager::modifyTask(
                     taskinfoPtr->setMemSize(ksize);
                 }
             } else {
-                return FResult(ERR_ERROR, "allocate memory failed");
+                return FResult(E802_DEFAULT_ERROR, "allocate memory failed");
             }
         }
     }
@@ -2201,32 +2202,32 @@ FResult TaskManager::passwdTask(
     std::string task_id = data->task_id;
     auto taskinfoPtr = TaskInfoManager::instance().getTaskInfo(task_id);
     if (taskinfoPtr == nullptr) {
-        return FResult(ERR_ERROR, "task not exist");
+        return FResult(E802_DEFAULT_ERROR, "task not exist");
     }
 
     if (!VmClient::instance().IsExistDomain(task_id)) {
-        return FResult(ERR_ERROR, "task not exist");
+        return FResult(E802_DEFAULT_ERROR, "task not exist");
     }
 
     virDomainState vm_status = VmClient::instance().GetDomainStatus(task_id);
     if (vm_status != VIR_DOMAIN_RUNNING) {
-        return FResult(ERR_ERROR,
+        return FResult(E802_DEFAULT_ERROR,
                        "Only the running task can change the password");
     }
 
     rapidjson::Document doc;
     doc.Parse(data->additional.c_str());
     if (!doc.IsObject()) {
-        return FResult(ERR_ERROR, "additional parse failed");
+        return FResult(E802_DEFAULT_ERROR, "additional parse failed");
     }
 
     std::string username, password;
     JSON_PARSE_STRING(doc, "username", username);
     JSON_PARSE_STRING(doc, "password", password);
     if (password.empty())
-        return FResult(ERR_ERROR, "password can not be empty");
+        return FResult(E802_DEFAULT_ERROR, "password can not be empty");
     if (username.empty())
-        return FResult(ERR_ERROR, "user name can not be empty");
+        return FResult(E802_DEFAULT_ERROR, "user name can not be empty");
     FResult fret = VmClient::instance().SetDomainUserPassword(task_id, username,
                                                               password, 1);
     if (fret.errcode == ERR_SUCCESS) {
@@ -2246,11 +2247,11 @@ FResult TaskManager::getTaskLog(const std::string& task_id,
     auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
     if (taskinfo == nullptr) {
         log_content = "";
-        return FResult(ERR_ERROR, "task not exist");
+        return FResult(E802_DEFAULT_ERROR, "task not exist");
     }
 
     if (!VmClient::instance().IsExistDomain(task_id)) {
-        return FResult(ERR_ERROR, "task not exist");
+        return FResult(E802_DEFAULT_ERROR, "task not exist");
     }
 
     return VmClient::instance().GetDomainLog(task_id, direction, nlines,
@@ -2281,24 +2282,24 @@ FResult TaskManager::downloadImage(
     const std::string& wallet,
     const std::shared_ptr<dbc::node_download_image_req_data>& data) {
     if (data->image_server.empty()) {
-        return FResult(ERR_ERROR, "no image_server");
+        return FResult(E802_DEFAULT_ERROR, "no image_server");
     }
 
     rapidjson::Document doc;
     doc.Parse(data->additional.c_str());
     if (!doc.IsObject()) {
-        return FResult(ERR_ERROR, "additional parse failed");
+        return FResult(E802_DEFAULT_ERROR, "additional parse failed");
     }
     std::string image_filename;
     JSON_PARSE_STRING(doc, "image_filename", image_filename)
     if (image_filename.empty()) {
-        return FResult(ERR_ERROR, "additional no image_filename");
+        return FResult(E802_DEFAULT_ERROR, "additional no image_filename");
     }
 
     std::string local_dir;
     JSON_PARSE_STRING(doc, "local_dir", local_dir)
     if (local_dir.empty()) {
-        return FResult(ERR_ERROR, "additional no local_dir");
+        return FResult(E802_DEFAULT_ERROR, "additional no local_dir");
     }
 
     std::vector<ImageFile> images;
@@ -2310,11 +2311,11 @@ FResult TaskManager::downloadImage(
                                  return iter.name == image_filename;
                              });
     if (iter == images.end()) {
-        return FResult(ERR_ERROR, "image:" + image_filename + " not exist");
+        return FResult(E802_DEFAULT_ERROR, "image:" + image_filename + " not exist");
     }
 
     if (ImageManager::instance().isDownloading(image_filename)) {
-        return FResult(ERR_ERROR,
+        return FResult(E802_DEFAULT_ERROR,
                        "image:" + image_filename + " in downloading");
     }
 
@@ -2332,12 +2333,12 @@ FResult TaskManager::downloadImageProgress(
     rapidjson::Document doc;
     doc.Parse(data->additional.c_str());
     if (!doc.IsObject()) {
-        return FResult(ERR_ERROR, "additional parse failed");
+        return FResult(E802_DEFAULT_ERROR, "additional parse failed");
     }
     std::string image_filename;
     JSON_PARSE_STRING(doc, "image_filename", image_filename)
     if (image_filename.empty()) {
-        return FResult(ERR_ERROR, "additional no image_filename");
+        return FResult(E802_DEFAULT_ERROR, "additional no image_filename");
     }
 
     float progress = ImageManager::instance().downloadProgress(image_filename);
@@ -2366,12 +2367,12 @@ FResult TaskManager::stopDownloadImage(
     rapidjson::Document doc;
     doc.Parse(data->additional.c_str());
     if (!doc.IsObject()) {
-        return FResult(ERR_ERROR, "additional parse failed");
+        return FResult(E802_DEFAULT_ERROR, "additional parse failed");
     }
     std::string image_filename;
     JSON_PARSE_STRING(doc, "image_filename", image_filename)
     if (image_filename.empty()) {
-        return FResult(ERR_ERROR, "additional no image_filename");
+        return FResult(E802_DEFAULT_ERROR, "additional no image_filename");
     }
 
     ImageManager::instance().terminateDownload(image_filename);
@@ -2388,18 +2389,18 @@ FResult TaskManager::uploadImage(
     const std::string& wallet,
     const std::shared_ptr<dbc::node_upload_image_req_data>& data) {
     if (data->image_server.empty()) {
-        return FResult(ERR_ERROR, "no image_server");
+        return FResult(E802_DEFAULT_ERROR, "no image_server");
     }
 
     rapidjson::Document doc;
     doc.Parse(data->additional.c_str());
     if (!doc.IsObject()) {
-        return FResult(ERR_ERROR, "additional parse failed");
+        return FResult(E802_DEFAULT_ERROR, "additional parse failed");
     }
     std::string image_filename;
     JSON_PARSE_STRING(doc, "image_filename", image_filename)
     if (image_filename.empty()) {
-        return FResult(ERR_ERROR, "image_filename is empty");
+        return FResult(E802_DEFAULT_ERROR, "image_filename is empty");
     }
 
     std::string image_fullpath = image_filename;
@@ -2407,11 +2408,11 @@ FResult TaskManager::uploadImage(
         image_fullpath = "/data/" + image_fullpath;
 
     if (!boost::filesystem::exists(image_fullpath)) {
-        return FResult(ERR_ERROR, "image:" + image_filename + " not exist");
+        return FResult(E802_DEFAULT_ERROR, "image:" + image_filename + " not exist");
     }
 
     if (ImageManager::instance().isUploading(image_fullpath)) {
-        return FResult(ERR_ERROR, "image:" + image_filename + " in uploading");
+        return FResult(E802_DEFAULT_ERROR, "image:" + image_filename + " in uploading");
     }
 
     ImageServer imgsvr;
@@ -2429,12 +2430,12 @@ FResult TaskManager::uploadImageProgress(
     rapidjson::Document doc;
     doc.Parse(data->additional.c_str());
     if (!doc.IsObject()) {
-        return FResult(ERR_ERROR, "additional parse failed");
+        return FResult(E802_DEFAULT_ERROR, "additional parse failed");
     }
     std::string image_filename;
     JSON_PARSE_STRING(doc, "image_filename", image_filename)
     if (image_filename.empty()) {
-        return FResult(ERR_ERROR, "additional no image_filename");
+        return FResult(E802_DEFAULT_ERROR, "additional no image_filename");
     }
 
     float progress = ImageManager::instance().uploadProgress(image_filename);
@@ -2463,12 +2464,12 @@ FResult TaskManager::stopUploadImage(
     rapidjson::Document doc;
     doc.Parse(data->additional.c_str());
     if (!doc.IsObject()) {
-        return FResult(ERR_ERROR, "additional parse failed");
+        return FResult(E802_DEFAULT_ERROR, "additional parse failed");
     }
     std::string image_filename;
     JSON_PARSE_STRING(doc, "image_filename", image_filename)
     if (image_filename.empty()) {
-        return FResult(ERR_ERROR, "additional no image_filename");
+        return FResult(E802_DEFAULT_ERROR, "additional no image_filename");
     }
 
     ImageManager::instance().terminateUpload(image_filename);
@@ -2487,24 +2488,24 @@ FResult TaskManager::deleteImage(
     rapidjson::Document doc;
     doc.Parse(data->additional.c_str());
     if (!doc.IsObject()) {
-        return FResult(ERR_ERROR, "additional parse failed");
+        return FResult(E802_DEFAULT_ERROR, "additional parse failed");
     }
     std::string image_filename;
     JSON_PARSE_STRING(doc, "image_filename", image_filename)
     if (image_filename.empty()) {
-        return FResult(ERR_ERROR, "image_filename is empty");
+        return FResult(E802_DEFAULT_ERROR, "image_filename is empty");
     }
 
     std::string image_fullpath = "/data/" + image_filename;
 
     if (!boost::filesystem::exists(image_fullpath)) {
-        return FResult(ERR_ERROR,
+        return FResult(E802_DEFAULT_ERROR,
                        "image file:" + image_filename + " is not exist");
     }
 
     if (ImageManager::instance().isDownloading(image_filename) ||
         ImageManager::instance().isUploading(image_fullpath)) {
-        return FResult(ERR_ERROR,
+        return FResult(E802_DEFAULT_ERROR,
                        "image file is in downloading or uploading, please try "
                        "again later");
     }
@@ -2595,7 +2596,7 @@ int32_t TaskManager::getTaskAgentInterfaceAddress(
     const std::string& task_id,
     std::vector<std::tuple<std::string, std::string>>& address) {
     virDomainState vm_status = VmClient::instance().GetDomainStatus(task_id);
-    if (vm_status != VIR_DOMAIN_RUNNING) return -1;
+    if (vm_status != VIR_DOMAIN_RUNNING) return E306_TASK_STATUS_INVALID;
     std::vector<dbc::virDomainInterface> difaces;
     if (VmClient::instance().GetDomainInterfaceAddress(
             task_id, difaces, VIR_DOMAIN_INTERFACE_ADDRESSES_SRC_AGENT) > 0) {
@@ -2704,16 +2705,16 @@ FResult TaskManager::listTaskSnapshot(
     std::vector<dbc::snapshot_info>& snapshots) {
     auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
     if (taskinfo == nullptr) {
-        return FResult(ERR_ERROR, "task not exist");
+        return FResult(E802_DEFAULT_ERROR, "task not exist");
     }
 
     if (!VmClient::instance().IsExistDomain(task_id)) {
-        return FResult(ERR_ERROR, "task not exist");
+        return FResult(E802_DEFAULT_ERROR, "task not exist");
     }
 
     std::string bios_mode = taskinfo->getBiosMode();
     if (bios_mode == "pxe")
-        return FResult(ERR_ERROR, "pxe not support snapshot");
+        return FResult(E802_DEFAULT_ERROR, "pxe not support snapshot");
 
     TaskDiskMgr::instance().listSnapshots(task_id, snapshots);
     return FResultOk;
@@ -2726,16 +2727,16 @@ FResult TaskManager::createSnapshot(const std::string& wallet,
                                     const std::string& desc) {
     auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
     if (taskinfo == nullptr) {
-        return FResult(ERR_ERROR, "task not exist");
+        return FResult(E802_DEFAULT_ERROR, "task not exist");
     }
 
     if (!VmClient::instance().IsExistDomain(task_id)) {
-        return FResult(ERR_ERROR, "task not exist");
+        return FResult(E802_DEFAULT_ERROR, "task not exist");
     }
 
     std::string bios_mode = taskinfo->getBiosMode();
     if (bios_mode == "pxe")
-        return FResult(ERR_ERROR, "pxe not support snapshot");
+        return FResult(E802_DEFAULT_ERROR, "pxe not support snapshot");
 
     FResult fret = TaskDiskMgr::instance().createAndUploadSnapshot(
         task_id, snapshot_name, imgsvr, desc);
@@ -2747,16 +2748,16 @@ FResult TaskManager::terminateSnapshot(const std::string& wallet,
                                        const std::string& snapshot_name) {
     auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
     if (taskinfo == nullptr) {
-        return FResult(ERR_ERROR, "task not exist");
+        return FResult(E802_DEFAULT_ERROR, "task not exist");
     }
 
     if (!VmClient::instance().IsExistDomain(task_id)) {
-        return FResult(ERR_ERROR, "task not exist");
+        return FResult(E802_DEFAULT_ERROR, "task not exist");
     }
 
     std::string bios_mode = taskinfo->getBiosMode();
     if (bios_mode == "pxe")
-        return FResult(ERR_ERROR, "pxe not support snapshot");
+        return FResult(E802_DEFAULT_ERROR, "pxe not support snapshot");
 
     TaskDiskMgr::instance().terminateUploadSnapshot(task_id, snapshot_name);
     return FResultOk;
@@ -2787,7 +2788,7 @@ void TaskManager::process_task_thread_func() {
 }
 
 void TaskManager::process_task(const std::shared_ptr<TaskEvent>& ev) {
-    int32_t res_code = ERR_ERROR;
+    int32_t res_code = E802_DEFAULT_ERROR;
     std::string res_msg;
     switch (ev->type) {
         case TaskEventType::TET_CreateTask:

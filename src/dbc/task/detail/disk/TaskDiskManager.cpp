@@ -1,4 +1,5 @@
 #include "TaskDiskManager.h"
+#include "common/error.h"
 #include "task/vm/vm_client.h"
 #include "task/detail/info/TaskInfoManager.h"
 #include "util/system_info.h"
@@ -48,7 +49,7 @@ FResult TaskDiskManager::init(const std::vector<std::string>& task_ids) {
     // snapshot
 	bool ret = m_snapshot_db.init_db(EnvManager::instance().get_db_path(), "snapshot.db");
 	if (!ret) {
-		return FResult(ERR_ERROR, "init snapshot_db failed");
+		return FResult(E802_DEFAULT_ERROR, "init snapshot_db failed");
 	}
 
     std::map<std::string, std::shared_ptr<dbc::db_snapshot_info>> mp_snapshots;
@@ -136,12 +137,12 @@ FResult TaskDiskManager::resizeDisk(const std::string& task_id, const std::strin
         auto iter_disk = iter_disks.find(disk_name);
         if (iter_disk != iter_disks.end()) {
             if (size_k <= 0) {
-                return FResult(ERR_ERROR, "size is invalid (usage: size > 0)");
+                return FResult(E802_DEFAULT_ERROR, "size is invalid (usage: size > 0)");
             }
 
             virDomainState vm_status = VmClient::instance().GetDomainStatus(task_id);
             if (vm_status != VIR_DOMAIN_SHUTOFF) {
-                return FResult(ERR_ERROR, "please close task first and try again");
+                return FResult(E802_DEFAULT_ERROR, "please close task first and try again");
             }
 
             auto diskinfo = iter_disks[disk_name];
@@ -155,11 +156,11 @@ FResult TaskDiskManager::resizeDisk(const std::string& task_id, const std::strin
             return FResultOk;
         }
         else {
-            return FResult(ERR_ERROR, "task have no disk:" + disk_name);
+            return FResult(E802_DEFAULT_ERROR, "task have no disk:" + disk_name);
         }
     }
     else {
-        return FResult(ERR_ERROR, "task have no disk");
+        return FResult(E802_DEFAULT_ERROR, "task have no disk");
     }
 }
 
@@ -168,22 +169,22 @@ FResult TaskDiskManager::addNewDisk(const std::string& task_id, int64_t size_k, 
     auto iter = m_task_disks.find(task_id);
     if (iter != m_task_disks.end()) {
         if (size_k <= 0) {
-            return FResult(ERR_ERROR, "size is invalid (usage: size > 0)");
+            return FResult(E802_DEFAULT_ERROR, "size is invalid (usage: size > 0)");
         }
 
         if (mount_dir.empty() || !bfs::exists(mount_dir)) {
-            return FResult(ERR_ERROR, "not exist mount directory: " + mount_dir);
+            return FResult(E802_DEFAULT_ERROR, "not exist mount directory: " + mount_dir);
         }
 
         virDomainState vm_status = VmClient::instance().GetDomainStatus(task_id);
         if (vm_status != VIR_DOMAIN_SHUTOFF) {
-            return FResult(ERR_ERROR, "please close task first and try again");
+            return FResult(E802_DEFAULT_ERROR, "please close task first and try again");
         }
          
         disk_info dinfo;
         SystemInfo::instance().GetDiskInfo(mount_dir, dinfo);
         if (dinfo.free <= 1024L * 1024L) { // 1MB
-            return FResult(ERR_ERROR, "mount directory:" + mount_dir + " have no enough space");
+            return FResult(E802_DEFAULT_ERROR, "mount directory:" + mount_dir + " have no enough space");
         }
 
         auto ev = std::make_shared<AddDiskEvent>(task_id);
@@ -194,7 +195,7 @@ FResult TaskDiskManager::addNewDisk(const std::string& task_id, int64_t size_k, 
         return FResultOk;
     }
     else {
-        return FResult(ERR_ERROR, "task have no disk");
+        return FResult(E802_DEFAULT_ERROR, "task have no disk");
     }
 }
 
@@ -207,11 +208,11 @@ FResult TaskDiskManager::deleteDisk(const std::string& task_id, const std::strin
         if (iter_disk != iter_disks.end()) {
             virDomainState vm_status = VmClient::instance().GetDomainStatus(task_id);
             if (vm_status != VIR_DOMAIN_SHUTOFF) {
-                return FResult(ERR_ERROR, "please close task first and try again");
+                return FResult(E802_DEFAULT_ERROR, "please close task first and try again");
             }
 
             if (disk_name == "vda") {
-                return FResult(ERR_ERROR, "can not allowed to delete disk:'vda'");
+                return FResult(E802_DEFAULT_ERROR, "can not allowed to delete disk:'vda'");
             }
 
             std::shared_ptr<DeleteDiskEvent> ev = std::make_shared<DeleteDiskEvent>(task_id);
@@ -221,11 +222,11 @@ FResult TaskDiskManager::deleteDisk(const std::string& task_id, const std::strin
             return FResultOk;
         }
         else {
-            return FResult(ERR_ERROR, "task have no disk:" + disk_name);
+            return FResult(E802_DEFAULT_ERROR, "task have no disk:" + disk_name);
         }
     }
     else {
-        return FResult(ERR_ERROR, "task no disk");
+        return FResult(E802_DEFAULT_ERROR, "task no disk");
     }
 }
 
@@ -294,12 +295,12 @@ FResult TaskDiskManager::createAndUploadSnapshot(const std::string& task_id, con
         if (iter_disk != iter_disks.end()) {
             virDomainState vm_status = VmClient::instance().GetDomainStatus(task_id);
             if (vm_status != VIR_DOMAIN_SHUTOFF) {
-                return FResult(ERR_ERROR, "please close task first and try again");
+                return FResult(E802_DEFAULT_ERROR, "please close task first and try again");
             }
 
             auto taskinfo = TaskInfoMgr::instance().getTaskInfo(task_id);
             if (taskinfo == nullptr || taskinfo->getVdaRootBackfile().empty()) {
-                return FResult(ERR_ERROR, "not found vda's root backfile");
+                return FResult(E802_DEFAULT_ERROR, "not found vda's root backfile");
             }
             
             auto diskinfo = iter_disk->second;
@@ -338,11 +339,11 @@ FResult TaskDiskManager::createAndUploadSnapshot(const std::string& task_id, con
             return FResultOk;
         }
         else {
-            return FResult(ERR_ERROR, "task have no disk:'vda'");
+            return FResult(E802_DEFAULT_ERROR, "task have no disk:'vda'");
         }
     }
     else {
-        return FResult(ERR_ERROR, "task have no disk");
+        return FResult(E802_DEFAULT_ERROR, "task have no disk");
     }
 }
 

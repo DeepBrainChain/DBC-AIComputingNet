@@ -7,6 +7,7 @@
 
 #include <boost/exception/all.hpp>
 
+#include "common/error.h"
 #include "config/env_manager.h"
 #include "network/connection_manager.h"
 #include "service/http_request_service/http_server_service.h"
@@ -213,13 +214,13 @@ ERRCODE Server::InitCrypto() {
     // ecc check
     if (!ECC_InitSanityCheck()) {
         // "Elliptic curve cryptography sanity check failure. Aborting.";
-        return E_DEFAULT;
+        return E802_DEFAULT_ERROR;
     }
 
     // random check
     if (!Random_SanityCheck()) {
         // LOG_ERROR << "OS cryptographic RNG sanity check failure. Aborting.";
-        return E_DEFAULT;
+        return E802_DEFAULT_ERROR;
     }
 
     return ERR_SUCCESS;
@@ -262,12 +263,12 @@ ERRCODE Server::ParseCommandLine(int argc, char *argv[]) {
     } catch (const std::exception &e) {
         std::cout << "parse command option error: " << e.what() << std::endl;
         std::cout << opts << std::endl;
-        return ERR_ERROR;
+        return E704_BAD_PARAMETER;
     }
 
     if (options.count("version")) {
         std::cout << "version: " << dbcversion() << std::endl;
-        return ERR_ERROR;
+        return ERR_SUCCESS;
     }
 
     if (options.count("compute")) {
@@ -291,7 +292,7 @@ ERRCODE Server::ParseCommandLine(int argc, char *argv[]) {
     }
 
     if (options.count("daemon")) {
-        if (ERR_SUCCESS != Daemon()) return ERR_ERROR;
+        if (ERR_SUCCESS != Daemon()) return E802_DEFAULT_ERROR;
     }
 
     return ERR_SUCCESS;
@@ -300,7 +301,7 @@ ERRCODE Server::ParseCommandLine(int argc, char *argv[]) {
 ERRCODE Server::Daemon() {
     if (daemon(1, 0)) {
         LOG_ERROR << "dbc daemon error: " << strerror(errno);
-        return ERR_ERROR;
+        return E802_DEFAULT_ERROR;
     }
 
     return ERR_SUCCESS;

@@ -1,5 +1,6 @@
 #include "bare_metal_node_manager.h"
 
+#include "common/error.h"
 #include "server/server.h"
 #include "service/node_request_service/node_request_service.h"
 
@@ -13,7 +14,7 @@ ERRCODE BareMetalNodeManager::Init() {
             m_db.init_db(EnvManager::instance().get_db_path(), "bare_metal.db");
         if (!ret) {
             LOG_ERROR << "init bare_metal_db failed";
-            return ERR_ERROR;
+            return E802_DEFAULT_ERROR;
         }
 
         m_db.load_datas(m_bare_metal_nodes);
@@ -62,7 +63,7 @@ FResult BareMetalNodeManager::AddBareMetalNodes(
     std::map<std::string, std::string>& ids) {
     RwMutex::WriteLock wlock(m_mtx);
 
-    FResult fret = {ERR_ERROR, ""};
+    FResult fret = {E802_DEFAULT_ERROR, ""};
     for (const auto& iter : nodes) {
         if (!iter.second.validate()) {
             fret.errmsg = "invalid bare metal info";
@@ -146,7 +147,7 @@ FResult BareMetalNodeManager::DeleteBareMetalNode(
 
 FResult BareMetalNodeManager::ModifyBareMetalNode(const std::string& node_id,
                                                   const bare_metal_info& bmi) {
-    FResult fret = {ERR_ERROR, ""};
+    FResult fret = {E802_DEFAULT_ERROR, ""};
     {
         RwMutex::ReadLock rlock(m_mtx);
         bool bExisted = false;
@@ -197,7 +198,7 @@ FResult BareMetalNodeManager::ModifyBareMetalNode(const std::string& node_id,
 FResult BareMetalNodeManager::SetDeepLinkInfo(
     const std::string& node_id, const std::string& device_id,
     const std::string& device_password) {
-    FResult fret = {ERR_ERROR, ""};
+    FResult fret = {E802_DEFAULT_ERROR, ""};
     {
         RwMutex::ReadLock rlock(m_mtx);
         if (m_bare_metal_nodes.find(node_id) == m_bare_metal_nodes.end()) {

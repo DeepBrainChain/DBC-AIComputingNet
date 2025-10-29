@@ -1,4 +1,5 @@
 #include "deeplink_room.h"
+#include "common/error.h"
 
 #include "log/log.h"
 
@@ -54,7 +55,7 @@ FResult deeplink_room::get_device_info(const std::string& host,
         iter->second->get_device_info(device_id, password);
         return FResultOk;
     }
-    return FResult(ERR_ERROR, "deeplink service not connected");
+    return FResult(E802_DEFAULT_ERROR, "deeplink service not connected");
 }
 
 FResult deeplink_room::set_device_info(const std::string& host,
@@ -70,5 +71,5 @@ FResult deeplink_room::set_device_info(const std::string& host,
         iter->second->set_device_info(device_id, password);
         return FResultOk;
     }
-    return FResult(ERR_ERROR, "deeplink service not connected");
+    return FResult(E802_DEFAULT_ERROR, "deeplink service not connected");
 }

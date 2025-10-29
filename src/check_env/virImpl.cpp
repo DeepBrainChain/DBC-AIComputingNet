@@ -1,4 +1,5 @@
 #include "virImpl.h"
+#include "../dbc/common/error.h"
 #include <iostream>
 #include <boost/filesystem.hpp>
 #include "tinyxml2.h"
@@ -71,42 +72,42 @@ virDomainImpl::~virDomainImpl() {
 }
 
 int32_t virDomainImpl::startDomain() {
-    if (!domain_) return -1;
+    if (!domain_) return E201_VM_DOMAIN_NOT_FOUND;
     return virDomainCreate(domain_.get());
 }
 
 int32_t virDomainImpl::suspendDomain() {
-    if (!domain_) return -1;
+    if (!domain_) return E201_VM_DOMAIN_NOT_FOUND;
     return virDomainSuspend(domain_.get());
 }
 
 int32_t virDomainImpl::resumeDomain() {
-    if (!domain_) return -1;
+    if (!domain_) return E201_VM_DOMAIN_NOT_FOUND;
     return virDomainResume(domain_.get());
 }
 
 int32_t virDomainImpl::rebootDomain(int flag) {
-    if (!domain_) return -1;
+    if (!domain_) return E201_VM_DOMAIN_NOT_FOUND;
     return virDomainReboot(domain_.get(), flag);
 }
 
 int32_t virDomainImpl::shutdownDomain() {
-    if (!domain_) return -1;
+    if (!domain_) return E201_VM_DOMAIN_NOT_FOUND;
     return virDomainShutdown(domain_.get());
 }
 
 int32_t virDomainImpl::destroyDomain() {
-    if (!domain_) return -1;
+    if (!domain_) return E201_VM_DOMAIN_NOT_FOUND;
     return virDomainDestroy(domain_.get());
 }
 
 int32_t virDomainImpl::resetDomain() {
-    if (!domain_) return -1;
+    if (!domain_) return E201_VM_DOMAIN_NOT_FOUND;
     return virDomainReset(domain_.get(), 0);
 }
 
 int32_t virDomainImpl::undefineDomain() {
-    if (!domain_) return -1;
+    if (!domain_) return E201_VM_DOMAIN_NOT_FOUND;
     int32_t snaps = getSnapshotNums(1 << 10);
     int32_t has_nvram = hasNvram();
     unsigned int flags = 0;
@@ -123,7 +124,7 @@ int32_t virDomainImpl::undefineDomain() {
 }
 
 int32_t virDomainImpl::deleteDomain() {
-    if (!domain_) return -1;
+    if (!domain_) return E201_VM_DOMAIN_NOT_FOUND;
     virDomainInfo info;
     int ret = virDomainGetInfo(domain_.get(), &info);
     if (ret < 0) return ret;
@@ -171,9 +172,9 @@ int32_t virDomainImpl::hasNvram() {
 }
 
 int32_t virDomainImpl::getDomainDisks(std::vector<std::string> &disks) {
-    if (!domain_) return -1;
+    if (!domain_) return E201_VM_DOMAIN_NOT_FOUND;
     char* pContent = virDomainGetXMLDesc(domain_.get(), VIR_DOMAIN_XML_SECURE);
-    if (!pContent) return -1;
+    if (!pContent) return E703_NULL_POINTER_ERROR;
     do {
         tinyxml2::XMLDocument doc;
         tinyxml2::XMLError err = doc.Parse(pContent);
@@ -196,7 +197,7 @@ int32_t virDomainImpl::getDomainDisks(std::vector<std::string> &disks) {
 }
 
 int32_t virDomainImpl::getDomainInterfaceAddress(std::string &local_ip) {
-    if (!domain_) return -1;
+    if (!domain_) return E201_VM_DOMAIN_NOT_FOUND;
     virDomainInterfacePtr *ifaces = nullptr;
     int ifaces_count = 0;
     size_t i, j;
@@ -233,12 +234,12 @@ cleanup:
 }
 
 int32_t virDomainImpl::setDomainUserPassword(const char *user, const char *password) {
-    if (!domain_) return -1;
+    if (!domain_) return E201_VM_DOMAIN_NOT_FOUND;
     return virDomainSetUserPassword(domain_.get(), user, password, 0);
 }
 
 int32_t virDomainImpl::getSnapshotNums(unsigned int flags) {
-    if (!domain_) return -1;
+    if (!domain_) return E201_VM_DOMAIN_NOT_FOUND;
     return virDomainSnapshotNum(domain_.get(), flags);
 }
 

@@ -1,10 +1,11 @@
 #include "TaskIptableManager.h"
+#include "common/error.h"
 #include "log/log.h"
 
 FResult TaskIptableManager::init() {
     bool ret = m_db.init_db(EnvManager::instance().get_db_path(), "iptable.db");
     if (!ret) {
-        return FResult(ERR_ERROR, "init iptable_db failed");
+        return FResult(E802_DEFAULT_ERROR, "init iptable_db failed");
     }
 
     std::map<std::string, std::shared_ptr<dbc::db_task_iptable>> mp_iptables;

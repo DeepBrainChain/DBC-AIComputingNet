@@ -1,5 +1,6 @@
 #include "BareMetalTaskManager.h"
 
+#include "common/error.h"
 #include "bare_metal/cloud_cybercafe_client.h"
 #include "bare_metal/ipmitool_client.h"
 #include "bare_metal/power_manager.h"
@@ -19,7 +20,7 @@ BareMetalTaskManager::~BareMetalTaskManager() {
 
 FResult BareMetalTaskManager::Init() {
     if (Server::NodeType != NODE_TYPE::BareMetalNode)
-        return FResult(ERR_ERROR, "not a bare metal node");
+        return FResult(E802_DEFAULT_ERROR, "not a bare metal node");
 
     std::string cloud_cybercafe_server =
         ConfManager::instance().GetCloudCybercafeServer();
@@ -44,14 +45,14 @@ FResult BareMetalTaskManager::PowerControl(const std::string& node_id,
                                            const std::string& command) {
     if (bare_metal_client_)
         return bare_metal_client_->PowerControl(node_id, command);
-    return FResult(ERR_ERROR, "bare metal client not existed");
+    return FResult(E802_DEFAULT_ERROR, "bare metal client not existed");
 }
 
 FResult BareMetalTaskManager::SetBootDeviceOrder(const std::string& node_id,
                                                  const std::string& device) {
     if (bare_metal_client_)
         bare_metal_client_->SetBootDeviceOrder(node_id, device);
-    return FResult(ERR_ERROR, "bare metal client not existed");
+    return FResult(E802_DEFAULT_ERROR, "bare metal client not existed");
 }
 
 void BareMetalTaskManager::PowerOffOnce(const std::string& node_id) {

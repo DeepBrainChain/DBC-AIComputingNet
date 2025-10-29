@@ -1,4 +1,5 @@
 #include "TaskGpuManager.h"
+#include "common/error.h"
 
 #include "log/log.h"
 #include "task/detail/info/TaskInfoManager.h"
@@ -167,7 +168,7 @@ FResult TaskGpuManager::checkXmlGpu(const std::shared_ptr<TaskInfo>& taskinfo,
         RwMutex::ReadLock rlock(m_mtx);
         auto iter = m_task_gpus.find(taskinfo->getTaskId());
         if (iter == m_task_gpus.end()) {
-            return FResult(ERR_ERROR, "task_id not exist");
+            return FResult(E802_DEFAULT_ERROR, "task_id not exist");
         }
 
         task_gpus = iter->second;

@@ -1,10 +1,11 @@
 #include "WalletRentTaskManager.h"
+#include "common/error.h"
 #include "log/log.h"
 
 FResult WalletRentTaskManager::init() {
     bool ret = m_db.init_db(EnvManager::instance().get_db_path(), "rent_task.db");
     if (!ret) {
-        return FResult(ERR_ERROR, "init wallet_task_db failed");
+        return FResult(E802_DEFAULT_ERROR, "init wallet_task_db failed");
     }
 
     std::map<std::string, std::shared_ptr<dbc::db_wallet_renttask>> mp_renttasks;

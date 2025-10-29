@@ -1,4 +1,5 @@
 #include "cloud_cybercafe_client.h"
+#include "common/error.h"
 
 #include "Preset.h"
 #include "config/conf_manager.h"
@@ -79,17 +80,17 @@ FResult CloudCybercafeClient::Init() {
     std::string server = ConfManager::instance().GetCloudCybercafeServer();
     std::vector<std::string> vecSplit = util::split(server, ":");
     if (vecSplit.size() != 2)
-        return FResult(ERR_ERROR, "split cloud cybercafe server config error");
+        return FResult(E802_DEFAULT_ERROR, "split cloud cybercafe server config error");
 
     m_host = vecSplit[0];
     m_port = atol(vecSplit[1].c_str());
 
     m_io_service_pool = std::make_shared<network::io_service_pool>();
     if (ERR_SUCCESS != m_io_service_pool->init(1))
-        return FResult(ERR_ERROR, "init io service pool failed");
+        return FResult(E802_DEFAULT_ERROR, "init io service pool failed");
 
     if (ERR_SUCCESS != m_io_service_pool->start())
-        return FResult(ERR_ERROR, "start io service pool failed");
+        return FResult(E802_DEFAULT_ERROR, "start io service pool failed");
 
     std::shared_ptr<apache::thrift::protocol::TBinaryProtocol> protocol =
         std::make_shared<apache::thrift::protocol::TBinaryProtocol>();
@@ -97,12 +98,12 @@ FResult CloudCybercafeClient::Init() {
                              protocol);
     bool connected = client.connect(m_host, m_port);
     if (!connected)
-        return FResult(ERR_ERROR, "connect cloud cybercafe server failed");
+        return FResult(E802_DEFAULT_ERROR, "connect cloud cybercafe server failed");
 
     std::string pingRes;
     client.ping(pingRes);
     if (pingRes != "pong")
-        return FResult(ERR_ERROR, "ping cloud cybercafe server error");
+        return FResult(E802_DEFAULT_ERROR, "ping cloud cybercafe server error");
     return FResultOk;
 }
 
@@ -117,10 +118,10 @@ void CloudCybercafeClient::Exit() {
 FResult CloudCybercafeClient::PowerControl(const std::string& node_id,
                                            const std::string& command) {
     if (command == "reset")
-        return FResult(ERR_ERROR, "smyoo device not support");
+        return FResult(E802_DEFAULT_ERROR, "smyoo device not support");
     std::shared_ptr<dbc::db_bare_metal> bm =
         BareMetalNodeManager::instance().getBareMetalNode(node_id);
-    if (!bm) return FResult(ERR_ERROR, "node id not existed");
+    if (!bm) return FResult(E802_DEFAULT_ERROR, "node id not existed");
 
     std::shared_ptr<apache::thrift::protocol::TBinaryProtocol> protocol =
         std::make_shared<apache::thrift::protocol::TBinaryProtocol>();
@@ -128,7 +129,7 @@ FResult CloudCybercafeClient::PowerControl(const std::string& node_id,
                              protocol);
     bool connected = client.connect(m_host, m_port);
     if (!connected)
-        return FResult(ERR_ERROR, "connect cloud cybercafe server failed");
+        return FResult(E802_DEFAULT_ERROR, "connect cloud cybercafe server failed");
 
     occ::ResultStruct rs;
     occ::SmyooDeviceInfo sdi;
@@ -142,17 +143,17 @@ FResult CloudCybercafeClient::PowerControl(const std::string& node_id,
 
     if (command == "status") {
         if (!getStatus)
-            return FResult(ERR_ERROR, rs.message);
+            return FResult(E802_DEFAULT_ERROR, rs.message);
         else if (sdi.power == 1)
             return FResult(ERR_SUCCESS, "Power is on");
         else if (sdi.power == 0)
             return FResult(ERR_SUCCESS, "Power is off");
         else
-            return FResult(ERR_ERROR, "unknown situation");
+            return FResult(E802_DEFAULT_ERROR, "unknown situation");
     }
 
     if (command != "on" && command != "off")
-        return FResult(ERR_ERROR, "unsupported command");
+        return FResult(E802_DEFAULT_ERROR, "unsupported command");
 
     int32_t power = (command == "off" ? 0 : 1);
     if (getStatus && sdi.power == power) return FResultOk;
@@ -167,5 +168,5 @@ FResult CloudCybercafeClient::PowerControl(const std::string& node_id,
 
 FResult CloudCybercafeClient::SetBootDeviceOrder(const std::string& node_id,
                                                  const std::string& device) {
-    return FResult(ERR_ERROR, "not support for now");
+    return FResult(E802_DEFAULT_ERROR, "not support for now");
 }

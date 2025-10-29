@@ -1,5 +1,6 @@
 #include "RentOrderManager.h"
 
+#include "common/error.h"
 #include "log/log.h"
 #include "task/HttpDBCChainClient.h"
 
@@ -11,7 +12,7 @@ FResult RentOrderManager::Init() {
     bool ret =
         db_.init_db(EnvManager::instance().get_db_path(), "rent_order.db");
     if (!ret) {
-        return FResult(ERR_ERROR, "init rent_order_db failed");
+        return FResult(E802_DEFAULT_ERROR, "init rent_order_db failed");
     }
 
     db_.load_datas(rent_orders_);
@@ -92,8 +93,8 @@ uint64_t RentOrderManager::GetRentEnd(const std::string& rent_order,
                                       const std::string& wallet) const {
     RwMutex::ReadLock rlock(mutex_);
     auto iter = rent_orders_.find(rent_order.empty() ? wallet : rent_order);
-    if (iter == rent_orders_.end()) return 0;
-    if (iter->second->renter != wallet) return 0;
+    if (iter == rent_orders_.end()) return E705_OBJECT_NOT_FOUND;
+    if (iter->second->renter != wallet) return E002_AUTHORITY_CHECK_FAILED;
     return iter->second->rent_end;
 }
 

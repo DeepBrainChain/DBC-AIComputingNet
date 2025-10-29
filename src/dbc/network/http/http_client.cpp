@@ -9,6 +9,7 @@
 **********************************************************************************/
 
 #include "http_client.h"
+#include "common/error.h"
 #include <event2/buffer.h>
 #include <event2/keyvalq_struct.h>
 #include <event2/http.h>
@@ -121,7 +122,7 @@ namespace network
         {
             if (start_ssl_engine() != true)
             {
-                return E_DEFAULT;
+                return E100_NETWORK_FAILURE;
             }
             //event base
             raii_event_base base = obtain_event_base();
@@ -136,7 +137,7 @@ namespace network
             raii_evhttp_request req = obtain_evhttp_request(http_request_done, (void*)&wrapper);
             if (nullptr == req)
             {
-                return E_DEFAULT;
+                return E100_NETWORK_FAILURE;
             }
 
             evhttp_request_set_error_cb(req.get(), http_error_cb);
@@ -160,29 +161,29 @@ namespace network
             req.release();                 // ownership moved to evcon in above call
             if (0 != r)
             {
-                return E_DEFAULT;
+                return E100_NETWORK_FAILURE;
             }
 
             event_base_dispatch(base.get());
             if (resp.status == 0)
             {
                 LOG_ERROR << "http client could not connect to server: " << http_errorstring(resp.error);
-                return E_DEFAULT;
+                return E100_NETWORK_FAILURE;
             }
             else if (resp.status == 401)
             {
                 LOG_ERROR << "http client authorization failed";
-                return E_DEFAULT;
+                return E100_NETWORK_FAILURE;
             }
             else if (resp.status >= 400) //&& resp.status != HTTP_BADREQUEST && resp.status != HTTP_NOTFOUND && resp.status != HTTP_INTERNAL)
             {
                 LOG_ERROR << "http client error: server returned HTTP error " << resp.status;
-                return E_DEFAULT;
+                return E100_NETWORK_FAILURE;
             }
             /*else if (resp.body.empty())
             {
             LOG_ERROR << "http client error: no resp from server";
-            return E_DEFAULT;
+            return E100_NETWORK_FAILURE;
             }*/
             //bufferevent_free(bev);
             //stop_ssl_engine();
@@ -190,7 +191,7 @@ namespace network
         catch (const std::exception & e)
         {
             LOG_ERROR << "http error" << e.what();
-            return E_DEFAULT;
+            return E100_NETWORK_FAILURE;
         }
             
         return ERR_SUCCESS;
@@ -202,7 +203,7 @@ namespace network
         {
             if (start_ssl_engine() != true)
             {
-                return E_DEFAULT;
+                return E100_NETWORK_FAILURE;
             }
             //event base
             raii_event_base base = obtain_event_base();
@@ -217,7 +218,7 @@ namespace network
             raii_evhttp_request req = obtain_evhttp_request(http_request_done, (void*)&wrapper);
             if (nullptr == req)
             {
-                return E_DEFAULT;
+                return E100_NETWORK_FAILURE;
             }
 
             evhttp_request_set_error_cb(req.get(), http_error_cb);
@@ -241,29 +242,29 @@ namespace network
             req.release();                 // ownership moved to evcon in above call
             if (0 != r)
             {
-                return E_DEFAULT;
+                return E100_NETWORK_FAILURE;
             }
 
             event_base_dispatch(base.get());
             if (resp.status == 0)
             {
                 LOG_ERROR << "http client could not connect to server: " << http_errorstring(resp.error);
-                return E_DEFAULT;
+                return E100_NETWORK_FAILURE;
             }
             else if (resp.status == 401)
             {
                 LOG_ERROR << "http client authorization failed";
-                return E_DEFAULT;
+                return E100_NETWORK_FAILURE;
             }
             else if (resp.status >= 400) //&& resp.status != HTTP_BADREQUEST && resp.status != HTTP_NOTFOUND && resp.status != HTTP_INTERNAL)
             {
                 LOG_ERROR << "http client error: server returned HTTP error " << resp.status;
-                return E_DEFAULT;
+                return E100_NETWORK_FAILURE;
             }
             /*else if (resp.body.empty())
             {
             LOG_ERROR << "http client error: no resp from server";
-            return E_DEFAULT;
+            return E100_NETWORK_FAILURE;
             }*/
             //bufferevent_free(bev);
             //stop_ssl_engine();
@@ -271,7 +272,7 @@ namespace network
         catch (const std::exception & e)
         {
             LOG_ERROR << "http error" << e.what();
-            return E_DEFAULT;
+            return E100_NETWORK_FAILURE;
         }
 
         return ERR_SUCCESS;
@@ -295,7 +296,7 @@ namespace network
             raii_evhttp_request req = obtain_evhttp_request(http_request_done, (void*)&wrapper);
             if (nullptr == req)
             {
-                return E_DEFAULT;
+                return E100_NETWORK_FAILURE;
             }
 
             evhttp_request_set_error_cb(req.get(), http_error_cb);
@@ -314,7 +315,7 @@ namespace network
             req.release();                 // ownership moved to evcon in above call
             if (0 != r)
             {
-                return E_DEFAULT;
+                return E100_NETWORK_FAILURE;
             }
 
             event_base_dispatch(base.get());
@@ -322,28 +323,28 @@ namespace network
             if (resp.status == 0)
             {
                 LOG_ERROR << "http client could not connect to server: " << http_errorstring(resp.error);
-                return E_DEFAULT;
+                return E100_NETWORK_FAILURE;
             }
             else if (resp.status == 401)
             {
                 LOG_ERROR << "http client authorization failed";
-                return E_DEFAULT;
+                return E100_NETWORK_FAILURE;
             }
             else if (resp.status >= 400) //&& resp.status != HTTP_BADREQUEST && resp.status != HTTP_NOTFOUND && resp.status != HTTP_INTERNAL)
             {
                 LOG_ERROR << "http client error: server returned HTTP error " << resp.status;
-                return E_DEFAULT;
+                return E100_NETWORK_FAILURE;
             }
             /*else if (resp.body.empty())
             {
             LOG_ERROR << "http client error: no resp from server";
-            return E_DEFAULT;
+            return E100_NETWORK_FAILURE;
             }*/
         }
         catch (const std::exception & e)
         {
             LOG_ERROR << "http error" << e.what();
-            return E_DEFAULT;
+            return E100_NETWORK_FAILURE;
         }
             
         return ERR_SUCCESS;
@@ -367,7 +368,7 @@ namespace network
             raii_evhttp_request req = obtain_evhttp_request(http_request_done, (void*)&wrapper);
             if (nullptr == req)
             {
-                return E_DEFAULT;
+                return E100_NETWORK_FAILURE;
             }
 
             evhttp_request_set_error_cb(req.get(), http_error_cb);
@@ -386,7 +387,7 @@ namespace network
             req.release();                 // ownership moved to evcon in above call
             if (0 != r)
             {
-                return E_DEFAULT;
+                return E100_NETWORK_FAILURE;
             }
 
             event_base_dispatch(base.get());
@@ -394,28 +395,28 @@ namespace network
             if (resp.status == 0)
             {
                 LOG_ERROR << "http client could not connect to server: " << http_errorstring(resp.error);
-                return E_DEFAULT;
+                return E100_NETWORK_FAILURE;
             }
             else if (resp.status == 401)
             {
                 LOG_ERROR << "http client authorization failed";
-                return E_DEFAULT;
+                return E100_NETWORK_FAILURE;
             }
             else if (resp.status >= 400) //&& resp.status != HTTP_BADREQUEST && resp.status != HTTP_NOTFOUND && resp.status != HTTP_INTERNAL)
             {
                 LOG_ERROR << "http client error: server returned HTTP error " << resp.status;
-                return E_DEFAULT;
+                return E100_NETWORK_FAILURE;
             }
             /*else if (resp.body.empty())
             {
             LOG_ERROR << "http client error: no resp from server";
-            return E_DEFAULT;
+            return E100_NETWORK_FAILURE;
             }*/
         }
         catch (const std::exception & e)
         {
             LOG_ERROR << "http error" << e.what();
-            return E_DEFAULT;
+            return E100_NETWORK_FAILURE;
         }
 
         return ERR_SUCCESS;
@@ -439,7 +440,7 @@ namespace network
             raii_evhttp_request req = obtain_evhttp_request(http_request_done, (void*)&wrapper);
             if (nullptr == req)
             {
-                return E_DEFAULT;
+                return E100_NETWORK_FAILURE;
             }
 
             evhttp_request_set_error_cb(req.get(), http_error_cb);
@@ -458,7 +459,7 @@ namespace network
             req.release();                 // ownership moved to evcon in above call
             if (0 != r)
             {
-                return E_DEFAULT;
+                return E100_NETWORK_FAILURE;
             }
 
             event_base_dispatch(base.get());
@@ -466,28 +467,28 @@ namespace network
             if (resp.status == 0)
             {
                 LOG_ERROR << "http client could not connect to server: " << http_errorstring(resp.error);
-                return E_DEFAULT;
+                return E100_NETWORK_FAILURE;
             }
             else if (resp.status == 401)
             {
                 LOG_ERROR << "http client authorization failed";
-                return E_DEFAULT;
+                return E100_NETWORK_FAILURE;
             }
             else if (resp.status >= 400) //&& resp.status != HTTP_BADREQUEST && resp.status != HTTP_NOTFOUND && resp.status != HTTP_INTERNAL)
             {
                 LOG_ERROR << "http client error: server returned HTTP error " << resp.status;
-                return E_DEFAULT;
+                return E100_NETWORK_FAILURE;
             }
             /*else if (resp.body.empty())
             {
             LOG_ERROR << "http client error: no resp from server";
-            return E_DEFAULT;
+            return E100_NETWORK_FAILURE;
             }*/
         }
         catch (const std::exception & e)
         {
             LOG_ERROR << "http error" << e.what();
-            return E_DEFAULT;
+            return E100_NETWORK_FAILURE;
         }
         return ERR_SUCCESS;
     }
@@ -542,12 +543,12 @@ namespace network
             /*printf("https server '%s' has this certificate, "
                 "which looks good to me:\n%s\n",
                 host, cert_str);*/
-            return 1;
+            return ERR_SUCCESS;
         }
         else 
         {
             LOG_ERROR << "Got X509_verify_cert failed for " << host << " and certificate " << cert_str << " error:" << res_str;
-            return 0;
+            return E001_PASSWORD_ERROR;
         }
     }
 
@@ -558,7 +559,7 @@ namespace network
             raii_evhttp_uri http_uri = obtain_evhttp_uri_parse(url);
             if (nullptr == http_uri)
             {
-                return E_DEFAULT;
+                return E100_NETWORK_FAILURE;
             }
             std::string host;
             std::string path;
@@ -606,7 +607,7 @@ namespace network
         catch (...)
         {
             LOG_DEBUG << "parse error";
-            return E_DEFAULT;
+            return E100_NETWORK_FAILURE;
         }
         return ERR_SUCCESS;
     }

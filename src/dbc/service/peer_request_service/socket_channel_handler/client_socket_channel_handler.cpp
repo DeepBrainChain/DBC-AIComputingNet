@@ -1,4 +1,5 @@
 #include "client_socket_channel_handler.h"
+#include "common/error.h"
 
 matrix_client_socket_channel_handler::matrix_client_socket_channel_handler(
     std::shared_ptr<network::channel> ch)
@@ -85,7 +86,7 @@ int32_t matrix_client_socket_channel_handler::on_after_msg_received(network::mes
             ch->on_error();
         }
         return ERR_SUCCESS;*/
-        return E_DEFAULT;
+        return E802_DEFAULT_ERROR;
     }
 
     if (VER_RESP == msg.get_name())
@@ -106,7 +107,7 @@ int32_t matrix_client_socket_channel_handler::on_after_msg_received(network::mes
             {
                 ch->on_error();
             }*/
-            return E_DEFAULT;
+            return E802_DEFAULT_ERROR;
         }
     }
     m_lost_shake_hand_count = 0;

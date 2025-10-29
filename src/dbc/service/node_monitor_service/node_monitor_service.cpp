@@ -1,4 +1,5 @@
 #include "node_monitor_service.h"
+#include "common/error.h"
 #include "db/db_types/db_wallet_monitor_types.h"
 #include "zabbixSender.h"
 #include "task/vm/vm_client.h"
@@ -34,7 +35,7 @@ ERRCODE node_monitor_service::init() {
         std::vector<std::string> vecSplit = util::split(default_monitor, ":");
         if (vecSplit.size() != 2) {
             LOG_ERROR << "parse dbc monitor server error";
-            return E_DEFAULT;
+            return E802_DEFAULT_ERROR;
         }
         m_dbc_monitor_server.host = vecSplit[0];
         m_dbc_monitor_server.port = vecSplit[1];
@@ -51,17 +52,17 @@ ERRCODE node_monitor_service::init() {
         m_io_service_pool = std::make_shared<network::io_service_pool>();
         if (ERR_SUCCESS != m_io_service_pool->init(1)) {
             LOG_ERROR << "init monitor io service failed";
-            return E_DEFAULT;
+            return E802_DEFAULT_ERROR;
         }
 
         if (ERR_SUCCESS != m_io_service_pool->start()) {
             LOG_ERROR << "monitor io service run failed";
-            return E_DEFAULT;
+            return E802_DEFAULT_ERROR;
         }
 
         if (ERR_SUCCESS != init_db()) {
             LOG_ERROR << "init_db error";
-            return E_DEFAULT;
+            return E802_DEFAULT_ERROR;
         }
 
         load_wallet_monitor_from_db();
@@ -99,14 +100,14 @@ FResult node_monitor_service::setMonitorServer(const std::string& wallet, const 
     rapidjson::Document doc;
     doc.Parse(additional.c_str());
     if (!doc.IsObject()) {
-        return FResult(ERR_ERROR, "additional parse failed");
+        return FResult(E802_DEFAULT_ERROR, "additional parse failed");
     }
     std::vector<monitor_server> servers;
     if (doc.HasMember("servers")) {
         const rapidjson::Value& v_servers = doc["servers"];
         if (v_servers.IsArray()) {
             if (v_servers.Size() > 2) {
-                return FResult(ERR_ERROR, "can not enter more than two servers");
+                return FResult(E802_DEFAULT_ERROR, "can not enter more than two servers");
             }
             for (rapidjson::SizeType i = 0; i < v_servers.Size(); i++) {
                 const rapidjson::Value& v_item = v_servers[i];
@@ -114,7 +115,7 @@ FResult node_monitor_service::setMonitorServer(const std::string& wallet, const 
                     std::string str = v_item.GetString();
                     std::vector<std::string> vecSplit = util::split(str, ":");
                     if (vecSplit.size() != 2) {
-                        return FResult(ERR_ERROR, "server not match format ip:port");
+                        return FResult(E802_DEFAULT_ERROR, "server not match format ip:port");
                     }
                     servers.push_back({vecSplit[0], vecSplit[1]});
                     LOG_INFO << "set monitor server host:" << vecSplit[0] << ", port:" << vecSplit[1];
@@ -123,10 +124,10 @@ FResult node_monitor_service::setMonitorServer(const std::string& wallet, const 
             if (write_db(wallet, servers)) {
                 m_wallet_monitors[wallet] = servers;
             } else {
-                return FResult(ERR_ERROR, "save monitor server failed");
+                return FResult(E802_DEFAULT_ERROR, "save monitor server failed");
             }
         } else {
-            return FResult(ERR_ERROR, "servers must be an array");
+            return FResult(E802_DEFAULT_ERROR, "servers must be an array");
         }
     }
     return FResultOk;
@@ -165,25 +166,25 @@ int32_t node_monitor_service::init_db() {
 
         if (false == bfs::is_directory(monitor_db_path)) {
             LOG_ERROR << "db directory path does not exist and exit";
-            return E_DEFAULT;
+            return E802_DEFAULT_ERROR;
         }
 
         monitor_db_path /= bfs::path("monitor.db");
         leveldb::Status status = leveldb::DB::Open(options, monitor_db_path.generic_string(), &db);
         if (false == status.ok()) {
             LOG_ERROR << "node monitor service init monitor db error: " << status.ToString();
-            return E_DEFAULT;
+            return E802_DEFAULT_ERROR;
         }
 
         m_wallet_monitors_db.reset(db);
     }
     catch (const std::exception &e) {
         LOG_ERROR << "create monitor db error: " << e.what();
-        return E_DEFAULT;
+        return E802_DEFAULT_ERROR;
     }
     catch (const boost::exception &e) {
         LOG_ERROR << "create monitor db error" << diagnostic_information(e);
-        return E_DEFAULT;
+        return E802_DEFAULT_ERROR;
     }
 
     return ERR_SUCCESS;
@@ -233,7 +234,7 @@ int32_t node_monitor_service::load_wallet_monitor_from_db() {
     }
     catch (std::exception& e) {
         LOG_ERROR << "load wallet monitors from db exception: " << e.what();
-        return E_DEFAULT;
+        return E802_DEFAULT_ERROR;
     }
 
     return ERR_SUCCESS;

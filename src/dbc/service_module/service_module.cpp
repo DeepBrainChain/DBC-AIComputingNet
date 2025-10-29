@@ -2,6 +2,7 @@
 
 #include <boost/format.hpp>
 
+#include "common/error.h"
 #include "../server/server.h"
 #include "../timer/time_tick_notification.h"
 #include "../timer/timer_tick_manager.h"
@@ -199,7 +200,7 @@ int32_t service_module::add_session(
         m_sessions.insert({session_id, session});
         return ERR_SUCCESS;
     } else {
-        return ERR_ERROR;
+        return E802_DEFAULT_ERROR;
     }
 }
 

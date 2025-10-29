@@ -1,4 +1,5 @@
 #include "tcp_socket_channel.h"
+#include "common/error.h"
 #include <boost/exception/all.hpp>
 #include "network/protocol/net_message_def.h"
 #include <boost/bind.hpp>
@@ -189,7 +190,7 @@ namespace network
     int32_t tcp_socket_channel::write(std::shared_ptr<message> msg)
     {
         if (CHANNEL_STOPPED == m_state) 
-            return ERR_ERROR;
+            return E802_DEFAULT_ERROR;
 
         {
             std::unique_lock<std::mutex> lock(m_queue_mutex);
@@ -198,7 +199,7 @@ namespace network
                 LOG_INFO << "send queue is full"
                     << ", sid=" << m_sid.to_string()
                     << ", remote=" << get_remote_addr().address().to_string() << ":" << get_remote_addr().port();
-                return ERR_ERROR;
+                return E802_DEFAULT_ERROR;
             }
         }
 
@@ -228,7 +229,7 @@ namespace network
                     << " sid=" << m_sid.to_string()
                     << ", remote=" << get_remote_addr().address().to_string() << ":" << get_remote_addr().port();
                 on_error();
-                return ERR_ERROR;
+                return E802_DEFAULT_ERROR;
             }
             
             async_write(m_send_buf);
@@ -239,7 +240,7 @@ namespace network
                 << ", sid=" << m_sid.to_string()
                 << ", remote=" << get_remote_addr().address().to_string() << ":" << get_remote_addr().port();
             on_error();
-            return ERR_ERROR;
+            return E802_DEFAULT_ERROR;
         }
         catch (const boost::exception & e)
         {
@@ -247,7 +248,7 @@ namespace network
                 << ", sid=" << m_sid.to_string()
                 << ", remote=" << get_remote_addr().address().to_string() << ":" << get_remote_addr().port();
             on_error();
-            return ERR_ERROR;
+            return E802_DEFAULT_ERROR;
         }
         catch (...)
         {
@@ -255,7 +256,7 @@ namespace network
                 << " sid=" << m_sid.to_string()
                 << ", remote=" << get_remote_addr().address().to_string() << ":" << get_remote_addr().port();
             on_error();
-            return ERR_ERROR;
+            return E802_DEFAULT_ERROR;
         }
 
         return ERR_SUCCESS;

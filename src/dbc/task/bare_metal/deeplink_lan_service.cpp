@@ -54,7 +54,7 @@ ERRCODE deeplink_lan_service::init() {
             }
         } catch (std::exception& e) {
             LOG_ERROR << "init deeplink lan service Exception: " << e.what();
-            return -1;
+            return E100_NETWORK_FAILURE;
         }
     }
 

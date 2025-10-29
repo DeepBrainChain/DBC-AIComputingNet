@@ -1,4 +1,5 @@
 #include "TaskInfoManager.h"
+#include "common/error.h"
 #include "log/log.h"
 #include "task/vm/vm_client.h"
 #include "tinyxml2.h"
@@ -6,7 +7,7 @@
 FResult TaskInfoManager::init() {
     bool ret = m_db.init_db(EnvManager::instance().get_db_path(), "task.db");
     if (!ret) {
-        return FResult(ERR_ERROR, "init task_db failed");
+        return FResult(E802_DEFAULT_ERROR, "init task_db failed");
     }
 
     std::map<std::string, std::shared_ptr<dbc::db_task_info>> mp_tasks;
@@ -69,7 +70,7 @@ FResult TaskInfoManager::init() {
 	// init running tasks
 	ret = m_running_db.init_db(EnvManager::instance().get_db_path(), "runningtasks.db");
 	if (!ret) {
-		return FResult(ERR_ERROR, "init running tasks db failed");
+		return FResult(E802_DEFAULT_ERROR, "init running tasks db failed");
 	}
 
 	m_running_db.load_datas(m_running_tasks);
@@ -86,7 +87,7 @@ FResult TaskInfoManager::init() {
     // init deleted tasks
     ret = m_deleted_db.init_db(EnvManager::instance().get_db_path(), "deleted_tasks.db");
     if (!ret) {
-        return FResult(ERR_ERROR, "init deleted tasks db failed");
+        return FResult(E802_DEFAULT_ERROR, "init deleted tasks db failed");
     }
     m_deleted_db.load_datas(m_deleted_tasks);
 

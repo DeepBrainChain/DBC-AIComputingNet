@@ -3,6 +3,7 @@
 #include <boost/exception/all.hpp>
 #include <boost/format.hpp>
 
+#include "common/error.h"
 #include "env_manager.h"
 #include "log/log.h"
 #include "server/server.h"
@@ -108,7 +109,7 @@ ERRCODE ConfManager::ParseConf() {
         bpo::notify(core_args);
     } catch (const boost::exception& e) {
         LOG_ERROR << "core.conf parse error: " << diagnostic_information(e);
-        return ERR_ERROR;
+        return E802_DEFAULT_ERROR;
     }
 
     m_version = core_args["version"].as<std::string>();
@@ -194,7 +195,7 @@ ERRCODE ConfManager::ParseConf() {
         bpo::notify(peer_args);
     } catch (const boost::exception& e) {
         LOG_ERROR << "peer.conf parse error: " << diagnostic_information(e);
-        return ERR_ERROR;
+        return E802_DEFAULT_ERROR;
     }
 
     if (peer_args.count("peer") > 0)
@@ -242,7 +243,7 @@ ERRCODE ConfManager::ParseDat() {
         bpo::notify(node_dat_args);
     } catch (const boost::exception& e) {
         LOG_ERROR << "parse node.dat error: " << diagnostic_information(e);
-        return ERR_ERROR;
+        return E802_DEFAULT_ERROR;
     }
 
     m_node_id = node_dat_args["node_id"].as<std::string>();
@@ -250,7 +251,7 @@ ERRCODE ConfManager::ParseDat() {
 
     if (!CheckNodeId()) {
         LOG_ERROR << "node_id error";
-        return ERR_ERROR;
+        return E802_DEFAULT_ERROR;
     }
 
     return ERR_SUCCESS;
@@ -290,7 +291,7 @@ ERRCODE ConfManager::SerializeNodeInfo(const util::machine_node_info& info) {
 
         if (!boost::filesystem::is_directory(node_dat_path)) {
             LOG_ERROR << "dat directory path does not exist and exit";
-            return ERR_ERROR;
+            return E802_DEFAULT_ERROR;
         }
 
         node_dat_path /= boost::filesystem::path("node.dat");
@@ -299,14 +300,14 @@ ERRCODE ConfManager::SerializeNodeInfo(const util::machine_node_info& info) {
         fp = fopen(node_dat_path.generic_string().c_str(), "w+");
         if (nullptr == fp) {
             LOG_ERROR << "ConfManager open node.dat error: fp is nullptr";
-            return ERR_ERROR;
+            return E802_DEFAULT_ERROR;
         }
     } catch (const std::exception& e) {
         LOG_ERROR << "create node error: " << e.what();
-        return ERR_ERROR;
+        return E802_DEFAULT_ERROR;
     } catch (const boost::exception& e) {
         LOG_ERROR << "create node error" << diagnostic_information(e);
-        return ERR_ERROR;
+        return E802_DEFAULT_ERROR;
     }
 
     assert(nullptr != fp);

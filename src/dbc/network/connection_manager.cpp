@@ -1,4 +1,5 @@
 #include "connection_manager.h"
+#include "common/error.h"
 #include <boost/exception/all.hpp>
 #include "log/log.h"
 #include "channel/tcp_socket_channel.h"
@@ -172,7 +173,7 @@ namespace network
 
         if (m_max_connect <= 0) {
             LOG_ERROR << "max_connect config error";
-            return E_DEFAULT;
+            return E704_BAD_PARAMETER;
         }
 
         m_max_connect = (std::max)((std::min)(m_max_connect, 
@@ -181,7 +182,7 @@ namespace network
         int32_t nFD = RaiseFileDescriptorLimit(m_max_connect + MIN_CORE_FILEDESCRIPTORS + MAX_ADDNODE_CONNECTIONS);
         if (nFD < MIN_CORE_FILEDESCRIPTORS) {
             LOG_ERROR << "not enough fd available";
-            return E_DEFAULT;
+            return E702_MEMORY_ALLOCATION_FAILED;
         }
 
         m_max_connect = (std::min)(nFD - MIN_CORE_FILEDESCRIPTORS - MAX_ADDNODE_CONNECTIONS, m_max_connect);
@@ -267,17 +268,17 @@ namespace network
         catch (const std::exception &e)
         {
             LOG_ERROR << "start listen exception: " << e.what();
-            return ERR_ERROR;
+            return E100_NETWORK_FAILURE;
         }
         catch (const boost::exception & e)
         {
             LOG_ERROR << "start listen exception: " << diagnostic_information(e);
-            return ERR_ERROR;
+            return E100_NETWORK_FAILURE;
         }
         catch (...)
         {
             LOG_ERROR << "start listen exception!";
-            return ERR_ERROR;
+            return E100_NETWORK_FAILURE;
         }
         
         return ERR_SUCCESS;
@@ -317,17 +318,17 @@ namespace network
         catch (const std::exception &e)
         {
             LOG_ERROR << "start connect exception: " << e.what() << ", conn_addr=" << connect_addr;
-            return E_DEFAULT;
+            return E802_DEFAULT_ERROR;
         }
         catch (const boost::exception & e)
         {
             LOG_ERROR << "start connect exception: " << diagnostic_information(e) << ", conn_addr=" << connect_addr;
-            return E_DEFAULT;
+            return E802_DEFAULT_ERROR;
         }
         catch (...)
         {
             LOG_ERROR << "start connect exception" << ", conn_addr=" << connect_addr;
-            return E_DEFAULT;
+            return E802_DEFAULT_ERROR;
         }
 
         return ERR_SUCCESS;
@@ -363,7 +364,7 @@ namespace network
             return ERR_SUCCESS;
         }
 
-        return E_NOT_FOUND;
+        return E705_OBJECT_NOT_FOUND;
     }
 
     ERRCODE connection_manager::add_channel(socket_id sid, std::shared_ptr<channel> channel)
@@ -374,7 +375,7 @@ namespace network
         if (!check_over_max_connect(sid.get_type()))
         {
             LOG_ERROR << "add channel failed. over max connect, remote_addr:" << ch->get_remote_addr();
-            return ERR_ERROR;
+            return E100_NETWORK_FAILURE;
         }
 
         auto ret = m_channels.insert(make_pair(sid, channel));
@@ -382,7 +383,7 @@ namespace network
             LOG_ERROR << "add channel error, channel already exist"
                 << ", socket_type: " << sid.get_type()
                 << ", remote_addr: " << ch->get_remote_addr();
-            return ERR_ERROR;
+            return E100_NETWORK_FAILURE;
         }
         else
         {
@@ -412,7 +413,7 @@ namespace network
 		read_lock_guard<rw_lock> lock(m_lock_chnl);
         auto it = m_channels.find(sid);
         if (it == m_channels.end()) {
-            return E_DEFAULT;
+            return E802_DEFAULT_ERROR;
         }
 
         return it->second->write(msg);
@@ -423,13 +424,13 @@ namespace network
         if (msg->content->header.nonce.empty())
         {
             LOG_ERROR << "nonce is empty, not broadcast, msg_name:" << msg->get_name();
-            return ERR_ERROR;
+            return E100_NETWORK_FAILURE;
         }
 
         if (!have_active_channel())
         {
             LOG_WARNING << "broadcast message error, no active channel";
-            return ERR_ERROR;
+            return E100_NETWORK_FAILURE;
         }
 
         {
@@ -661,13 +662,13 @@ namespace network
             if (it == m_channels.end())
             {
                 LOG_ERROR << "on tcp channel error but not found" << sid.to_string();
-                return E_DEFAULT;
+                return E802_DEFAULT_ERROR;
             }
 
             ch = std::dynamic_pointer_cast<tcp_socket_channel>(it->second);
             if (nullptr == ch)
             {
-                return E_DEFAULT;
+                return E802_DEFAULT_ERROR;
             }
 
             //remove channel

@@ -1,4 +1,5 @@
 #include "tcp_acceptor.h"
+#include "common/error.h"
 #include "channel/tcp_socket_channel.h"
 #include <boost/exception/all.hpp>
 #include "server/server.h"
@@ -22,7 +23,7 @@ namespace network
         boost::system::error_code error;
         m_acceptor.listen(8, error);
         if (error) {
-            return ERR_ERROR;
+            return E802_DEFAULT_ERROR;
         }
 
         return start_accept();
@@ -58,21 +59,21 @@ namespace network
         std::shared_ptr<tcp_socket_channel> socket_channel = std::dynamic_pointer_cast<tcp_socket_channel>(ch);
         if (nullptr == ch || nullptr == socket_channel)
         {
-            return ERR_ERROR;
+            return E802_DEFAULT_ERROR;
         }
 
         if (error)
         {
             if (boost::asio::error::operation_aborted == error.value())
             {
-                return ERR_ERROR;
+                return E802_DEFAULT_ERROR;
             }
 
             socket_channel->on_error();
 
             start_accept();
 
-            return E_DEFAULT;
+            return E802_DEFAULT_ERROR;
         }
 		
         LOG_INFO << "accept new connection from "
@@ -88,7 +89,7 @@ namespace network
 
             socket_channel->on_error();
             start_accept();
-            return E_DEFAULT;
+            return E802_DEFAULT_ERROR;
         }
 	    
         int32_t ret = connection_manager::instance().add_channel(socket_channel->id(), socket_channel->shared_from_this());

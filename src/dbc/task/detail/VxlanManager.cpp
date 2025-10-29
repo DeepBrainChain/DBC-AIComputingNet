@@ -1,4 +1,5 @@
 #include "VxlanManager.h"
+#include "common/error.h"
 #include <boost/asio/ip/address.hpp>
 #include "log/log.h"
 #include "network/protocol/thrift_binary.h"
@@ -107,12 +108,12 @@ VxlanManager::VxlanManager() {
 ERRCODE VxlanManager::Init() {
     if (ERR_SUCCESS != InitDb()) {
         LOG_ERROR << "init_db error";
-        return E_DEFAULT;
+        return E802_DEFAULT_ERROR;
     }
 
     if (ERR_SUCCESS != LoadNetworkInfoFromDb()) {
         LOG_ERROR << "load network info from db error";
-        return E_DEFAULT;
+        return E802_DEFAULT_ERROR;
     }
     return ERR_SUCCESS;
 }
@@ -136,7 +137,7 @@ void VxlanManager::Exit() {
 }
 
 FResult VxlanManager::CreateVxlanDevice(const std::string &bridgeName, const std::string &vxlanName, const std::string &vxlanVni) {
-    FResult fret = {ERR_ERROR, "parse shell result error"};
+    FResult fret = {E802_DEFAULT_ERROR, "parse shell result error"};
     bfs::path shell_path = EnvManager::instance().get_shell_path();
     shell_path /= "network/create_bridge.sh";
     std::string cmd = shell_path.generic_string() + " " + bridgeName + " " + vxlanName + " " + vxlanVni;
@@ -163,7 +164,7 @@ void VxlanManager::DeleteVxlanDevice(const std::string &bridgeName, const std::s
 
 FResult VxlanManager::StartDhcpServer(const std::string &bridgeName, const std::string &vxlanName, const std::string &dhcpName,
         const std::string &netMask, const std::string &ipStart, const std::string &ipEnd, const std::string &ipLeaseNum) {
-    FResult fret = {ERR_ERROR, "parse shell result error"};
+    FResult fret = {E802_DEFAULT_ERROR, "parse shell result error"};
     bfs::path shell_path = EnvManager::instance().get_shell_path();
     shell_path /= "network/start_dhcp.sh";
     std::string cmd = shell_path.generic_string() + " " + bridgeName + " " + vxlanName + " " + dhcpName;
@@ -193,17 +194,17 @@ FResult VxlanManager::CreateNetworkServer(const std::string &networkName, const 
     std::string random = random_string(10);
 
     if (networkName.empty())
-        return FResult(ERR_ERROR, "network name can not be empty");
+        return FResult(E802_DEFAULT_ERROR, "network name can not be empty");
     if (!check_network_name(networkName))
-        return FResult(ERR_ERROR, "network name requires a combination of 6 to 10 letters or numbers");
+        return FResult(E802_DEFAULT_ERROR, "network name requires a combination of 6 to 10 letters or numbers");
     if (GetNetwork(networkName))
-        return FResult(ERR_ERROR, "network name already existed");
+        return FResult(E802_DEFAULT_ERROR, "network name already existed");
 
     std::string vni = RandomVni();
     if (vni.empty())
-        return FResult(ERR_ERROR, "network vni is full");
+        return FResult(E802_DEFAULT_ERROR, "network vni is full");
     if (ipCidr.empty())
-        return FResult(ERR_ERROR, "ip cidr can not be empty");
+        return FResult(E802_DEFAULT_ERROR, "ip cidr can not be empty");
 
     std::shared_ptr<dbc::networkInfo> info = std::make_shared<dbc::networkInfo>();
     info->__set_networkId(networkName);
@@ -212,15 +213,15 @@ FResult VxlanManager::CreateNetworkServer(const std::string &networkName, const 
     info->__set_vxlanVni(vni);
 
     if (ipCidr.find("192.168.122.") != std::string::npos)
-        return FResult(ERR_ERROR, "ip cidr already exist");
+        return FResult(E802_DEFAULT_ERROR, "ip cidr already exist");
     std::vector<std::string> vecSplit = util::split(ipCidr, "/");
     if (vecSplit.size() != 2)
-        return FResult(ERR_ERROR, "invalid ip cidr");
+        return FResult(E802_DEFAULT_ERROR, "invalid ip cidr");
     boost::asio::ip::address addr = boost::asio::ip::address::from_string(vecSplit[0]);
     if (!addr.is_v4())
-        return FResult(ERR_ERROR, "invalid ip cidr");
+        return FResult(E802_DEFAULT_ERROR, "invalid ip cidr");
     // if (CheckIpCidr(ipCidr))
-    //     return FResult(ERR_ERROR, "ip cidr already exist");
+    //     return FResult(E802_DEFAULT_ERROR, "ip cidr already exist");
 
     ipRangeHelper ipHelper(vecSplit[0], atoi(vecSplit[1].c_str()));
 
@@ -254,7 +255,7 @@ FResult VxlanManager::CreateNetworkServer(const std::string &networkName, const 
     if (!UpdateNetworkDb(info)) {
         DeleteVxlanDevice(info->bridgeName, info->vxlanName);
         StopDhcpServer(info->bridgeName, info->vxlanName);
-        return FResult(ERR_ERROR, "write network db failed");
+        return FResult(E802_DEFAULT_ERROR, "write network db failed");
     }
 
     {
@@ -270,11 +271,11 @@ FResult VxlanManager::CreateNetworkServer(const std::string &networkName, const 
 
 FResult VxlanManager::CreateNetworkClient(const std::string &networkName) {
     std::shared_ptr<dbc::networkInfo> info = GetNetwork(networkName);
-    if (!info) return FResult(ERR_ERROR, "can not find network info");
+    if (!info) return FResult(E802_DEFAULT_ERROR, "can not find network info");
     if (info->nativeFlags & NATIVE_FLAGS_DEVICE) return FResultOk;
     if (p2p_lan_service::instance().is_same_host(info->machineId)) return FResultOk;
     if (info->bridgeName.empty() || info->vxlanName.empty() || info->vxlanVni.empty())
-        return FResult(ERR_ERROR, "invalid network info");
+        return FResult(E802_DEFAULT_ERROR, "invalid network info");
  
     FResult fret = CreateVxlanDevice(info->bridgeName, info->vxlanName, info->vxlanVni);
     if (fret.errcode != 0) {
@@ -284,7 +285,7 @@ FResult VxlanManager::CreateNetworkClient(const std::string &networkName) {
 
     if (!UpdateNetworkDb(info)) {
         DeleteVxlanDevice(info->bridgeName, info->vxlanName);
-        return FResult(ERR_ERROR, "update network db failed");
+        return FResult(E802_DEFAULT_ERROR, "update network db failed");
     }
 
     {
@@ -330,16 +331,16 @@ FResult VxlanManager::DeleteNetwork(const std::string &networkName, const std::s
         auto iter = m_networks.find(networkName);
         if (iter != m_networks.end()) {
             if (iter->second->rentWallet != wallet) {
-                return FResult(ERR_ERROR, "wallet error, you are not the owner of the network");
+                return FResult(E802_DEFAULT_ERROR, "wallet error, you are not the owner of the network");
             }
             if (!iter->second->members.empty()) {
-                return FResult(ERR_ERROR, "network is in used, please delete task in the network first");
+                return FResult(E802_DEFAULT_ERROR, "network is in used, please delete task in the network first");
             }
             StopDhcpServer(iter->second->bridgeName, iter->second->vxlanName);
             DeleteVxlanDevice(iter->second->bridgeName, iter->second->vxlanName);
             m_networks.erase(iter);
         } else {
-            return FResult(ERR_ERROR, "network name not exist");
+            return FResult(E802_DEFAULT_ERROR, "network name not exist");
         }
     }
 
@@ -383,10 +384,10 @@ std::shared_ptr<dbc::networkInfo> VxlanManager::GetNetwork(const std::string &ne
 
 FResult VxlanManager::MoveNetwork(const std::string &networkName, const std::string &newMachineId) {
     std::shared_ptr<dbc::networkInfo> info = GetNetwork(networkName);
-    if (!info) return FResult(ERR_ERROR, "network name not exist");
+    if (!info) return FResult(E802_DEFAULT_ERROR, "network name not exist");
 
     if (newMachineId != ConfManager::instance().GetNodeId())
-        return FResult(ERR_ERROR, "not my machine id");
+        return FResult(E802_DEFAULT_ERROR, "not my machine id");
     
     bool isSameHost = p2p_lan_service::instance().is_same_host(info->machineId);
 
@@ -399,9 +400,9 @@ FResult VxlanManager::MoveNetwork(const std::string &networkName, const std::str
     }
 
     std::vector<std::string> vecSplit = util::split(info->ipCidr, "/");
-    if (vecSplit.size() != 2) return FResult(ERR_ERROR, "invalid ip cidr");
+    if (vecSplit.size() != 2) return FResult(E802_DEFAULT_ERROR, "invalid ip cidr");
     boost::asio::ip::address addr = boost::asio::ip::address::from_string(vecSplit[0]);
-    if (!addr.is_v4()) return FResult(ERR_ERROR, "invalid ip cidr");
+    if (!addr.is_v4()) return FResult(E802_DEFAULT_ERROR, "invalid ip cidr");
 
     ipRangeHelper ipHelper(vecSplit[0], atoi(vecSplit[1].c_str()));
     FResult fret = StartDhcpServer(info->bridgeName, info->vxlanName, info->dhcpInterface,
@@ -570,25 +571,25 @@ int32_t VxlanManager::InitDb() {
 
         if (false == bfs::is_directory(db_path)) {
             LOG_ERROR << "db directory path does not exist and exit";
-            return E_DEFAULT;
+            return E802_DEFAULT_ERROR;
         }
 
         db_path /= bfs::path("network.db");
         leveldb::Status status = leveldb::DB::Open(options, db_path.generic_string(), &db);
         if (false == status.ok()) {
             LOG_ERROR << "init vxlan network db error: " << status.ToString();
-            return E_DEFAULT;
+            return E802_DEFAULT_ERROR;
         }
 
         m_db.reset(db);
     }
     catch (const std::exception &e) {
         LOG_ERROR << "create vxlan network db error: " << e.what();
-        return E_DEFAULT;
+        return E802_DEFAULT_ERROR;
     }
     catch (const boost::exception &e) {
         LOG_ERROR << "create vxlan network db error" << diagnostic_information(e);
-        return E_DEFAULT;
+        return E802_DEFAULT_ERROR;
     }
 
     return ERR_SUCCESS;
@@ -622,7 +623,7 @@ int32_t VxlanManager::LoadNetworkInfoFromDb() {
                     if (fret.errcode != ERR_SUCCESS) {
                         LOG_ERROR << "found bridge " << db_item->bridgeName
                             << " not existed, and restore failed";
-                        return E_DEFAULT;
+                        return E802_DEFAULT_ERROR;
                     }
                 }
             }
@@ -636,7 +637,7 @@ int32_t VxlanManager::LoadNetworkInfoFromDb() {
                     if (fret.errcode != ERR_SUCCESS) {
                         LOG_ERROR << "found network " << db_item->networkId
                             << " not running, and restart failed";
-                        return E_DEFAULT;
+                        return E802_DEFAULT_ERROR;
                     }
                 }
             }
@@ -648,7 +649,7 @@ int32_t VxlanManager::LoadNetworkInfoFromDb() {
     }
     catch (std::exception& e) {
         LOG_ERROR << "load network info from db exception: " << e.what();
-        return E_DEFAULT;
+        return E802_DEFAULT_ERROR;
     }
 
     return ERR_SUCCESS;

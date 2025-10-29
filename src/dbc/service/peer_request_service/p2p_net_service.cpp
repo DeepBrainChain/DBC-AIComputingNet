@@ -5,6 +5,7 @@
 #include <boost/lexical_cast.hpp>
 #include <cassert>
 
+#include "common/error.h"
 #include "config/conf_manager.h"
 #include "db/db_types/db_peer_candidate_types.h"
 #include "network/channel/tcp_socket_channel.h"
@@ -43,22 +44,22 @@ ERRCODE p2p_net_service::init() {
 
     if (ERR_SUCCESS != init_conf()) {
         LOG_ERROR << "init conf error";
-        return ERR_ERROR;
+        return E802_DEFAULT_ERROR;
     }
 
     if (ERR_SUCCESS != init_db()) {
         LOG_ERROR << "init db error";
-        return ERR_ERROR;
+        return E802_DEFAULT_ERROR;
     }
 
     if (ERR_SUCCESS != start_acceptor()) {
         LOG_ERROR << "start acceptor error";
-        return ERR_ERROR;
+        return E802_DEFAULT_ERROR;
     }
 
     if (ERR_SUCCESS != start_connector()) {
         LOG_ERROR << "start connector error";
-        return ERR_ERROR;
+        return E802_DEFAULT_ERROR;
     }
 
     return ERR_SUCCESS;
@@ -118,7 +119,7 @@ ERRCODE p2p_net_service::init_db() {
     fs::path db_file_path = EnvManager::instance().get_db_path();
     if (!m_peers_candidates_db.init(db_file_path, "peers.db")) {
         LOG_ERROR << "init peer_candidate_db failed";
-        return ERR_ERROR;
+        return E802_DEFAULT_ERROR;
     }
 
     load_peer_candidates_from_db();
@@ -585,7 +586,7 @@ uint32_t p2p_net_service::start_connect(const tcp::endpoint tcp_ep) {
         if (exist_peer_node(tcp_ep)) {
             LOG_DEBUG << "tcp channel exist to: "
                       << tcp_ep.address().to_string() << ":" << tcp_ep.port();
-            return E_DEFAULT;
+            return E802_DEFAULT_ERROR;
         }
 
         // start connect
@@ -594,13 +595,13 @@ uint32_t p2p_net_service::start_connect(const tcp::endpoint tcp_ep) {
                 tcp_ep, &matrix_client_socket_channel_handler::create)) {
             LOG_ERROR << "matrix init connector invalid peer address, ip: "
                       << tcp_ep.address() << " port: " << tcp_ep.port();
-            return E_DEFAULT;
+            return E802_DEFAULT_ERROR;
         }
     } catch (const std::exception& e) {
         LOG_ERROR << "timer connect ip catch exception. addr info: "
                   << tcp_ep.address() << " port: " << tcp_ep.port() << ", "
                   << e.what();
-        return E_DEFAULT;
+        return E802_DEFAULT_ERROR;
     }
 
     return ERR_SUCCESS;
@@ -1257,7 +1258,7 @@ int32_t p2p_net_service::save_peer_candidates() {
 
     if (!m_peers_candidates_db.write_datas(list_peer_candidates)) {
         LOG_ERROR << "save db_peer_candidates failed";
-        return ERR_ERROR;
+        return E802_DEFAULT_ERROR;
     }
 
     return ERR_SUCCESS;

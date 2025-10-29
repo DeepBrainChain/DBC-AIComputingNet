@@ -1,4 +1,5 @@
 #include "check_images.h"
+#include "../dbc/common/error.h"
 #include <openssl/md5.h>
 #include <iostream>
 #include <sstream>
@@ -28,7 +29,7 @@ int compute_file_md5(const char* file, std::string& md5) {
     FILE* fd = fopen(file, "r");
     if (fd == NULL) {
         std::cout << "open file failed." << std::endl;
-        return -1;
+        return E700_FILE_OPERATION_FAILED;
     }
     MD5_CTX ctx;
     unsigned char md5_value[MD5_SIZE] = {0};
@@ -41,7 +42,7 @@ int compute_file_md5(const char* file, std::string& md5) {
     fclose(fd);
     if (ret < 0) {
         std::cout << "read error" << std::endl;
-        return -1;
+        return E700_FILE_OPERATION_FAILED;
     }
     MD5_Final(md5_value, &ctx);
     std::stringstream ss;

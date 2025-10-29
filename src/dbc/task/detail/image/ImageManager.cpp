@@ -1,4 +1,5 @@
 #include "ImageManager.h"
+#include "common/error.h"
 #include "util/threadpool.h"
 #include "log/log.h"
 #include "config/conf_manager.h"
@@ -284,13 +285,13 @@ void ImageManager::listWalletLocalShareImages(const std::string &wallet, const I
 FResult ImageManager::download(const std::string& imagefile_name, const std::string& local_dir, const ImageServer& from_server,
                             const std::function<void()>& finish_callback) {
 	if (from_server.ip.empty() || from_server.port.empty() || from_server.modulename.empty()) 
-        return FResult(ERR_ERROR, "image server is invalid");
+        return FResult(E802_DEFAULT_ERROR, "image server is invalid");
     
     std::string cmd1 = CommandQueryImageSize(imagefile_name, from_server.ip, from_server.port, from_server.modulename);
     std::string rsp1 = run_shell(cmd1);
     std::vector<std::string> vec_file = util::split(rsp1, " ");
     if (vec_file.size() < 2) 
-        return FResult(ERR_ERROR, "query image file size failed");
+        return FResult(E802_DEFAULT_ERROR, "query image file size failed");
 
     std::string filename = vec_file[0];
     std::string filesize = vec_file[1];
@@ -365,7 +366,7 @@ bool ImageManager::isDownloading(const std::string & imagefile_name) {
 FResult ImageManager::upload(const std::string& imagefile_name, const ImageServer& to_server,
                           const std::function<void()>& finish_callback) {
 	if (to_server.ip.empty() || to_server.port.empty() || to_server.modulename.empty()) 
-        return FResult(ERR_ERROR, "image server is invalid");
+        return FResult(E802_DEFAULT_ERROR, "image server is invalid");
 
     bfs::path fpath(imagefile_name);
     ImageFile image_file;

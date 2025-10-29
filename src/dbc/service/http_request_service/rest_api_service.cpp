@@ -4,6 +4,7 @@
 #include <boost/exception/all.hpp>
 #include <boost/format.hpp>
 
+#include "common/error.h"
 #include "config/conf_manager.h"
 #include "log/log.h"
 #include "message/message_id.h"
@@ -497,7 +498,7 @@ int32_t rest_api_service::create_request_session(
 
     if (get_session_count() >= MAX_SESSION_COUNT) {
         LOG_ERROR << "session pool is full, uri:" << str_uri;
-        return E_DEFAULT;
+        return E802_DEFAULT_ERROR;
     }
 
     auto hreq_context = std::make_shared<network::http_request_context>();
@@ -514,7 +515,7 @@ int32_t rest_api_service::create_request_session(
     int32_t ret = this->add_session(session_id, session);
     if (ERR_SUCCESS != ret) {
         LOG_ERROR << "add_session failed, uri:" << str_uri;
-        return E_DEFAULT;
+        return E802_DEFAULT_ERROR;
     }
 
     return ERR_SUCCESS;

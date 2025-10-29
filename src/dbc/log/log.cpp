@@ -88,17 +88,17 @@ int32_t dbclog::init()
     catch (const std::exception & e)
     {
         std::cout << "log error" << e.what() << std::endl;
-        return E_DEFAULT;
+        return E802_DEFAULT_ERROR;
     }
     catch (const boost::exception & e)
     {
         std::cout << "log error" << diagnostic_information(e) << std::endl;
-        return E_DEFAULT;
+        return E802_DEFAULT_ERROR;
     }
     catch (...)
     {
         std::cout << "log error" << std::endl;
-        return E_DEFAULT;
+        return E802_DEFAULT_ERROR;
     }
 
     //fix by regulus:fix boost::log throw exception cause coredump where open files is not enough. can use the 2 method as below.

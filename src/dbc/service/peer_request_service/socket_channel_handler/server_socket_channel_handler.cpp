@@ -1,4 +1,5 @@
 #include "server_socket_channel_handler.h"
+#include "common/error.h"
 
 matrix_server_socket_channel_handler::matrix_server_socket_channel_handler(
     std::shared_ptr<network::channel> ch)
@@ -79,14 +80,14 @@ int32_t matrix_server_socket_channel_handler::on_after_msg_received(network::mes
     if (nullptr == msg.content)
     {
         LOG_ERROR << "matrix server socket channel msg content nullptr ";
-        return E_DEFAULT;
+        return E802_DEFAULT_ERROR;
     }
 
     //check magic
     if (ConfManager::instance().GetNetFlag() != msg.content->header.magic)
     {
         LOG_ERROR << "matrix server socket channel received error magic: " << msg.content->header.magic;
-        return E_DEFAULT;
+        return E802_DEFAULT_ERROR;
     }
 
     if (false == m_login_success)
@@ -94,7 +95,7 @@ int32_t matrix_server_socket_channel_handler::on_after_msg_received(network::mes
         if (VER_REQ != msg.get_name())
         {
             LOG_ERROR << "matrix server socket channel received error message: " << msg.get_name() << " , while not login success" << msg.header.src_sid.to_string();
-            return E_DEFAULT;
+            return E802_DEFAULT_ERROR;
         }
     }
 
@@ -104,13 +105,13 @@ int32_t matrix_server_socket_channel_handler::on_after_msg_received(network::mes
         if (req_content->body.node_id == ConfManager::instance().GetNodeId())
         {
             LOG_ERROR << "matrix server socket channel received itself node id: " << req_content->body.node_id << msg.header.src_sid.to_string();
-            return E_DEFAULT;
+            return E802_DEFAULT_ERROR;
         }
 
         if (true == m_recv_ver_req)
         {
             LOG_ERROR << "matrix server socket channel received duplicated VER_REQ message" << msg.header.src_sid.to_string();
-            return E_DEFAULT;
+            return E802_DEFAULT_ERROR;
         }
 
         m_recv_ver_req = true;

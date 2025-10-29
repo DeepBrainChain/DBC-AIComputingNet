@@ -5,6 +5,7 @@
 #include <event2/bufferevent.h>
 #include <event2/event.h>
 #include <event2/http.h>
+#include "common/error.h"
 #include "server/server.h"
 #include "log/log.h"
 #include "network/http/http_client.h"
@@ -33,14 +34,14 @@ ERRCODE http_server_service::load_config() {
     val.value() = conf_rest_ip;
     if (!ip_vdr.validate(val)) {
         LOG_ERROR << "http server init invalid ip: " << conf_rest_ip;
-        return E_DEFAULT;
+        return E802_DEFAULT_ERROR;
     }
     m_listen_ip = conf_rest_ip;
     
     int32_t conf_rest_port = ConfManager::instance().GetHttpListenPort();
     if (conf_rest_port <= 0) {
         LOG_ERROR << "http server init invalid port: " << conf_rest_port;
-        return E_DEFAULT;
+        return E802_DEFAULT_ERROR;
     } else {
         m_listen_port = conf_rest_port;
     }

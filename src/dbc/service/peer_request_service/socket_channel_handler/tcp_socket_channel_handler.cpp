@@ -1,4 +1,5 @@
 #include "tcp_socket_channel_handler.h"
+#include "common/error.h"
 #include "network/compress/matrix_compress.h"
 #include "message/message_id.h"
 #include "network/topic_manager.h"
@@ -311,12 +312,12 @@ int32_t matrix_socket_channel_handler::on_write(network::channel_handler_context
     {
         //this should be found in coding phase
         LOG_ERROR << "matrix_socket_channel_handler encode error, buffer is not enough to encode: " << msg.get_name();
-        return E_DEFAULT;
+        return E802_DEFAULT_ERROR;
     }
     else
     {
         LOG_ERROR << "matrix_socket_channel_handler encode error: " << msg.get_name();
-        return E_DEFAULT;
+        return E802_DEFAULT_ERROR;
     }
 }
 

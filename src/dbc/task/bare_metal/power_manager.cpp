@@ -1,4 +1,5 @@
 #include "power_manager.h"
+#include "common/error.h"
 
 #include <boost/process.hpp>
 
@@ -49,11 +50,11 @@ static FResult RunPowerCommand(const std::string& file,
         c.wait();
         return FResult(c.exit_code(), result);
     } catch (boost::exception& e) {
-        FResult(ERR_ERROR, diagnostic_information(e));
+        FResult(E802_DEFAULT_ERROR, diagnostic_information(e));
     } catch (...) {
     }
 
-    return FResult(ERR_ERROR, "run power manager tool error");
+    return FResult(E802_DEFAULT_ERROR, "run power manager tool error");
 }
 
 namespace fool {
@@ -69,7 +70,7 @@ PowerManager::~PowerManager() {
 FResult PowerManager::Init() {
     power_manager_tool_ = ConfManager::instance().GetNetbarPowerManager();
     if (!boost::filesystem::exists(power_manager_tool_))
-        return FResult(ERR_ERROR, "power manager tool not existed");
+        return FResult(E802_DEFAULT_ERROR, "power manager tool not existed");
     return FResultOk;
 }
 
@@ -82,13 +83,13 @@ FResult PowerManager::PowerControl(const std::string& node_id,
                                    const std::string& command) {
     std::shared_ptr<dbc::db_bare_metal> bm =
         BareMetalNodeManager::instance().getBareMetalNode(node_id);
-    if (!bm) return FResult(ERR_ERROR, "node id not existed");
+    if (!bm) return FResult(E802_DEFAULT_ERROR, "node id not existed");
 
     std::string arg1 = command;
     if (command == "on" || command == "off") {
         arg1 = "power" + command;
     } else if (command != "status") {
-        return FResult(ERR_ERROR, "unsupported command");
+        return FResult(E802_DEFAULT_ERROR, "unsupported command");
     }
     std::string arg2 = GetBareMetalInfo(bm);
 
@@ -101,7 +102,7 @@ FResult PowerManager::PowerControl(const std::string& node_id,
 
 FResult PowerManager::SetBootDeviceOrder(const std::string& node_id,
                                          const std::string& device) {
-    return FResult(ERR_ERROR, "unsupported command");
+    return FResult(E802_DEFAULT_ERROR, "unsupported command");
 }
 
 }  // namespace fool

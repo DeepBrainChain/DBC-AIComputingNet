@@ -1,4 +1,5 @@
 #include "CpuTuneManager.h"
+#include "common/error.h"
 #include "log/log.h"
 #include "task/vm/vm_client.h"
 #include "tinyxml2.h"
@@ -23,39 +24,39 @@ FResult CpuTuneManager::Init() {
     tinyxml2::XMLDocument doc;
     tinyxml2::XMLError err = doc.Parse(xml.c_str());
     if (err != tinyxml2::XML_SUCCESS) {
-        return FResult(ERR_ERROR, "parse host capabilities xml failed");
+        return FResult(E802_DEFAULT_ERROR, "parse host capabilities xml failed");
     }
 
     tinyxml2::XMLElement* root = doc.RootElement();
     // host
     tinyxml2::XMLElement* ele_host = root->FirstChildElement("host");
     if (!ele_host) {
-        return FResult(ERR_ERROR, "can not find host node in capabilities");
+        return FResult(E802_DEFAULT_ERROR, "can not find host node in capabilities");
     }
 
     // host -> cpu
     tinyxml2::XMLElement* ele_host_cpu = ele_host->FirstChildElement("cpu");
     if (!ele_host_cpu) {
-        return FResult(ERR_ERROR, "can not find host cpu node in capabilities");
+        return FResult(E802_DEFAULT_ERROR, "can not find host cpu node in capabilities");
     }
 
     // host -> cpu -> topology
     tinyxml2::XMLElement* ele_cpu_topology = ele_host_cpu->FirstChildElement("topology");
     if (!ele_cpu_topology) {
-        return FResult(ERR_ERROR, "can not find host cpu topology in capabilities");
+        return FResult(E802_DEFAULT_ERROR, "can not find host cpu topology in capabilities");
     }
     is_hyper_threading_ = ele_cpu_topology->UnsignedAttribute("threads") == 2;
 
     // host -> topology
     tinyxml2::XMLElement* ele_host_topology = ele_host->FirstChildElement("topology");
     if (!ele_host_topology) {
-        return FResult(ERR_ERROR, "can not find host topology node in capabilities");
+        return FResult(E802_DEFAULT_ERROR, "can not find host topology node in capabilities");
     }
 
     // host -> topology -> cells
     tinyxml2::XMLElement* ele_topology_cells = ele_host_topology->FirstChildElement("cells");
     if (!ele_topology_cells) {
-        return FResult(ERR_ERROR, "can not find host topology cells in capabilities");
+        return FResult(E802_DEFAULT_ERROR, "can not find host topology cells in capabilities");
     }
 
     // host -> topology -> cells -> cell
@@ -93,7 +94,7 @@ FResult CpuTuneManager::Init() {
     }
 
     if (host_cpu_count_ == 0) {
-        return FResult(ERR_ERROR, "parse host cpu topology error");
+        return FResult(E802_DEFAULT_ERROR, "parse host cpu topology error");
     }
 
     cpu_maplen_ = VIR_CPU_MAPLEN(host_cpu_count_);
@@ -130,7 +131,7 @@ void CpuTuneManager::UnuseCpus(const std::vector<unsigned int>& cpus) {
 }
 
 int CpuTuneManager::CpuUsed(const unsigned int cpu) const {
-    if (cpu >= host_cpu_count_) return -1;
+    if (cpu >= host_cpu_count_) return E309_TASK_CPU_CHECK_FAILED;
     RwMutex::ReadLock rlock(mutex_);
     return VIR_CPU_USED(&cpumap_[0], cpu);
 }

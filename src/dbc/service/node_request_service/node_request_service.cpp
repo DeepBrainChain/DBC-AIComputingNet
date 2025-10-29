@@ -1,5 +1,6 @@
 #include "node_request_service.h"
 
+#include "common/error.h"
 #include <boost/algorithm/string/join.hpp>
 #include <boost/exception/all.hpp>
 #include <boost/format.hpp>
@@ -78,13 +79,13 @@ ERRCODE node_request_service::init() {
     FResult fret = WalletSessionIDMgr::instance().init();
     if (fret.errcode != ERR_SUCCESS) {
         LOG_ERROR << "wallet_sessionid manager init failed";
-        return ERR_ERROR;
+        return E701_DATABASE_ERROR;
     }
 
     fret = RentOrderManager::instance().Init();
     if (fret.errcode != ERR_SUCCESS) {
         LOG_ERROR << "rent order manager init failed";
-        return ERR_ERROR;
+        return E701_DATABASE_ERROR;
     }
 
     if (Server::NodeType == NODE_TYPE::ComputeNode ||
@@ -104,7 +105,7 @@ ERRCODE node_request_service::init() {
         fret = BareMetalTaskManager::instance().Init();
         if (fret.errcode != ERR_SUCCESS) {
             LOG_ERROR << fret.errmsg;
-            return ERR_ERROR;
+            return E709_NOT_COMPUTING_NODE;
         }
     }
 
@@ -112,7 +113,7 @@ ERRCODE node_request_service::init() {
         fret = TaskMgr::instance().init();
         if (fret.errcode != ERR_SUCCESS) {
             LOG_ERROR << fret.errmsg;
-            return ERR_ERROR;
+            return E302_TASK_CREATE_FAILED;
         }
     }
 
@@ -526,27 +527,27 @@ FResult node_request_service::check_nonce(const std::string& wallet,
                                           const std::string& sign) {
     if (wallet.empty()) {
         LOG_ERROR << "wallet is empty";
-        return FResult(ERR_ERROR, "wallet is empty");
+        return FResult(E802_DEFAULT_ERROR, "wallet is empty");
     }
 
     if (nonce.empty()) {
         LOG_ERROR << "nonce is empty";
-        return FResult(ERR_ERROR, "nonce is empty");
+        return FResult(E802_DEFAULT_ERROR, "nonce is empty");
     }
 
     if (sign.empty()) {
         LOG_ERROR << "sign is empty";
-        return FResult(ERR_ERROR, "sign is empty");
+        return FResult(E802_DEFAULT_ERROR, "sign is empty");
     }
 
     if (!util::verify_sign(sign, nonce, wallet)) {
         LOG_ERROR << "verify sign failed";
-        return FResult(ERR_ERROR, "verify sign failed");
+        return FResult(E802_DEFAULT_ERROR, "verify sign failed");
     }
 
     if (m_nonce_filter.contains(nonce)) {
         LOG_ERROR << "nonce is already exist";
-        return FResult(ERR_ERROR, "nonce is already exist");
+        return FResult(E802_DEFAULT_ERROR, "nonce is already exist");
     }
 
     return FResultOk;
@@ -558,13 +559,13 @@ FResult node_request_service::check_nonce(
     const std::vector<dbc::multisig_sign_item>& multisig_signs) {
     if (multisig_wallets.empty() || multisig_signs.empty() ||
         multisig_threshold <= 0) {
-        return FResult(ERR_ERROR, "multisig wallet is emtpty");
+        return FResult(E802_DEFAULT_ERROR, "multisig wallet is emtpty");
     }
 
     if (multisig_threshold > multisig_wallets.size() ||
         multisig_threshold > multisig_signs.size()) {
         LOG_ERROR << "threshold is invalid";
-        return FResult(ERR_ERROR, "threshold is invalid");
+        return FResult(E802_DEFAULT_ERROR, "threshold is invalid");
     }
 
     for (auto& it : multisig_signs) {
@@ -573,28 +574,28 @@ FResult node_request_service::check_nonce(
                                                 it.wallet)) {
             LOG_ERROR << "multisig sign_wallet " + it.wallet +
                              " not found in wallets";
-            return FResult(ERR_ERROR, "multisig sign_wallet " + it.wallet +
+            return FResult(E802_DEFAULT_ERROR, "multisig sign_wallet " + it.wallet +
                                           " not found in wallets");
         }
 
         if (it.nonce.empty()) {
             LOG_ERROR << "multisig nonce is empty";
-            return FResult(ERR_ERROR, "multisig nonce is empty");
+            return FResult(E802_DEFAULT_ERROR, "multisig nonce is empty");
         }
 
         if (it.sign.empty()) {
             LOG_ERROR << "multisig sign is empty";
-            return FResult(ERR_ERROR, "multisig sign is empty");
+            return FResult(E802_DEFAULT_ERROR, "multisig sign is empty");
         }
 
         if (!util::verify_sign(it.sign, it.nonce, it.wallet)) {
             LOG_ERROR << "verify multisig sign failed";
-            return FResult(ERR_ERROR, "verify multisig sign failed");
+            return FResult(E802_DEFAULT_ERROR, "verify multisig sign failed");
         }
 
         if (m_nonce_filter.contains(it.nonce)) {
             LOG_ERROR << "multisig nonce is already exist";
-            return FResult(ERR_ERROR, "multisig nonce is already exist");
+            return FResult(E802_DEFAULT_ERROR, "multisig nonce is already exist");
         }
     }
 
@@ -909,7 +910,7 @@ void node_request_service::on_node_list_task_req(
         if (!result.success) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_list_task_rsp>(
-                NODE_LIST_TASK_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_LIST_TASK_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
                 "check authority failed: " + result.errmsg);
             return;
         }
@@ -917,7 +918,7 @@ void node_request_service::on_node_list_task_req(
         task_list(node_req_msg->header, data, result);
     } else if (hit_self == HitBareMetal || hit_self == HitBareMetalManager) {
         send_response_error<dbc::node_list_task_rsp>(
-            NODE_LIST_TASK_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_LIST_TASK_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "bare metal nodes are not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -1113,7 +1114,7 @@ void node_request_service::task_list(
             ss_tasks << "]";
             ss_tasks << "}";
         } else {
-            ret_code = E_DEFAULT;
+            ret_code = E802_DEFAULT_ERROR;
             ret_msg = "task_id not exist";
         }
     }
@@ -1145,13 +1146,13 @@ void node_request_service::task_list(
         } else {
             LOG_ERROR << "pub_key or priv_key is empty";
             send_response_error<dbc::node_list_task_rsp>(
-                NODE_LIST_TASK_RSP, header, E_DEFAULT,
+                NODE_LIST_TASK_RSP, header, E802_DEFAULT_ERROR,
                 "pub_key or priv_key is empty");
         }
     } else {
         LOG_ERROR << "request no pub_key";
         send_response_error<dbc::node_list_task_rsp>(
-            NODE_LIST_TASK_RSP, header, E_DEFAULT, "request no pub_key");
+            NODE_LIST_TASK_RSP, header, E802_DEFAULT_ERROR, "request no pub_key");
     }
 }
 
@@ -1243,7 +1244,7 @@ void node_request_service::on_node_create_task_req(
         if (!result.success) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_create_task_rsp>(
-                NODE_CREATE_TASK_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_CREATE_TASK_RSP, node_req_msg->header, E002_AUTHORITY_CHECK_FAILED,
                 "check authority failed: " + result.errmsg);
             return;
         }
@@ -1253,7 +1254,7 @@ void node_request_service::on_node_create_task_req(
 
         if (found_other_running_domains()) {
             send_response_error<dbc::node_create_task_rsp>(
-                NODE_CREATE_TASK_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_CREATE_TASK_RSP, node_req_msg->header, E312_TASK_RUNNING_DOMAINS_EXIST,
                 "create task failed, please try again in a minute");
             return;
         }
@@ -1261,7 +1262,7 @@ void node_request_service::on_node_create_task_req(
         task_create(node_req_msg->header, data, result);
     } else if (hit_self == HitBareMetal || hit_self == HitBareMetalManager) {
         send_response_error<dbc::node_create_task_rsp>(
-            NODE_CREATE_TASK_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_CREATE_TASK_RSP, node_req_msg->header, E709_NOT_COMPUTING_NODE,
             "bare metal nodes are not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -1333,13 +1334,13 @@ void node_request_service::task_create(
         } else {
             LOG_ERROR << "pub_key or priv_key is empty";
             send_response_error<dbc::node_create_task_rsp>(
-                NODE_CREATE_TASK_RSP, header, E_DEFAULT,
+                NODE_CREATE_TASK_RSP, header, E802_DEFAULT_ERROR,
                 "pub_key or priv_key is empty");
         }
     } else {
         LOG_ERROR << "request no pub_key";
         send_response_error<dbc::node_create_task_rsp>(
-            NODE_CREATE_TASK_RSP, header, E_DEFAULT, "request no pub_key");
+            NODE_CREATE_TASK_RSP, header, E802_DEFAULT_ERROR, "request no pub_key");
     }
 }
 
@@ -1431,7 +1432,7 @@ void node_request_service::on_node_start_task_req(
         if (!result.success) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_start_task_rsp>(
-                NODE_START_TASK_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_START_TASK_RSP, node_req_msg->header, E002_AUTHORITY_CHECK_FAILED,
                 "check authority failed: " + result.errmsg);
             return;
         }
@@ -1440,7 +1441,7 @@ void node_request_service::on_node_start_task_req(
 
         if (found_other_running_domains()) {
             send_response_error<dbc::node_start_task_rsp>(
-                NODE_START_TASK_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_START_TASK_RSP, node_req_msg->header, E312_TASK_RUNNING_DOMAINS_EXIST,
                 "start task failed, please try again in a minute");
             return;
         }
@@ -1448,7 +1449,7 @@ void node_request_service::on_node_start_task_req(
         task_start(node_req_msg->header, data, result);
     } else if (hit_self == HitBareMetal || hit_self == HitBareMetalManager) {
         send_response_error<dbc::node_start_task_rsp>(
-            NODE_START_TASK_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_START_TASK_RSP, node_req_msg->header, E709_NOT_COMPUTING_NODE,
             "bare metal nodes are not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -1566,7 +1567,7 @@ void node_request_service::on_node_shutdown_task_req(
         if (!result.success) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_shutdown_task_rsp>(
-                NODE_SHUTDOWN_TASK_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_SHUTDOWN_TASK_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
                 "check authority failed: " + result.errmsg);
             return;
         }
@@ -1574,7 +1575,7 @@ void node_request_service::on_node_shutdown_task_req(
         task_shutdown(node_req_msg->header, data, result);
     } else if (hit_self == HitBareMetal || hit_self == HitBareMetalManager) {
         send_response_error<dbc::node_shutdown_task_rsp>(
-            NODE_SHUTDOWN_TASK_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_SHUTDOWN_TASK_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "bare metal nodes are not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -1693,7 +1694,7 @@ void node_request_service::on_node_poweroff_task_req(
         if (!result.success) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_poweroff_task_rsp>(
-                NODE_POWEROFF_TASK_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_POWEROFF_TASK_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
                 "check authority failed: " + result.errmsg);
             return;
         }
@@ -1701,7 +1702,7 @@ void node_request_service::on_node_poweroff_task_req(
         task_poweroff(node_req_msg->header, data, result);
     } else if (hit_self == HitBareMetal || hit_self == HitBareMetalManager) {
         send_response_error<dbc::node_poweroff_task_rsp>(
-            NODE_POWEROFF_TASK_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_POWEROFF_TASK_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "bare metal nodes are not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -1820,7 +1821,7 @@ void node_request_service::on_node_stop_task_req(
         if (!result.success) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_stop_task_rsp>(
-                NODE_STOP_TASK_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_STOP_TASK_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
                 "check authority failed: " + result.errmsg);
             return;
         }
@@ -1828,7 +1829,7 @@ void node_request_service::on_node_stop_task_req(
         task_stop(node_req_msg->header, data, result);
     } else if (hit_self == HitBareMetal || hit_self == HitBareMetalManager) {
         send_response_error<dbc::node_stop_task_rsp>(
-            NODE_STOP_TASK_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_STOP_TASK_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "bare metal nodes are not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -1946,14 +1947,14 @@ void node_request_service::on_node_restart_task_req(
         if (!result.success) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_restart_task_rsp>(
-                NODE_RESTART_TASK_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_RESTART_TASK_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
                 "check authority failed: " + result.errmsg);
             return;
         }
 
         if (found_other_running_domains()) {
             send_response_error<dbc::node_restart_task_rsp>(
-                NODE_RESTART_TASK_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_RESTART_TASK_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
                 "restart task failed, please try again in a minute");
             return;
         }
@@ -1961,7 +1962,7 @@ void node_request_service::on_node_restart_task_req(
         task_restart(node_req_msg->header, data, result);
     } else if (hit_self == HitBareMetal || hit_self == HitBareMetalManager) {
         send_response_error<dbc::node_restart_task_rsp>(
-            NODE_RESTART_TASK_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_RESTART_TASK_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "bare metal nodes are not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -2081,7 +2082,7 @@ void node_request_service::on_node_reset_task_req(
         if (!result.success) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_reset_task_rsp>(
-                NODE_RESET_TASK_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_RESET_TASK_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
                 "check authority failed: " + result.errmsg);
             return;
         }
@@ -2089,7 +2090,7 @@ void node_request_service::on_node_reset_task_req(
         task_reset(node_req_msg->header, data, result);
     } else if (hit_self == HitBareMetal || hit_self == HitBareMetalManager) {
         send_response_error<dbc::node_reset_task_rsp>(
-            NODE_RESET_TASK_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_RESET_TASK_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "bare metal nodes are not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -2207,7 +2208,7 @@ void node_request_service::on_node_delete_task_req(
         if (!result.success) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_delete_task_rsp>(
-                NODE_DELETE_TASK_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_DELETE_TASK_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
                 "check authority failed: " + result.errmsg);
             return;
         }
@@ -2215,7 +2216,7 @@ void node_request_service::on_node_delete_task_req(
         task_delete(node_req_msg->header, data, result);
     } else if (hit_self == HitBareMetal || hit_self == HitBareMetalManager) {
         send_response_error<dbc::node_delete_task_rsp>(
-            NODE_DELETE_TASK_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_DELETE_TASK_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "bare metal nodes are not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -2334,7 +2335,7 @@ void node_request_service::on_node_task_logs_req(
         if (!result.success) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_task_logs_rsp>(
-                NODE_TASK_LOGS_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_TASK_LOGS_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
                 "check authority failed: " + result.errmsg);
             return;
         }
@@ -2342,7 +2343,7 @@ void node_request_service::on_node_task_logs_req(
         task_logs(node_req_msg->header, data, result);
     } else if (hit_self == HitBareMetal || hit_self == HitBareMetalManager) {
         send_response_error<dbc::node_task_logs_rsp>(
-            NODE_TASK_LOGS_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_TASK_LOGS_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "bare metal nodes are not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -2365,7 +2366,7 @@ void node_request_service::task_logs(
     if (QUERY_LOG_DIRECTION::Head != head_or_tail &&
         QUERY_LOG_DIRECTION::Tail != head_or_tail) {
         send_response_error<dbc::node_task_logs_rsp>(
-            NODE_TASK_LOGS_RSP, header, E_DEFAULT,
+            NODE_TASK_LOGS_RSP, header, E802_DEFAULT_ERROR,
             "request head_or_tail is invalid");
         LOG_ERROR << "req_head_or_tail is invalid:" << (int32_t)head_or_tail;
         return;
@@ -2373,7 +2374,7 @@ void node_request_service::task_logs(
 
     if (number_of_lines > MAX_NUMBER_OF_LINES || number_of_lines < 0) {
         send_response_error<dbc::node_task_logs_rsp>(
-            NODE_TASK_LOGS_RSP, header, E_DEFAULT,
+            NODE_TASK_LOGS_RSP, header, E802_DEFAULT_ERROR,
             "req_number_of_lines is invalid:" + number_of_lines);
         LOG_ERROR << "req_number_of_lines is invalid:" << number_of_lines;
         return;
@@ -2413,13 +2414,13 @@ void node_request_service::task_logs(
             } else {
                 LOG_ERROR << "pub_key or priv_key is empty";
                 send_response_error<dbc::node_task_logs_rsp>(
-                    NODE_TASK_LOGS_RSP, header, E_DEFAULT,
+                    NODE_TASK_LOGS_RSP, header, E802_DEFAULT_ERROR,
                     "pub_key or priv_key is empty");
             }
         } else {
             LOG_ERROR << "request no pub_key";
             send_response_error<dbc::node_task_logs_rsp>(
-                NODE_TASK_LOGS_RSP, header, E_DEFAULT, "request no pub_key");
+                NODE_TASK_LOGS_RSP, header, E802_DEFAULT_ERROR, "request no pub_key");
         }
     } else {
         send_response_error<dbc::node_task_logs_rsp>(NODE_TASK_LOGS_RSP, header,
@@ -2515,7 +2516,7 @@ void node_request_service::on_node_modify_task_req(
         if (!result.success) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_modify_task_rsp>(
-                NODE_MODIFY_TASK_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_MODIFY_TASK_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
                 "check authority failed: " + result.errmsg);
             return;
         }
@@ -2523,7 +2524,7 @@ void node_request_service::on_node_modify_task_req(
         task_modify(node_req_msg->header, data, result);
     } else if (hit_self == HitBareMetal || hit_self == HitBareMetalManager) {
         send_response_error<dbc::node_modify_task_rsp>(
-            NODE_MODIFY_TASK_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_MODIFY_TASK_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "bare metal nodes are not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -2633,7 +2634,7 @@ void node_request_service::on_node_passwd_task_req(
         if (!result.success) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_passwd_task_rsp>(
-                NODE_PASSWD_TASK_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_PASSWD_TASK_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
                 "check authority failed: " + result.errmsg);
             return;
         }
@@ -2641,7 +2642,7 @@ void node_request_service::on_node_passwd_task_req(
         task_passwd(node_req_msg->header, data, result);
     } else if (hit_self == HitBareMetal || hit_self == HitBareMetalManager) {
         send_response_error<dbc::node_passwd_task_rsp>(
-            NODE_PASSWD_TASK_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_PASSWD_TASK_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "bare metal nodes are not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -2760,7 +2761,7 @@ void node_request_service::on_node_list_images_req(
         list_images(node_req_msg->header, data, result);
     } else if (hit_self == HitBareMetal || hit_self == HitBareMetalManager) {
         send_response_error<dbc::node_list_images_rsp>(
-            NODE_LIST_IMAGES_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_LIST_IMAGES_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "bare metal nodes are not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -2828,13 +2829,13 @@ void node_request_service::list_images(
         } else {
             LOG_ERROR << "pub_key or priv_key is empty";
             send_response_error<dbc::node_list_images_rsp>(
-                NODE_LIST_IMAGES_RSP, header, E_DEFAULT,
+                NODE_LIST_IMAGES_RSP, header, E802_DEFAULT_ERROR,
                 "pub_key or priv_key is empty");
         }
     } else {
         LOG_ERROR << "request no pub_key";
         send_response_error<dbc::node_list_images_rsp>(
-            NODE_LIST_IMAGES_RSP, header, E_DEFAULT, "request no pub_key");
+            NODE_LIST_IMAGES_RSP, header, E802_DEFAULT_ERROR, "request no pub_key");
     }
 }
 
@@ -2926,7 +2927,7 @@ void node_request_service::on_node_download_image_req(
         if (!result.success) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_download_image_rsp>(
-                NODE_DOWNLOAD_IMAGE_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_DOWNLOAD_IMAGE_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
                 "check authority failed: " + result.errmsg);
             return;
         }
@@ -2934,7 +2935,7 @@ void node_request_service::on_node_download_image_req(
         download_image(node_req_msg->header, data, result);
     } else if (hit_self == HitBareMetal || hit_self == HitBareMetalManager) {
         send_response_error<dbc::node_download_image_rsp>(
-            NODE_DOWNLOAD_IMAGE_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_DOWNLOAD_IMAGE_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "bare metal nodes are not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -3054,14 +3055,14 @@ void node_request_service::on_node_download_image_progress_req(
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_download_image_progress_rsp>(
                 NODE_DOWNLOAD_IMAGE_PROGRESS_RSP, node_req_msg->header,
-                E_DEFAULT, "check authority failed: " + result.errmsg);
+                E802_DEFAULT_ERROR, "check authority failed: " + result.errmsg);
             return;
         }
 
         download_image_progress(node_req_msg->header, data, result);
     } else if (hit_self == HitBareMetal || hit_self == HitBareMetalManager) {
         send_response_error<dbc::node_download_image_progress_rsp>(
-            NODE_DOWNLOAD_IMAGE_PROGRESS_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_DOWNLOAD_IMAGE_PROGRESS_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "bare metal nodes are not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -3099,13 +3100,13 @@ void node_request_service::download_image_progress(
             } else {
                 LOG_ERROR << "pub_key or priv_key is empty";
                 send_response_error<dbc::node_download_image_progress_rsp>(
-                    NODE_DOWNLOAD_IMAGE_PROGRESS_RSP, header, E_DEFAULT,
+                    NODE_DOWNLOAD_IMAGE_PROGRESS_RSP, header, E802_DEFAULT_ERROR,
                     "pub_key or priv_key is empty");
             }
         } else {
             LOG_ERROR << "request no pub_key";
             send_response_error<dbc::node_download_image_progress_rsp>(
-                NODE_DOWNLOAD_IMAGE_PROGRESS_RSP, header, E_DEFAULT,
+                NODE_DOWNLOAD_IMAGE_PROGRESS_RSP, header, E802_DEFAULT_ERROR,
                 "request no pub_key");
         }
     } else {
@@ -3203,7 +3204,7 @@ void node_request_service::on_node_stop_download_image_req(
         if (!result.success) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_stop_download_image_rsp>(
-                NODE_STOP_DOWNLOAD_IMAGE_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_STOP_DOWNLOAD_IMAGE_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
                 "check authority failed: " + result.errmsg);
             return;
         }
@@ -3211,7 +3212,7 @@ void node_request_service::on_node_stop_download_image_req(
         stop_download_image(node_req_msg->header, data, result);
     } else if (hit_self == HitBareMetal || hit_self == HitBareMetalManager) {
         send_response_error<dbc::node_stop_download_image_rsp>(
-            NODE_STOP_DOWNLOAD_IMAGE_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_STOP_DOWNLOAD_IMAGE_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "bare metal nodes are not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -3249,13 +3250,13 @@ void node_request_service::stop_download_image(
             } else {
                 LOG_ERROR << "pub_key or priv_key is empty";
                 send_response_error<dbc::node_stop_download_image_rsp>(
-                    NODE_STOP_DOWNLOAD_IMAGE_RSP, header, E_DEFAULT,
+                    NODE_STOP_DOWNLOAD_IMAGE_RSP, header, E802_DEFAULT_ERROR,
                     "pub_key or priv_key is empty");
             }
         } else {
             LOG_ERROR << "request no pub_key";
             send_response_error<dbc::node_stop_download_image_rsp>(
-                NODE_STOP_DOWNLOAD_IMAGE_RSP, header, E_DEFAULT,
+                NODE_STOP_DOWNLOAD_IMAGE_RSP, header, E802_DEFAULT_ERROR,
                 "request no pub_key");
         }
     } else {
@@ -3352,7 +3353,7 @@ void node_request_service::on_node_upload_image_req(
         if (!result.success) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_upload_image_rsp>(
-                NODE_UPLOAD_IMAGE_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_UPLOAD_IMAGE_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
                 "check authority failed: " + result.errmsg);
             return;
         }
@@ -3360,7 +3361,7 @@ void node_request_service::on_node_upload_image_req(
         upload_image(node_req_msg->header, data, result);
     } else if (hit_self == HitBareMetal || hit_self == HitBareMetalManager) {
         send_response_error<dbc::node_upload_image_rsp>(
-            NODE_UPLOAD_IMAGE_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_UPLOAD_IMAGE_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "bare metal nodes are not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -3479,7 +3480,7 @@ void node_request_service::on_node_upload_image_progress_req(
         if (!result.success) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_upload_image_progress_rsp>(
-                NODE_UPLOAD_IMAGE_PROGRESS_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_UPLOAD_IMAGE_PROGRESS_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
                 "check authority failed: " + result.errmsg);
             return;
         }
@@ -3487,7 +3488,7 @@ void node_request_service::on_node_upload_image_progress_req(
         upload_image_progress(node_req_msg->header, data, result);
     } else if (hit_self == HitBareMetal || hit_self == HitBareMetalManager) {
         send_response_error<dbc::node_upload_image_progress_rsp>(
-            NODE_UPLOAD_IMAGE_PROGRESS_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_UPLOAD_IMAGE_PROGRESS_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "bare metal nodes are not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -3525,13 +3526,13 @@ void node_request_service::upload_image_progress(
             } else {
                 LOG_ERROR << "pub_key or priv_key is empty";
                 send_response_error<dbc::node_upload_image_progress_rsp>(
-                    NODE_UPLOAD_IMAGE_PROGRESS_RSP, header, E_DEFAULT,
+                    NODE_UPLOAD_IMAGE_PROGRESS_RSP, header, E802_DEFAULT_ERROR,
                     "pub_key or priv_key is empty");
             }
         } else {
             LOG_ERROR << "request no pub_key";
             send_response_error<dbc::node_upload_image_progress_rsp>(
-                NODE_UPLOAD_IMAGE_PROGRESS_RSP, header, E_DEFAULT,
+                NODE_UPLOAD_IMAGE_PROGRESS_RSP, header, E802_DEFAULT_ERROR,
                 "request no pub_key");
         }
     } else {
@@ -3629,7 +3630,7 @@ void node_request_service::on_node_stop_upload_image_req(
         if (!result.success) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_stop_upload_image_rsp>(
-                NODE_STOP_UPLOAD_IMAGE_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_STOP_UPLOAD_IMAGE_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
                 "check authority failed: " + result.errmsg);
             return;
         }
@@ -3637,7 +3638,7 @@ void node_request_service::on_node_stop_upload_image_req(
         stop_upload_image(node_req_msg->header, data, result);
     } else if (hit_self == HitBareMetal || hit_self == HitBareMetalManager) {
         send_response_error<dbc::node_stop_upload_image_rsp>(
-            NODE_STOP_UPLOAD_IMAGE_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_STOP_UPLOAD_IMAGE_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "bare metal nodes are not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -3675,13 +3676,13 @@ void node_request_service::stop_upload_image(
             } else {
                 LOG_ERROR << "pub_key or priv_key is empty";
                 send_response_error<dbc::node_stop_upload_image_rsp>(
-                    NODE_STOP_UPLOAD_IMAGE_RSP, header, E_DEFAULT,
+                    NODE_STOP_UPLOAD_IMAGE_RSP, header, E802_DEFAULT_ERROR,
                     "pub_key or priv_key is empty");
             }
         } else {
             LOG_ERROR << "request no pub_key";
             send_response_error<dbc::node_stop_upload_image_rsp>(
-                NODE_STOP_UPLOAD_IMAGE_RSP, header, E_DEFAULT,
+                NODE_STOP_UPLOAD_IMAGE_RSP, header, E802_DEFAULT_ERROR,
                 "request no pub_key");
         }
     } else {
@@ -3778,7 +3779,7 @@ void node_request_service::on_node_delete_image_req(
         if (!result.success) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_delete_image_rsp>(
-                NODE_DELETE_IMAGE_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_DELETE_IMAGE_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
                 "check authority failed: " + result.errmsg);
             return;
         }
@@ -3786,7 +3787,7 @@ void node_request_service::on_node_delete_image_req(
         delete_image(node_req_msg->header, data, result);
     } else if (hit_self == HitBareMetal || hit_self == HitBareMetalManager) {
         send_response_error<dbc::node_delete_image_rsp>(
-            NODE_DELETE_IMAGE_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_DELETE_IMAGE_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "bare metal nodes are not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -3905,7 +3906,7 @@ void node_request_service::on_node_list_snapshot_req(
         if (!result.success) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_list_snapshot_rsp>(
-                NODE_LIST_SNAPSHOT_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_LIST_SNAPSHOT_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
                 "check authority failed: " + result.errmsg);
             return;
         }
@@ -3913,7 +3914,7 @@ void node_request_service::on_node_list_snapshot_req(
         snapshot_list(node_req_msg->header, data, result);
     } else if (hit_self == HitBareMetal || hit_self == HitBareMetalManager) {
         send_response_error<dbc::node_list_snapshot_rsp>(
-            NODE_LIST_SNAPSHOT_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_LIST_SNAPSHOT_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "bare metal nodes are not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -4002,7 +4003,7 @@ void node_request_service::snapshot_list(
                              << "\"";
             ss_snapshots << "}";
         } else {
-            ret_code = ERR_ERROR;
+            ret_code = E802_DEFAULT_ERROR;
             ret_msg = "snapshot_name not exist";
         }
     }
@@ -4034,13 +4035,13 @@ void node_request_service::snapshot_list(
         } else {
             LOG_ERROR << "pub_key or priv_key is empty";
             send_response_error<dbc::node_list_snapshot_rsp>(
-                NODE_LIST_SNAPSHOT_RSP, header, E_DEFAULT,
+                NODE_LIST_SNAPSHOT_RSP, header, E802_DEFAULT_ERROR,
                 "pub_key or priv_key is empty");
         }
     } else {
         LOG_ERROR << "request no pub_key";
         send_response_error<dbc::node_list_snapshot_rsp>(
-            NODE_LIST_SNAPSHOT_RSP, header, E_DEFAULT, "request no pub_key");
+            NODE_LIST_SNAPSHOT_RSP, header, E802_DEFAULT_ERROR, "request no pub_key");
     }
 }
 
@@ -4135,7 +4136,7 @@ void node_request_service::on_node_create_snapshot_req(
             result.user_role == USER_ROLE::Verifier) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_create_snapshot_rsp>(
-                NODE_CREATE_SNAPSHOT_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_CREATE_SNAPSHOT_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
                 "check authority failed: " + result.errmsg);
             return;
         }
@@ -4143,7 +4144,7 @@ void node_request_service::on_node_create_snapshot_req(
         snapshot_create(node_req_msg->header, data, result);
     } else if (hit_self == HitBareMetal || hit_self == HitBareMetalManager) {
         send_response_error<dbc::node_create_snapshot_rsp>(
-            NODE_CREATE_SNAPSHOT_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_CREATE_SNAPSHOT_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "bare metal nodes are not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -4165,7 +4166,7 @@ void node_request_service::snapshot_create(
     if (!doc.IsObject()) {
         LOG_ERROR << "parse xml failed";
         send_response_error<dbc::node_create_snapshot_rsp>(
-            NODE_CREATE_SNAPSHOT_RSP, header, E_DEFAULT, "parse xml failed");
+            NODE_CREATE_SNAPSHOT_RSP, header, E802_DEFAULT_ERROR, "parse xml failed");
         return;
     }
 
@@ -4174,7 +4175,7 @@ void node_request_service::snapshot_create(
     if (s_snapshot_name.empty()) {
         LOG_ERROR << "'snapshot_name' is empty";
         send_response_error<dbc::node_create_snapshot_rsp>(
-            NODE_CREATE_SNAPSHOT_RSP, header, E_DEFAULT,
+            NODE_CREATE_SNAPSHOT_RSP, header, E802_DEFAULT_ERROR,
             "'snapshot_name' is empty");
         return;
     }
@@ -4220,13 +4221,13 @@ void node_request_service::snapshot_create(
         } else {
             LOG_ERROR << "pub_key or priv_key is empty";
             send_response_error<dbc::node_create_snapshot_rsp>(
-                NODE_CREATE_SNAPSHOT_RSP, header, E_DEFAULT,
+                NODE_CREATE_SNAPSHOT_RSP, header, E802_DEFAULT_ERROR,
                 "pub_key or priv_key is empty");
         }
     } else {
         LOG_ERROR << "request no pub_key";
         send_response_error<dbc::node_create_snapshot_rsp>(
-            NODE_CREATE_SNAPSHOT_RSP, header, E_DEFAULT, "request no pub_key");
+            NODE_CREATE_SNAPSHOT_RSP, header, E802_DEFAULT_ERROR, "request no pub_key");
     }
 }
 
@@ -4321,7 +4322,7 @@ void node_request_service::on_node_delete_snapshot_req(
             result.user_role == USER_ROLE::Verifier) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_delete_snapshot_rsp>(
-                NODE_DELETE_SNAPSHOT_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_DELETE_SNAPSHOT_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
                 "check authority failed: " + result.errmsg);
             return;
         }
@@ -4329,7 +4330,7 @@ void node_request_service::on_node_delete_snapshot_req(
         snapshot_delete(node_req_msg->header, data, result);
     } else if (hit_self == HitBareMetal || hit_self == HitBareMetalManager) {
         send_response_error<dbc::node_delete_snapshot_rsp>(
-            NODE_DELETE_SNAPSHOT_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_DELETE_SNAPSHOT_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "bare metal nodes are not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -4361,7 +4362,7 @@ void node_request_service::snapshot_delete(
         ss << "}";
     } else {
         ss << "{";
-        ss << "\"errcode\":" << ERR_ERROR;
+        ss << "\"errcode\":" << E802_DEFAULT_ERROR;
         ss << ",\"message\":"
            << "\"" << data->snapshot_name << " not exist"
            << "\"";
@@ -4384,13 +4385,13 @@ void node_request_service::snapshot_delete(
         } else {
             LOG_ERROR << "pub_key or priv_key is empty";
             send_response_error<dbc::node_delete_snapshot_rsp>(
-                NODE_DELETE_SNAPSHOT_RSP, header, E_DEFAULT,
+                NODE_DELETE_SNAPSHOT_RSP, header, E802_DEFAULT_ERROR,
                 "pub_key or priv_key is empty");
         }
     } else {
         LOG_ERROR << "request no pub_key";
         send_response_error<dbc::node_delete_snapshot_rsp>(
-            NODE_DELETE_SNAPSHOT_RSP, header, E_DEFAULT, "request no pub_key");
+            NODE_DELETE_SNAPSHOT_RSP, header, E802_DEFAULT_ERROR, "request no pub_key");
     }
 }
 
@@ -4484,7 +4485,7 @@ void node_request_service::on_node_list_disk_req(
             result.user_role == USER_ROLE::Verifier) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_list_disk_rsp>(
-                NODE_LIST_DISK_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_LIST_DISK_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
                 "check authority failed: " + result.errmsg);
             return;
         }
@@ -4492,7 +4493,7 @@ void node_request_service::on_node_list_disk_req(
         do_list_disk(node_req_msg->header, data, result);
     } else if (hit_self == HitBareMetal || hit_self == HitBareMetalManager) {
         send_response_error<dbc::node_list_disk_rsp>(
-            NODE_LIST_DISK_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_LIST_DISK_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "bare metal nodes are not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -4511,20 +4512,20 @@ void node_request_service::do_list_disk(
     auto taskinfo = TaskInfoMgr::instance().getTaskInfo(data->task_id);
     if (taskinfo == nullptr) {
         send_response_error<dbc::node_list_disk_rsp>(
-            NODE_LIST_DISK_RSP, header, E_DEFAULT, "task not exist");
+            NODE_LIST_DISK_RSP, header, E802_DEFAULT_ERROR, "task not exist");
         return;
     }
 
     if (!VmClient::instance().IsExistDomain(data->task_id)) {
         send_response_error<dbc::node_list_disk_rsp>(
-            NODE_LIST_DISK_RSP, header, E_DEFAULT, "task not exist");
+            NODE_LIST_DISK_RSP, header, E802_DEFAULT_ERROR, "task not exist");
         return;
     }
 
     std::string bios_mode = taskinfo->getBiosMode();
     if (bios_mode == "pxe") {
         send_response_error<dbc::node_list_disk_rsp>(
-            NODE_LIST_DISK_RSP, header, E_DEFAULT, "pxe not support disk");
+            NODE_LIST_DISK_RSP, header, E802_DEFAULT_ERROR, "pxe not support disk");
         return;
     }
 
@@ -4569,13 +4570,13 @@ void node_request_service::do_list_disk(
         } else {
             LOG_ERROR << "pub_key or priv_key is empty";
             send_response_error<dbc::node_list_disk_rsp>(
-                NODE_LIST_DISK_RSP, header, E_DEFAULT,
+                NODE_LIST_DISK_RSP, header, E802_DEFAULT_ERROR,
                 "pub_key or priv_key is empty");
         }
     } else {
         LOG_ERROR << "request no pub_key";
         send_response_error<dbc::node_list_disk_rsp>(
-            NODE_LIST_DISK_RSP, header, E_DEFAULT, "request no pub_key");
+            NODE_LIST_DISK_RSP, header, E802_DEFAULT_ERROR, "request no pub_key");
     }
 }
 
@@ -4669,7 +4670,7 @@ void node_request_service::on_node_resize_disk_req(
             result.user_role == USER_ROLE::Verifier) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_resize_disk_rsp>(
-                NODE_RESIZE_DISK_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_RESIZE_DISK_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
                 "check authority failed: " + result.errmsg);
             return;
         }
@@ -4677,7 +4678,7 @@ void node_request_service::on_node_resize_disk_req(
         do_resize_disk(node_req_msg->header, data, result);
     } else if (hit_self == HitBareMetal || hit_self == HitBareMetalManager) {
         send_response_error<dbc::node_resize_disk_rsp>(
-            NODE_RESIZE_DISK_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_RESIZE_DISK_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "bare metal nodes are not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -4696,20 +4697,20 @@ void node_request_service::do_resize_disk(
     auto taskinfo = TaskInfoMgr::instance().getTaskInfo(data->task_id);
     if (taskinfo == nullptr) {
         send_response_error<dbc::node_resize_disk_rsp>(
-            NODE_RESIZE_DISK_RSP, header, E_DEFAULT, "task not exist");
+            NODE_RESIZE_DISK_RSP, header, E802_DEFAULT_ERROR, "task not exist");
         return;
     }
 
     if (!VmClient::instance().IsExistDomain(data->task_id)) {
         send_response_error<dbc::node_resize_disk_rsp>(
-            NODE_RESIZE_DISK_RSP, header, E_DEFAULT, "task not exist");
+            NODE_RESIZE_DISK_RSP, header, E802_DEFAULT_ERROR, "task not exist");
         return;
     }
 
     std::string bios_mode = taskinfo->getBiosMode();
     if (bios_mode == "pxe") {
         send_response_error<dbc::node_resize_disk_rsp>(
-            NODE_RESIZE_DISK_RSP, header, E_DEFAULT, "pxe not support disk");
+            NODE_RESIZE_DISK_RSP, header, E802_DEFAULT_ERROR, "pxe not support disk");
         return;
     }
 
@@ -4719,7 +4720,7 @@ void node_request_service::do_resize_disk(
     if (!doc.IsObject()) {
         LOG_ERROR << "parse xml failed";
         send_response_error<dbc::node_resize_disk_rsp>(
-            NODE_RESIZE_DISK_RSP, header, E_DEFAULT, "parse xml failed");
+            NODE_RESIZE_DISK_RSP, header, E802_DEFAULT_ERROR, "parse xml failed");
         return;
     }
 
@@ -4728,7 +4729,7 @@ void node_request_service::do_resize_disk(
     if (s_disk.empty()) {
         LOG_ERROR << "'disk' is empty";
         send_response_error<dbc::node_resize_disk_rsp>(
-            NODE_RESIZE_DISK_RSP, header, E_DEFAULT, "'disk' is empty");
+            NODE_RESIZE_DISK_RSP, header, E802_DEFAULT_ERROR, "'disk' is empty");
         return;
     }
 
@@ -4737,7 +4738,7 @@ void node_request_service::do_resize_disk(
     if (n_size <= 0) {
         LOG_ERROR << "'size' is invalid";
         send_response_error<dbc::node_resize_disk_rsp>(
-            NODE_RESIZE_DISK_RSP, header, E_DEFAULT, "'size' is invalid");
+            NODE_RESIZE_DISK_RSP, header, E802_DEFAULT_ERROR, "'size' is invalid");
         return;
     }
 
@@ -4776,13 +4777,13 @@ void node_request_service::do_resize_disk(
         } else {
             LOG_ERROR << "pub_key or priv_key is empty";
             send_response_error<dbc::node_resize_disk_rsp>(
-                NODE_RESIZE_DISK_RSP, header, E_DEFAULT,
+                NODE_RESIZE_DISK_RSP, header, E802_DEFAULT_ERROR,
                 "pub_key or priv_key is empty");
         }
     } else {
         LOG_ERROR << "request no pub_key";
         send_response_error<dbc::node_resize_disk_rsp>(
-            NODE_RESIZE_DISK_RSP, header, E_DEFAULT, "request no pub_key");
+            NODE_RESIZE_DISK_RSP, header, E802_DEFAULT_ERROR, "request no pub_key");
     }
 }
 
@@ -4876,7 +4877,7 @@ void node_request_service::on_node_add_disk_req(
             result.user_role == USER_ROLE::Verifier) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_add_disk_rsp>(
-                NODE_ADD_DISK_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_ADD_DISK_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
                 "check authority failed: " + result.errmsg);
             return;
         }
@@ -4884,7 +4885,7 @@ void node_request_service::on_node_add_disk_req(
         do_add_disk(node_req_msg->header, data, result);
     } else if (hit_self == HitBareMetal || hit_self == HitBareMetalManager) {
         send_response_error<dbc::node_add_disk_rsp>(
-            NODE_ADD_DISK_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_ADD_DISK_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "bare metal nodes are not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -4903,20 +4904,20 @@ void node_request_service::do_add_disk(
     auto taskinfo = TaskInfoMgr::instance().getTaskInfo(data->task_id);
     if (taskinfo == nullptr) {
         send_response_error<dbc::node_add_disk_rsp>(
-            NODE_ADD_DISK_RSP, header, E_DEFAULT, "task not exist");
+            NODE_ADD_DISK_RSP, header, E802_DEFAULT_ERROR, "task not exist");
         return;
     }
 
     if (!VmClient::instance().IsExistDomain(data->task_id)) {
         send_response_error<dbc::node_add_disk_rsp>(
-            NODE_ADD_DISK_RSP, header, E_DEFAULT, "task not exist");
+            NODE_ADD_DISK_RSP, header, E802_DEFAULT_ERROR, "task not exist");
         return;
     }
 
     std::string bios_mode = taskinfo->getBiosMode();
     if (bios_mode == "pxe") {
         send_response_error<dbc::node_add_disk_rsp>(
-            NODE_ADD_DISK_RSP, header, E_DEFAULT, "pxe not support disk");
+            NODE_ADD_DISK_RSP, header, E802_DEFAULT_ERROR, "pxe not support disk");
         return;
     }
 
@@ -4926,7 +4927,7 @@ void node_request_service::do_add_disk(
     if (!doc.IsObject()) {
         LOG_ERROR << "parse xml failed";
         send_response_error<dbc::node_add_disk_rsp>(
-            NODE_ADD_DISK_RSP, header, E_DEFAULT, "parse xml failed");
+            NODE_ADD_DISK_RSP, header, E802_DEFAULT_ERROR, "parse xml failed");
         return;
     }
 
@@ -4935,7 +4936,7 @@ void node_request_service::do_add_disk(
     if (n_size <= 0) {
         LOG_ERROR << "'size' is invalid";
         send_response_error<dbc::node_add_disk_rsp>(
-            NODE_ADD_DISK_RSP, header, E_DEFAULT, "'size' is invalid");
+            NODE_ADD_DISK_RSP, header, E802_DEFAULT_ERROR, "'size' is invalid");
         return;
     }
 
@@ -4948,7 +4949,7 @@ void node_request_service::do_add_disk(
     if (!bfs::exists(s_mount_dir)) {
         LOG_ERROR << "mount_dir:" << s_mount_dir << " is not exist";
         send_response_error<dbc::node_add_disk_rsp>(
-            NODE_ADD_DISK_RSP, header, E_DEFAULT,
+            NODE_ADD_DISK_RSP, header, E802_DEFAULT_ERROR,
             s_mount_dir + " is not exist");
         return;
     }
@@ -4988,13 +4989,13 @@ void node_request_service::do_add_disk(
         } else {
             LOG_ERROR << "pub_key or priv_key is empty";
             send_response_error<dbc::node_add_disk_rsp>(
-                NODE_ADD_DISK_RSP, header, E_DEFAULT,
+                NODE_ADD_DISK_RSP, header, E802_DEFAULT_ERROR,
                 "pub_key or priv_key is empty");
         }
     } else {
         LOG_ERROR << "request no pub_key";
         send_response_error<dbc::node_add_disk_rsp>(
-            NODE_ADD_DISK_RSP, header, E_DEFAULT, "request no pub_key");
+            NODE_ADD_DISK_RSP, header, E802_DEFAULT_ERROR, "request no pub_key");
     }
 }
 
@@ -5088,7 +5089,7 @@ void node_request_service::on_node_delete_disk_req(
             result.user_role == USER_ROLE::Verifier) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_delete_disk_rsp>(
-                NODE_DELETE_DISK_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_DELETE_DISK_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
                 "check authority failed: " + result.errmsg);
             return;
         }
@@ -5096,7 +5097,7 @@ void node_request_service::on_node_delete_disk_req(
         do_delete_disk(node_req_msg->header, data, result);
     } else if (hit_self == HitBareMetal || hit_self == HitBareMetalManager) {
         send_response_error<dbc::node_delete_disk_rsp>(
-            NODE_DELETE_DISK_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_DELETE_DISK_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "bare metal nodes are not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -5115,20 +5116,20 @@ void node_request_service::do_delete_disk(
     auto taskinfo = TaskInfoMgr::instance().getTaskInfo(data->task_id);
     if (taskinfo == nullptr) {
         send_response_error<dbc::node_delete_disk_rsp>(
-            NODE_DELETE_DISK_RSP, header, E_DEFAULT, "task not exist");
+            NODE_DELETE_DISK_RSP, header, E802_DEFAULT_ERROR, "task not exist");
         return;
     }
 
     if (!VmClient::instance().IsExistDomain(data->task_id)) {
         send_response_error<dbc::node_delete_disk_rsp>(
-            NODE_DELETE_DISK_RSP, header, E_DEFAULT, "task not exist");
+            NODE_DELETE_DISK_RSP, header, E802_DEFAULT_ERROR, "task not exist");
         return;
     }
 
     std::string bios_mode = taskinfo->getBiosMode();
     if (bios_mode == "pxe") {
         send_response_error<dbc::node_delete_disk_rsp>(
-            NODE_DELETE_DISK_RSP, header, E_DEFAULT, "pxe not support disk");
+            NODE_DELETE_DISK_RSP, header, E802_DEFAULT_ERROR, "pxe not support disk");
         return;
     }
 
@@ -5138,7 +5139,7 @@ void node_request_service::do_delete_disk(
     if (!doc.IsObject()) {
         LOG_ERROR << "parse xml failed";
         send_response_error<dbc::node_delete_disk_rsp>(
-            NODE_DELETE_DISK_RSP, header, E_DEFAULT, "parse xml failed");
+            NODE_DELETE_DISK_RSP, header, E802_DEFAULT_ERROR, "parse xml failed");
         return;
     }
 
@@ -5147,7 +5148,7 @@ void node_request_service::do_delete_disk(
     if (s_disk.empty()) {
         LOG_ERROR << "'disk' is empty";
         send_response_error<dbc::node_delete_disk_rsp>(
-            NODE_DELETE_DISK_RSP, header, E_DEFAULT, "'disk' is empty");
+            NODE_DELETE_DISK_RSP, header, E802_DEFAULT_ERROR, "'disk' is empty");
         return;
     }
 
@@ -5185,13 +5186,13 @@ void node_request_service::do_delete_disk(
         } else {
             LOG_ERROR << "pub_key or priv_key is empty";
             send_response_error<dbc::node_delete_disk_rsp>(
-                NODE_DELETE_DISK_RSP, header, E_DEFAULT,
+                NODE_DELETE_DISK_RSP, header, E802_DEFAULT_ERROR,
                 "pub_key or priv_key is empty");
         }
     } else {
         LOG_ERROR << "request no pub_key";
         send_response_error<dbc::node_delete_disk_rsp>(
-            NODE_DELETE_DISK_RSP, header, E_DEFAULT, "request no pub_key");
+            NODE_DELETE_DISK_RSP, header, E802_DEFAULT_ERROR, "request no pub_key");
     }
 }
 
@@ -5274,7 +5275,7 @@ void node_request_service::on_node_query_node_info_req(
         query_bare_metal_node_info(node_req_msg->header, data);
     } else if (hit_self == HitBareMetalManager) {
         send_response_error<dbc::node_query_node_info_rsp>(
-            NODE_QUERY_NODE_INFO_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_QUERY_NODE_INFO_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "bare metal node has no machine info for now",
             data->peer_nodes_list[0]);
     } else {
@@ -5442,13 +5443,13 @@ void node_request_service::query_node_info(
         } else {
             LOG_ERROR << "pub_key or priv_key is empty";
             send_response_error<dbc::node_query_node_info_rsp>(
-                NODE_QUERY_NODE_INFO_RSP, header, E_DEFAULT,
+                NODE_QUERY_NODE_INFO_RSP, header, E802_DEFAULT_ERROR,
                 "pub_key or priv_key is empty");
         }
     } else {
         LOG_ERROR << "request no pub_key";
         send_response_error<dbc::node_query_node_info_rsp>(
-            NODE_QUERY_NODE_INFO_RSP, header, E_DEFAULT, "request no pub_key");
+            NODE_QUERY_NODE_INFO_RSP, header, E802_DEFAULT_ERROR, "request no pub_key");
     }
 }
 
@@ -5463,7 +5464,7 @@ void node_request_service::query_bare_metal_node_info(
     // if (!HttpDBCChainClient::instance().getCommitteeUploadInfo(
     //         data->peer_nodes_list[0], info)) {
     //     send_response_error<dbc::node_query_node_info_rsp>(
-    //         NODE_QUERY_NODE_INFO_RSP, header, E_DEFAULT,
+    //         NODE_QUERY_NODE_INFO_RSP, header, E802_DEFAULT_ERROR,
     //         "query committee upload info of bare metal node failed",
     //         data->peer_nodes_list[0]);
     //     return;
@@ -5474,7 +5475,7 @@ void node_request_service::query_bare_metal_node_info(
             data->peer_nodes_list[0]);
     if (!bm) {
         send_response_error<dbc::node_query_node_info_rsp>(
-            NODE_QUERY_NODE_INFO_RSP, header, E_DEFAULT,
+            NODE_QUERY_NODE_INFO_RSP, header, E802_DEFAULT_ERROR,
             "get bare metal node info failed", data->peer_nodes_list[0]);
         return;
     }
@@ -5582,13 +5583,13 @@ void node_request_service::query_bare_metal_node_info(
         } else {
             LOG_ERROR << "pub_key or priv_key is empty";
             send_response_error<dbc::node_query_node_info_rsp>(
-                NODE_QUERY_NODE_INFO_RSP, header, E_DEFAULT,
+                NODE_QUERY_NODE_INFO_RSP, header, E802_DEFAULT_ERROR,
                 "pub_key or priv_key is empty", data->peer_nodes_list[0]);
         }
     } else {
         LOG_ERROR << "request no pub_key";
         send_response_error<dbc::node_query_node_info_rsp>(
-            NODE_QUERY_NODE_INFO_RSP, header, E_DEFAULT, "request no pub_key",
+            NODE_QUERY_NODE_INFO_RSP, header, E802_DEFAULT_ERROR, "request no pub_key",
             data->peer_nodes_list[0]);
     }
 }
@@ -5670,7 +5671,7 @@ void node_request_service::on_query_node_rent_orders_req(
         query_node_rent_orders(node_req_msg->header, data);
     } else if (hit_self == HitBareMetalManager) {
         send_response_error<dbc::query_node_rent_orders_rsp>(
-            QUERY_NODE_RENT_ORDERS_RSP, node_req_msg->header, E_DEFAULT,
+            QUERY_NODE_RENT_ORDERS_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "bare metal node has no machine info for now",
             data->peer_nodes_list[0]);
     } else {
@@ -5741,13 +5742,13 @@ void node_request_service::query_node_rent_orders(
         } else {
             LOG_ERROR << "pub_key or priv_key is empty";
             send_response_error<dbc::query_node_rent_orders_rsp>(
-                QUERY_NODE_RENT_ORDERS_RSP, header, E_DEFAULT,
+                QUERY_NODE_RENT_ORDERS_RSP, header, E802_DEFAULT_ERROR,
                 "pub_key or priv_key is empty");
         }
     } else {
         LOG_ERROR << "request no pub_key";
         send_response_error<dbc::query_node_rent_orders_rsp>(
-            QUERY_NODE_RENT_ORDERS_RSP, header, E_DEFAULT,
+            QUERY_NODE_RENT_ORDERS_RSP, header, E802_DEFAULT_ERROR,
             "request no pub_key");
     }
 }
@@ -5839,7 +5840,7 @@ void node_request_service::on_node_session_id_req(
         if (!result.success) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_session_id_rsp>(
-                NODE_SESSION_ID_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_SESSION_ID_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
                 "check authority failed: " + result.errmsg,
                 data->peer_nodes_list[0]);
             return;
@@ -5865,7 +5866,7 @@ void node_request_service::node_session_id(
                 result.rent_wallet);
         if (session_id.empty()) {
             send_response_error<dbc::node_session_id_rsp>(
-                NODE_SESSION_ID_RSP, header, E_DEFAULT, "no session id",
+                NODE_SESSION_ID_RSP, header, E802_DEFAULT_ERROR, "no session id",
                 data->peer_nodes_list[0]);
         } else {
             std::stringstream ss;
@@ -5892,21 +5893,21 @@ void node_request_service::node_session_id(
                 } else {
                     LOG_ERROR << "pub_key or priv_key is empty";
                     send_response_error<dbc::node_session_id_rsp>(
-                        NODE_SESSION_ID_RSP, header, E_DEFAULT,
+                        NODE_SESSION_ID_RSP, header, E802_DEFAULT_ERROR,
                         "pub_key or priv_key is empty",
                         data->peer_nodes_list[0]);
                 }
             } else {
                 LOG_ERROR << "request no pub_key";
                 send_response_error<dbc::node_session_id_rsp>(
-                    NODE_SESSION_ID_RSP, header, E_DEFAULT,
+                    NODE_SESSION_ID_RSP, header, E802_DEFAULT_ERROR,
                     "request no pub_key", data->peer_nodes_list[0]);
             }
         }
     } else {
         LOG_INFO << "you are not renter of this machine";
         send_response_error<dbc::node_session_id_rsp>(
-            NODE_SESSION_ID_RSP, header, E_DEFAULT, "check authority failed",
+            NODE_SESSION_ID_RSP, header, E802_DEFAULT_ERROR, "check authority failed",
             data->peer_nodes_list[0]);
     }
 }
@@ -5999,7 +6000,7 @@ void node_request_service::on_node_free_memory_req(
         if (!result.success) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_free_memory_rsp>(
-                NODE_FREE_MEMORY_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_FREE_MEMORY_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
                 "check authority failed: " + result.errmsg);
             return;
         }
@@ -6007,7 +6008,7 @@ void node_request_service::on_node_free_memory_req(
         node_free_memory(node_req_msg->header, data, result);
     } else if (hit_self == HitBareMetal || hit_self == HitBareMetalManager) {
         send_response_error<dbc::node_free_memory_rsp>(
-            NODE_FREE_MEMORY_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_FREE_MEMORY_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "bare metal nodes are not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -6268,7 +6269,7 @@ void node_request_service::on_node_list_monitor_server_req(
             result.user_role == USER_ROLE::Verifier) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_list_monitor_server_rsp>(
-                NODE_LIST_MONITOR_SERVER_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_LIST_MONITOR_SERVER_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
                 "check authority failed: " + result.errmsg);
             return;
         }
@@ -6276,7 +6277,7 @@ void node_request_service::on_node_list_monitor_server_req(
         monitor_server_list(node_req_msg->header, data, result);
     } else if (hit_self == HitBareMetal || hit_self == HitBareMetalManager) {
         send_response_error<dbc::node_list_monitor_server_rsp>(
-            NODE_LIST_MONITOR_SERVER_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_LIST_MONITOR_SERVER_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "bare metal nodes are not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -6334,13 +6335,13 @@ void node_request_service::monitor_server_list(
         } else {
             LOG_ERROR << "pub_key or priv_key is empty";
             send_response_error<dbc::node_list_monitor_server_rsp>(
-                NODE_LIST_MONITOR_SERVER_RSP, header, E_DEFAULT,
+                NODE_LIST_MONITOR_SERVER_RSP, header, E802_DEFAULT_ERROR,
                 "pub_key or priv_key is empty");
         }
     } else {
         LOG_ERROR << "request no pub_key";
         send_response_error<dbc::node_list_monitor_server_rsp>(
-            NODE_LIST_MONITOR_SERVER_RSP, header, E_DEFAULT,
+            NODE_LIST_MONITOR_SERVER_RSP, header, E802_DEFAULT_ERROR,
             "request no pub_key");
     }
 }
@@ -6434,7 +6435,7 @@ void node_request_service::on_node_set_monitor_server_req(
             result.user_role == USER_ROLE::Verifier) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_set_monitor_server_rsp>(
-                NODE_SET_MONITOR_SERVER_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_SET_MONITOR_SERVER_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
                 "check authority failed: " + result.errmsg);
             return;
         }
@@ -6442,7 +6443,7 @@ void node_request_service::on_node_set_monitor_server_req(
         monitor_server_set(node_req_msg->header, data, result);
     } else if (hit_self == HitBareMetal || hit_self == HitBareMetalManager) {
         send_response_error<dbc::node_set_monitor_server_rsp>(
-            NODE_SET_MONITOR_SERVER_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_SET_MONITOR_SERVER_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "bare metal nodes are not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -6562,14 +6563,14 @@ void node_request_service::on_node_list_lan_req(
         // result.user_role == USER_ROLE::Verifier) {
         //     LOG_ERROR << "check authority failed: " << result.errmsg;
         //     send_response_error<dbc::node_list_lan_rsp>(NODE_LIST_LAN_RSP,
-        //     node_req_msg->header, E_DEFAULT, "check authority failed: " +
+        //     node_req_msg->header, E802_DEFAULT_ERROR, "check authority failed: " +
         //     result.errmsg); return;
         // }
 
         list_lan(node_req_msg->header, data);
     } else if (hit_self == HitBareMetal || hit_self == HitBareMetalManager) {
         send_response_error<dbc::node_list_lan_rsp>(
-            NODE_LIST_LAN_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_LIST_LAN_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "bare metal nodes are not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -6688,7 +6689,7 @@ void node_request_service::list_lan(
                         << "\"" << network->nativeFlags << "\"";
             ss_networks << "}";
         } else {
-            ret_code = E_DEFAULT;
+            ret_code = E802_DEFAULT_ERROR;
             ret_msg = "network name not exist";
         }
     }
@@ -6720,13 +6721,13 @@ void node_request_service::list_lan(
         } else {
             LOG_ERROR << "pub_key or priv_key is empty";
             send_response_error<dbc::node_list_lan_rsp>(
-                NODE_LIST_LAN_RSP, header, E_DEFAULT,
+                NODE_LIST_LAN_RSP, header, E802_DEFAULT_ERROR,
                 "pub_key or priv_key is empty");
         }
     } else {
         LOG_ERROR << "request no pub_key";
         send_response_error<dbc::node_list_lan_rsp>(
-            NODE_LIST_LAN_RSP, header, E_DEFAULT, "request no pub_key");
+            NODE_LIST_LAN_RSP, header, E802_DEFAULT_ERROR, "request no pub_key");
     }
 }
 
@@ -6818,7 +6819,7 @@ void node_request_service::on_node_create_lan_req(
             result.user_role == USER_ROLE::Verifier) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_create_lan_rsp>(
-                NODE_CREATE_LAN_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_CREATE_LAN_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
                 "check authority failed: " + result.errmsg);
             return;
         }
@@ -6826,7 +6827,7 @@ void node_request_service::on_node_create_lan_req(
         create_lan(node_req_msg->header, data, result);
     } else if (hit_self == HitBareMetal || hit_self == HitBareMetalManager) {
         send_response_error<dbc::node_create_lan_rsp>(
-            NODE_CREATE_LAN_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_CREATE_LAN_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "bare metal nodes are not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -6843,7 +6844,7 @@ void node_request_service::create_lan(
     // send_response_error<dbc::node_create_lan_rsp>(NODE_CREATE_LAN_RSP,
     // header, ERR_SUCCESS, "AAAAAAAAAAAA");
     // send_response_ok<dbc::node_create_lan_rsp>(NODE_CREATE_LAN_RSP, header);
-    FResult fret = {ERR_ERROR, "invalid additional param"};
+    FResult fret = {E802_DEFAULT_ERROR, "invalid additional param"};
     rapidjson::Document doc;
     rapidjson::ParseResult ok = doc.Parse(data->additional.c_str());
     if (ok && doc.IsObject()) {
@@ -6859,7 +6860,7 @@ void node_request_service::create_lan(
         send_response_ok<dbc::node_create_lan_rsp>(NODE_CREATE_LAN_RSP, header);
     } else {
         send_response_error<dbc::node_create_lan_rsp>(
-            NODE_CREATE_LAN_RSP, header, E_DEFAULT, fret.errmsg);
+            NODE_CREATE_LAN_RSP, header, E802_DEFAULT_ERROR, fret.errmsg);
     }
 }
 
@@ -6951,7 +6952,7 @@ void node_request_service::on_node_delete_lan_req(
             result.user_role == USER_ROLE::Verifier) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_delete_lan_rsp>(
-                NODE_DELETE_LAN_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_DELETE_LAN_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
                 "check authority failed: " + result.errmsg);
             return;
         }
@@ -6959,7 +6960,7 @@ void node_request_service::on_node_delete_lan_req(
         delete_lan(node_req_msg->header, data, result);
     } else if (hit_self == HitBareMetal || hit_self == HitBareMetalManager) {
         send_response_error<dbc::node_delete_lan_rsp>(
-            NODE_DELETE_LAN_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_DELETE_LAN_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "bare metal nodes are not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -6985,7 +6986,7 @@ void node_request_service::delete_lan(
         send_response_ok<dbc::node_delete_lan_rsp>(NODE_DELETE_LAN_RSP, header);
     } else {
         send_response_error<dbc::node_delete_lan_rsp>(
-            NODE_DELETE_LAN_RSP, header, E_DEFAULT, fret.errmsg);
+            NODE_DELETE_LAN_RSP, header, E802_DEFAULT_ERROR, fret.errmsg);
     }
 }
 
@@ -7081,7 +7082,7 @@ void node_request_service::on_node_list_bare_metal_req(
         if (!result.success || result.user_role == USER_ROLE::Unknown) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_list_bare_metal_rsp>(
-                NODE_LIST_BARE_METAL_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_LIST_BARE_METAL_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
                 "check authority failed: " + result.errmsg,
                 data->peer_nodes_list[0]);
             return;
@@ -7090,7 +7091,7 @@ void node_request_service::on_node_list_bare_metal_req(
         list_bare_metal(node_req_msg->header, data, result);
     } else if (hit_self == HitComputer) {
         send_response_error<dbc::node_list_bare_metal_rsp>(
-            NODE_LIST_BARE_METAL_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_LIST_BARE_METAL_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "Not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -7230,13 +7231,13 @@ void node_request_service::list_bare_metal_manager(
         } else {
             LOG_ERROR << "pub_key or priv_key is empty";
             send_response_error<dbc::node_list_bare_metal_rsp>(
-                NODE_LIST_BARE_METAL_RSP, header, E_DEFAULT,
+                NODE_LIST_BARE_METAL_RSP, header, E802_DEFAULT_ERROR,
                 "pub_key or priv_key is empty", data->peer_nodes_list[0]);
         }
     } else {
         LOG_ERROR << "request no pub_key";
         send_response_error<dbc::node_list_bare_metal_rsp>(
-            NODE_LIST_BARE_METAL_RSP, header, E_DEFAULT, "request no pub_key",
+            NODE_LIST_BARE_METAL_RSP, header, E802_DEFAULT_ERROR, "request no pub_key",
             data->peer_nodes_list[0]);
     }
 }
@@ -7252,7 +7253,7 @@ void node_request_service::list_bare_metal(
             data->peer_nodes_list[0]);
     if (!bm) {
         send_response_error<dbc::node_list_bare_metal_rsp>(
-            NODE_LIST_BARE_METAL_RSP, header, E_DEFAULT,
+            NODE_LIST_BARE_METAL_RSP, header, E802_DEFAULT_ERROR,
             "get bare metal node info failed", data->peer_nodes_list[0]);
         return;
     }
@@ -7306,13 +7307,13 @@ void node_request_service::list_bare_metal(
         } else {
             LOG_ERROR << "pub_key or priv_key is empty";
             send_response_error<dbc::node_list_bare_metal_rsp>(
-                NODE_LIST_BARE_METAL_RSP, header, E_DEFAULT,
+                NODE_LIST_BARE_METAL_RSP, header, E802_DEFAULT_ERROR,
                 "pub_key or priv_key is empty", data->peer_nodes_list[0]);
         }
     } else {
         LOG_ERROR << "request no pub_key";
         send_response_error<dbc::node_list_bare_metal_rsp>(
-            NODE_LIST_BARE_METAL_RSP, header, E_DEFAULT, "request no pub_key",
+            NODE_LIST_BARE_METAL_RSP, header, E802_DEFAULT_ERROR, "request no pub_key",
             data->peer_nodes_list[0]);
     }
 }
@@ -7394,14 +7395,14 @@ void node_request_service::on_node_add_bare_metal_req(
         if (data->wallet != ConfManager::instance().GetNodeId() ||
             fret.errcode != ERR_SUCCESS) {
             send_response_error<dbc::node_add_bare_metal_rsp>(
-                NODE_ADD_BARE_METAL_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_ADD_BARE_METAL_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
                 "verify sign failed", data->peer_nodes_list[0]);
             return;
         }
         add_bare_metal(node_req_msg->header, data);
     } else if (hit_self == HitComputer || hit_self == HitBareMetal) {
         send_response_error<dbc::node_add_bare_metal_rsp>(
-            NODE_ADD_BARE_METAL_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_ADD_BARE_METAL_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "Not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -7418,7 +7419,7 @@ void node_request_service::add_bare_metal(
     // header, ERR_SUCCESS, "hello world", data->peer_nodes_list[0]);
     if (data->additional.empty()) {
         send_response_error<dbc::node_add_bare_metal_rsp>(
-            NODE_ADD_BARE_METAL_RSP, header, E_DEFAULT, "additional is empty",
+            NODE_ADD_BARE_METAL_RSP, header, E802_DEFAULT_ERROR, "additional is empty",
             data->peer_nodes_list[0]);
         return;
     }
@@ -7427,14 +7428,14 @@ void node_request_service::add_bare_metal(
     doc.Parse(data->additional.c_str());
     if (!doc.IsObject()) {
         send_response_error<dbc::node_add_bare_metal_rsp>(
-            NODE_ADD_BARE_METAL_RSP, header, E_DEFAULT,
+            NODE_ADD_BARE_METAL_RSP, header, E802_DEFAULT_ERROR,
             "additional parse failed", data->peer_nodes_list[0]);
         return;
     }
 
     if (!doc.HasMember("bare_metal_nodes")) {
         send_response_error<dbc::node_add_bare_metal_rsp>(
-            NODE_ADD_BARE_METAL_RSP, header, E_DEFAULT,
+            NODE_ADD_BARE_METAL_RSP, header, E802_DEFAULT_ERROR,
             "additional bare_metal_nodes not existed",
             data->peer_nodes_list[0]);
         return;
@@ -7443,7 +7444,7 @@ void node_request_service::add_bare_metal(
     const rapidjson::Value& v_bm_nodes = doc["bare_metal_nodes"];
     if (!v_bm_nodes.IsArray()) {
         send_response_error<dbc::node_add_bare_metal_rsp>(
-            NODE_ADD_BARE_METAL_RSP, header, E_DEFAULT,
+            NODE_ADD_BARE_METAL_RSP, header, E802_DEFAULT_ERROR,
             "additional bare_metal_nodes must be an array",
             data->peer_nodes_list[0]);
         return;
@@ -7473,7 +7474,7 @@ void node_request_service::add_bare_metal(
                 info.ipmi_port = port;
             } else {
                 send_response_error<dbc::node_add_bare_metal_rsp>(
-                    NODE_ADD_BARE_METAL_RSP, header, E_DEFAULT,
+                    NODE_ADD_BARE_METAL_RSP, header, E802_DEFAULT_ERROR,
                     "invalid ipmi port in " + info.uuid,
                     data->peer_nodes_list[0]);
                 return;
@@ -7481,14 +7482,14 @@ void node_request_service::add_bare_metal(
         }
         if (!info.validate()) {
             send_response_error<dbc::node_add_bare_metal_rsp>(
-                NODE_ADD_BARE_METAL_RSP, header, E_DEFAULT,
+                NODE_ADD_BARE_METAL_RSP, header, E802_DEFAULT_ERROR,
                 "bare metal node info " + info.uuid + " invalid",
                 data->peer_nodes_list[0]);
             return;
         }
         if (BareMetalNodeManager::instance().ExistUUID(info.uuid)) {
             send_response_error<dbc::node_add_bare_metal_rsp>(
-                NODE_ADD_BARE_METAL_RSP, header, E_DEFAULT,
+                NODE_ADD_BARE_METAL_RSP, header, E802_DEFAULT_ERROR,
                 "bare metal node uuid " + info.uuid + " already existed",
                 data->peer_nodes_list[0]);
             return;
@@ -7498,7 +7499,7 @@ void node_request_service::add_bare_metal(
 
     if (bare_metal_infos.empty()) {
         send_response_error<dbc::node_add_bare_metal_rsp>(
-            NODE_ADD_BARE_METAL_RSP, header, E_DEFAULT,
+            NODE_ADD_BARE_METAL_RSP, header, E802_DEFAULT_ERROR,
             "additional bare_metal_nodes is empty", data->peer_nodes_list[0]);
         return;
     }
@@ -7548,13 +7549,13 @@ void node_request_service::add_bare_metal(
         } else {
             LOG_ERROR << "pub_key or priv_key is empty";
             send_response_error<dbc::node_add_bare_metal_rsp>(
-                NODE_ADD_BARE_METAL_RSP, header, E_DEFAULT,
+                NODE_ADD_BARE_METAL_RSP, header, E802_DEFAULT_ERROR,
                 "pub_key or priv_key is empty", data->peer_nodes_list[0]);
         }
     } else {
         LOG_ERROR << "request no pub_key";
         send_response_error<dbc::node_add_bare_metal_rsp>(
-            NODE_ADD_BARE_METAL_RSP, header, E_DEFAULT, "request no pub_key",
+            NODE_ADD_BARE_METAL_RSP, header, E802_DEFAULT_ERROR, "request no pub_key",
             data->peer_nodes_list[0]);
     }
 }
@@ -7637,14 +7638,14 @@ void node_request_service::on_node_delete_bare_metal_req(
         if (data->wallet != ConfManager::instance().GetNodeId() ||
             fret.errcode != ERR_SUCCESS) {
             send_response_error<dbc::node_delete_bare_metal_rsp>(
-                NODE_DELETE_BARE_METAL_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_DELETE_BARE_METAL_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
                 "verify sign failed", data->peer_nodes_list[0]);
             return;
         }
         delete_bare_metal(node_req_msg->header, data);
     } else if (hit_self == HitComputer || hit_self == HitBareMetal) {
         send_response_error<dbc::node_delete_bare_metal_rsp>(
-            NODE_DELETE_BARE_METAL_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_DELETE_BARE_METAL_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "Not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -7661,7 +7662,7 @@ void node_request_service::delete_bare_metal(
     // header, ERR_SUCCESS, "olleh world", data->peer_nodes_list[0]);
     if (data->additional.empty()) {
         send_response_error<dbc::node_delete_bare_metal_rsp>(
-            NODE_DELETE_BARE_METAL_RSP, header, E_DEFAULT,
+            NODE_DELETE_BARE_METAL_RSP, header, E802_DEFAULT_ERROR,
             "additional is empty", data->peer_nodes_list[0]);
         return;
     }
@@ -7670,14 +7671,14 @@ void node_request_service::delete_bare_metal(
     doc.Parse(data->additional.c_str());
     if (!doc.IsObject()) {
         send_response_error<dbc::node_delete_bare_metal_rsp>(
-            NODE_DELETE_BARE_METAL_RSP, header, E_DEFAULT,
+            NODE_DELETE_BARE_METAL_RSP, header, E802_DEFAULT_ERROR,
             "additional parse failed", data->peer_nodes_list[0]);
         return;
     }
 
     if (!doc.HasMember("bare_metal_node_ids")) {
         send_response_error<dbc::node_delete_bare_metal_rsp>(
-            NODE_DELETE_BARE_METAL_RSP, header, E_DEFAULT,
+            NODE_DELETE_BARE_METAL_RSP, header, E802_DEFAULT_ERROR,
             "additional bare_metal_node_ids not existed",
             data->peer_nodes_list[0]);
         return;
@@ -7686,7 +7687,7 @@ void node_request_service::delete_bare_metal(
     const rapidjson::Value& v_bm_ids = doc["bare_metal_node_ids"];
     if (!v_bm_ids.IsArray()) {
         send_response_error<dbc::node_delete_bare_metal_rsp>(
-            NODE_DELETE_BARE_METAL_RSP, header, E_DEFAULT,
+            NODE_DELETE_BARE_METAL_RSP, header, E802_DEFAULT_ERROR,
             "additional bare_metal_node_ids must be an array",
             data->peer_nodes_list[0]);
         return;
@@ -7698,7 +7699,7 @@ void node_request_service::delete_bare_metal(
             ids.push_back(v.GetString());
         } else {
             send_response_error<dbc::node_delete_bare_metal_rsp>(
-                NODE_DELETE_BARE_METAL_RSP, header, E_DEFAULT,
+                NODE_DELETE_BARE_METAL_RSP, header, E802_DEFAULT_ERROR,
                 "bare_metal_node_ids item must be a string",
                 data->peer_nodes_list[0]);
             return;
@@ -7707,7 +7708,7 @@ void node_request_service::delete_bare_metal(
 
     if (ids.empty()) {
         send_response_error<dbc::node_delete_bare_metal_rsp>(
-            NODE_DELETE_BARE_METAL_RSP, header, E_DEFAULT,
+            NODE_DELETE_BARE_METAL_RSP, header, E802_DEFAULT_ERROR,
             "additional bare_meta_node_ids is an empty array",
             data->peer_nodes_list[0]);
         return;
@@ -7797,14 +7798,14 @@ void node_request_service::on_node_modify_bare_metal_req(
         if (data->wallet != ConfManager::instance().GetNodeId() ||
             fret.errcode != ERR_SUCCESS) {
             send_response_error<dbc::node_modify_bare_metal_rsp>(
-                NODE_MODIFY_BARE_METAL_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_MODIFY_BARE_METAL_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
                 "verify sign failed", data->peer_nodes_list[0]);
             return;
         }
         modify_bare_metal(node_req_msg->header, data);
     } else if (hit_self == HitComputer || hit_self == HitBareMetal) {
         send_response_error<dbc::node_modify_bare_metal_rsp>(
-            NODE_MODIFY_BARE_METAL_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_MODIFY_BARE_METAL_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "Not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -7822,7 +7823,7 @@ void node_request_service::modify_bare_metal(
     //     data->peer_nodes_list[0]);
     if (data->additional.empty()) {
         send_response_error<dbc::node_modify_bare_metal_rsp>(
-            NODE_MODIFY_BARE_METAL_RSP, header, E_DEFAULT,
+            NODE_MODIFY_BARE_METAL_RSP, header, E802_DEFAULT_ERROR,
             "additional is empty", data->peer_nodes_list[0]);
         return;
     }
@@ -7831,14 +7832,14 @@ void node_request_service::modify_bare_metal(
     doc.Parse(data->additional.c_str());
     if (!doc.IsObject()) {
         send_response_error<dbc::node_modify_bare_metal_rsp>(
-            NODE_MODIFY_BARE_METAL_RSP, header, E_DEFAULT,
+            NODE_MODIFY_BARE_METAL_RSP, header, E802_DEFAULT_ERROR,
             "additional parse failed", data->peer_nodes_list[0]);
         return;
     }
 
     if (!BareMetalNodeManager::instance().ExistNodeID(data->node_id)) {
         send_response_error<dbc::node_modify_bare_metal_rsp>(
-            NODE_MODIFY_BARE_METAL_RSP, header, E_DEFAULT,
+            NODE_MODIFY_BARE_METAL_RSP, header, E802_DEFAULT_ERROR,
             "node id not existed", data->peer_nodes_list[0]);
         return;
     }
@@ -7849,7 +7850,7 @@ void node_request_service::modify_bare_metal(
         for (const auto& ch : info.uuid) {
             if (!isalnum(ch) && ch != '-') {
                 send_response_error<dbc::node_modify_bare_metal_rsp>(
-                    NODE_MODIFY_BARE_METAL_RSP, header, E_DEFAULT,
+                    NODE_MODIFY_BARE_METAL_RSP, header, E802_DEFAULT_ERROR,
                     "invalid uuid", data->peer_nodes_list[0]);
                 return;
             }
@@ -7873,7 +7874,7 @@ void node_request_service::modify_bare_metal(
             info.ipmi_port = port;
         } else {
             send_response_error<dbc::node_modify_bare_metal_rsp>(
-                NODE_MODIFY_BARE_METAL_RSP, header, E_DEFAULT,
+                NODE_MODIFY_BARE_METAL_RSP, header, E802_DEFAULT_ERROR,
                 "invalid ipmi port", data->peer_nodes_list[0]);
             return;
         }
@@ -7976,7 +7977,7 @@ void node_request_service::on_node_bare_metal_power_req(
         if (!result.success || result.user_role == USER_ROLE::Unknown) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_bare_metal_power_rsp>(
-                NODE_BARE_METAL_POWER_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_BARE_METAL_POWER_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
                 "check authority failed: " + result.errmsg,
                 data->peer_nodes_list[0]);
             return;
@@ -7985,7 +7986,7 @@ void node_request_service::on_node_bare_metal_power_req(
         bare_metal_power(node_req_msg->header, data, result);
     } else if (hit_self == HitComputer || hit_self == HitBareMetalManager) {
         send_response_error<dbc::node_bare_metal_power_rsp>(
-            NODE_BARE_METAL_POWER_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_BARE_METAL_POWER_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "Not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -8001,7 +8002,7 @@ void node_request_service::bare_metal_power(
     const AuthoriseResult& result) {
     if (data->additional.empty()) {
         send_response_error<dbc::node_bare_metal_power_rsp>(
-            NODE_BARE_METAL_POWER_RSP, header, E_DEFAULT, "additional is empty",
+            NODE_BARE_METAL_POWER_RSP, header, E802_DEFAULT_ERROR, "additional is empty",
             data->peer_nodes_list[0]);
         return;
     }
@@ -8010,7 +8011,7 @@ void node_request_service::bare_metal_power(
     doc.Parse(data->additional.c_str());
     if (!doc.IsObject()) {
         send_response_error<dbc::node_bare_metal_power_rsp>(
-            NODE_BARE_METAL_POWER_RSP, header, E_DEFAULT,
+            NODE_BARE_METAL_POWER_RSP, header, E802_DEFAULT_ERROR,
             "additional parse failed", data->peer_nodes_list[0]);
         return;
     }
@@ -8021,7 +8022,7 @@ void node_request_service::bare_metal_power(
     if (command != "status" && command != "on" && command != "off" &&
         command != "reset") {
         send_response_error<dbc::node_bare_metal_power_rsp>(
-            NODE_BARE_METAL_POWER_RSP, header, E_DEFAULT, "invalid command",
+            NODE_BARE_METAL_POWER_RSP, header, E802_DEFAULT_ERROR, "invalid command",
             data->peer_nodes_list[0]);
         return;
     }
@@ -8034,7 +8035,7 @@ void node_request_service::bare_metal_power(
             data->peer_nodes_list[0]);
     send_response_error<dbc::node_bare_metal_power_rsp>(
         NODE_BARE_METAL_POWER_RSP, header,
-        fret.errcode == ERR_SUCCESS ? 0 : E_DEFAULT, fret.errmsg,
+        fret.errcode == ERR_SUCCESS ? 0 : E802_DEFAULT_ERROR, fret.errmsg,
         data->peer_nodes_list[0]);
 }
 
@@ -8129,7 +8130,7 @@ void node_request_service::on_node_bare_metal_bootdev_req(
             result.user_role == USER_ROLE::Verifier) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_bare_metal_bootdev_rsp>(
-                NODE_BARE_METAL_BOOTDEV_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_BARE_METAL_BOOTDEV_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
                 "check authority failed: " + result.errmsg,
                 data->peer_nodes_list[0]);
             return;
@@ -8138,7 +8139,7 @@ void node_request_service::on_node_bare_metal_bootdev_req(
         bare_metal_bootdev(node_req_msg->header, data, result);
     } else if (hit_self == HitComputer || hit_self == HitBareMetalManager) {
         send_response_error<dbc::node_bare_metal_bootdev_rsp>(
-            NODE_BARE_METAL_BOOTDEV_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_BARE_METAL_BOOTDEV_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "Not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -8154,7 +8155,7 @@ void node_request_service::bare_metal_bootdev(
     const AuthoriseResult& result) {
     if (data->additional.empty()) {
         send_response_error<dbc::node_bare_metal_bootdev_rsp>(
-            NODE_BARE_METAL_BOOTDEV_RSP, header, E_DEFAULT,
+            NODE_BARE_METAL_BOOTDEV_RSP, header, E802_DEFAULT_ERROR,
             "additional is empty", data->peer_nodes_list[0]);
         return;
     }
@@ -8163,7 +8164,7 @@ void node_request_service::bare_metal_bootdev(
     doc.Parse(data->additional.c_str());
     if (!doc.IsObject()) {
         send_response_error<dbc::node_bare_metal_bootdev_rsp>(
-            NODE_BARE_METAL_BOOTDEV_RSP, header, E_DEFAULT,
+            NODE_BARE_METAL_BOOTDEV_RSP, header, E802_DEFAULT_ERROR,
             "additional parse failed", data->peer_nodes_list[0]);
         return;
     }
@@ -8174,7 +8175,7 @@ void node_request_service::bare_metal_bootdev(
     if (device != "none" && device != "pxe" && device != "cdrom" &&
         device != "disk" && device != "bios") {
         send_response_error<dbc::node_bare_metal_bootdev_rsp>(
-            NODE_BARE_METAL_BOOTDEV_RSP, header, E_DEFAULT, "invalid device",
+            NODE_BARE_METAL_BOOTDEV_RSP, header, E802_DEFAULT_ERROR, "invalid device",
             data->peer_nodes_list[0]);
         return;
     }
@@ -8183,7 +8184,7 @@ void node_request_service::bare_metal_bootdev(
         data->peer_nodes_list[0], device);
     send_response_error<dbc::node_bare_metal_bootdev_rsp>(
         NODE_BARE_METAL_BOOTDEV_RSP, header,
-        fret.errcode == ERR_SUCCESS ? 0 : E_DEFAULT, fret.errmsg,
+        fret.errcode == ERR_SUCCESS ? 0 : E802_DEFAULT_ERROR, fret.errmsg,
         data->peer_nodes_list[0]);
 }
 
@@ -8277,7 +8278,7 @@ void node_request_service::on_node_list_deeplink_info_req(
         if (!result.success || result.user_role == USER_ROLE::Unknown) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_list_deeplink_info_rsp>(
-                NODE_LIST_DEEPLINK_INFO_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_LIST_DEEPLINK_INFO_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
                 "check authority failed: " + result.errmsg,
                 data->peer_nodes_list[0]);
             return;
@@ -8286,7 +8287,7 @@ void node_request_service::on_node_list_deeplink_info_req(
         list_deeplink_info(node_req_msg->header, data, result);
     } else if (hit_self == HitComputer || hit_self == HitBareMetalManager) {
         send_response_error<dbc::node_list_deeplink_info_rsp>(
-            NODE_LIST_DEEPLINK_INFO_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_LIST_DEEPLINK_INFO_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "Not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -8348,13 +8349,13 @@ void node_request_service::list_deeplink_info(
         } else {
             LOG_ERROR << "pub_key or priv_key is empty";
             send_response_error<dbc::node_list_deeplink_info_rsp>(
-                NODE_LIST_DEEPLINK_INFO_RSP, header, E_DEFAULT,
+                NODE_LIST_DEEPLINK_INFO_RSP, header, E802_DEFAULT_ERROR,
                 "pub_key or priv_key is empty", data->peer_nodes_list[0]);
         }
     } else {
         LOG_ERROR << "request no pub_key";
         send_response_error<dbc::node_list_deeplink_info_rsp>(
-            NODE_LIST_DEEPLINK_INFO_RSP, header, E_DEFAULT,
+            NODE_LIST_DEEPLINK_INFO_RSP, header, E802_DEFAULT_ERROR,
             "request no pub_key", data->peer_nodes_list[0]);
     }
 }
@@ -8450,7 +8451,7 @@ void node_request_service::on_node_set_deeplink_info_req(
             result.user_role == USER_ROLE::Verifier) {
             LOG_ERROR << "check authority failed: " << result.errmsg;
             send_response_error<dbc::node_set_deeplink_info_rsp>(
-                NODE_SET_DEEPLINK_INFO_RSP, node_req_msg->header, E_DEFAULT,
+                NODE_SET_DEEPLINK_INFO_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
                 "check authority failed: " + result.errmsg,
                 data->peer_nodes_list[0]);
             return;
@@ -8459,7 +8460,7 @@ void node_request_service::on_node_set_deeplink_info_req(
         set_deeplink_info(node_req_msg->header, data, result);
     } else if (hit_self == HitComputer || hit_self == HitBareMetalManager) {
         send_response_error<dbc::node_set_deeplink_info_rsp>(
-            NODE_SET_DEEPLINK_INFO_RSP, node_req_msg->header, E_DEFAULT,
+            NODE_SET_DEEPLINK_INFO_RSP, node_req_msg->header, E802_DEFAULT_ERROR,
             "Not supported", data->peer_nodes_list[0]);
     } else {
         node_req_msg->header.path.push_back(
@@ -8475,7 +8476,7 @@ void node_request_service::set_deeplink_info(
     const AuthoriseResult& result) {
     if (data->additional.empty()) {
         send_response_error<dbc::node_set_deeplink_info_rsp>(
-            NODE_SET_DEEPLINK_INFO_RSP, header, E_DEFAULT,
+            NODE_SET_DEEPLINK_INFO_RSP, header, E802_DEFAULT_ERROR,
             "additional is empty", data->peer_nodes_list[0]);
         return;
     }
@@ -8484,7 +8485,7 @@ void node_request_service::set_deeplink_info(
     doc.Parse(data->additional.c_str());
     if (!doc.IsObject()) {
         send_response_error<dbc::node_set_deeplink_info_rsp>(
-            NODE_SET_DEEPLINK_INFO_RSP, header, E_DEFAULT,
+            NODE_SET_DEEPLINK_INFO_RSP, header, E802_DEFAULT_ERROR,
             "additional parse failed", data->peer_nodes_list[0]);
         return;
     }
@@ -8494,7 +8495,7 @@ void node_request_service::set_deeplink_info(
     JSON_PARSE_STRING(doc, "device_password", device_password);
     if (device_id.empty() && device_password.empty()) {
         send_response_error<dbc::node_set_deeplink_info_rsp>(
-            NODE_SET_DEEPLINK_INFO_RSP, header, E_DEFAULT, "invalid device",
+            NODE_SET_DEEPLINK_INFO_RSP, header, E802_DEFAULT_ERROR, "invalid device",
             data->peer_nodes_list[0]);
         return;
     }
@@ -8503,7 +8504,7 @@ void node_request_service::set_deeplink_info(
         data->peer_nodes_list[0]);
     if (!bm) {
         send_response_error<dbc::node_set_deeplink_info_rsp>(
-            NODE_SET_DEEPLINK_INFO_RSP, header, E_DEFAULT,
+            NODE_SET_DEEPLINK_INFO_RSP, header, E802_DEFAULT_ERROR,
             "node id not existed", data->peer_nodes_list[0]);
         return;
     }
@@ -8512,6 +8513,6 @@ void node_request_service::set_deeplink_info(
         bm->ip, device_id, device_password);
     send_response_error<dbc::node_set_deeplink_info_rsp>(
         NODE_SET_DEEPLINK_INFO_RSP, header,
-        fret.errcode == ERR_SUCCESS ? 0 : E_DEFAULT, fret.errmsg,
+        fret.errcode == ERR_SUCCESS ? 0 : E802_DEFAULT_ERROR, fret.errmsg,
         data->peer_nodes_list[0]);
 }

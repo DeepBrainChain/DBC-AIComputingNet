@@ -1,4 +1,5 @@
 #include "p2p_lan_service.h"
+#include "common/error.h"
 #include "server/server.h"
 #include "config/conf_manager.h"
 #include "util/system_info.h"
@@ -126,7 +127,7 @@ ERRCODE p2p_lan_service::init() {
         catch (std::exception& e)
         {
             LOG_ERROR << "init multicast receiver Exception: " << e.what();
-            return -1;
+            return E100_NETWORK_FAILURE;
         }
     }
 

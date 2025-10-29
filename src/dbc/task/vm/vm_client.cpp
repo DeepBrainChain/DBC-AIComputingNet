@@ -1,4 +1,5 @@
 #include "vm_client.h"
+#include "common/error.h"
 #include "rapidjson/document.h"
 #include "rapidjson/error/en.h"
 #include "server/server.h"
@@ -650,19 +651,19 @@ static std::string createNWFilterXml(const std::string& nwfilter_name, const std
         //]
         // std::vector<std::string> v_nwfilter_protocol = util::split(nwfilter_item, ",");
         // if (v_nwfilter_protocol.size() != 5) return -1;
-        if (v_nwfilter_protocol[0] != "in" && v_nwfilter_protocol[0] != "out" && v_nwfilter_protocol[0] != "inout") return -1;
+        if (v_nwfilter_protocol[0] != "in" && v_nwfilter_protocol[0] != "out" && v_nwfilter_protocol[0] != "inout") return E211_VM_NETWORK_FILTER_CREATE_FAILED;
         // check ipCidr
         std::vector<std::string> vec_ipCidr = util::split(v_nwfilter_protocol[3], "/");
-        if (vec_ipCidr.empty()) return -1;
+        if (vec_ipCidr.empty()) return E211_VM_NETWORK_FILTER_CREATE_FAILED;
         std::string ip_addr = vec_ipCidr[0];
         {
             ip_validator ip_vdr;
             variable_value val_ip(ip_addr, false);
-            if (!ip_vdr.validate(val_ip)) return -1;
+            if (!ip_vdr.validate(val_ip)) return E211_VM_NETWORK_FILTER_CREATE_FAILED;
             if (ip_addr == "0.0.0.0") ip_addr.clear();
         }
         // rdp ftp icmp ssh http https 最终还是在xml中配置tcp或者udp端口
-        if (v_nwfilter_protocol[4] != "accept" && v_nwfilter_protocol[4] != "drop") return -1;
+        if (v_nwfilter_protocol[4] != "accept" && v_nwfilter_protocol[4] != "drop") return E211_VM_NETWORK_FILTER_CREATE_FAILED;
         tinyxml2::XMLElement *rule = doc.NewElement("rule");
         rule->SetAttribute("action", v_nwfilter_protocol[4].c_str());
         rule->SetAttribute("direction", v_nwfilter_protocol[0].c_str());
@@ -673,7 +674,7 @@ static std::string createNWFilterXml(const std::string& nwfilter_name, const std
             protocol_node = doc.NewElement("all");
         } else if (v_nwfilter_protocol[1] == "tcp" || v_nwfilter_protocol[1] == "udp") {
             std::vector<std::string> v_tcp_range = util::split(v_nwfilter_protocol[2], "-");
-            if (v_tcp_range.empty()) return -1;
+            if (v_tcp_range.empty()) return E211_VM_NETWORK_FILTER_CREATE_FAILED;
             protocol_node = doc.NewElement(v_nwfilter_protocol[1].c_str());
             protocol_node->SetAttribute("dstportstart", v_tcp_range[0].c_str());
             if (v_tcp_range.size() == 2)
@@ -712,7 +713,7 @@ static std::string createNWFilterXml(const std::string& nwfilter_name, const std
         if (protocol_node)
             rule->LinkEndChild(protocol_node);
         root->LinkEndChild(rule);
-        return 0;
+        return ERR_SUCCESS;
     };
 
     std::vector<std::vector<std::string>> vec_rule_all;
@@ -772,7 +773,7 @@ VmClient::~VmClient() {
 
 FResult VmClient::init() {
     if (virEventRegisterDefaultImpl() < 0) {
-        return FResult(ERR_ERROR, "register libvirt event impl failed");
+        return FResult(E802_DEFAULT_ERROR, "register libvirt event impl failed");
     }
 
     return OpenConnect();
@@ -790,15 +791,15 @@ FResult VmClient::OpenConnect() {
 
     m_connPtr = virConnectOpen(qemu_tcp_url.c_str());
     if (m_connPtr == nullptr) {
-        return FResult(ERR_ERROR, "connect libvirt tcp service failed");
+        return FResult(E802_DEFAULT_ERROR, "connect libvirt tcp service failed");
     }
 
     if (virConnectRegisterCloseCallback(m_connPtr, connect_close_cb, this, NULL) < 0) {
-        return FResult(ERR_ERROR, "register libvirt connect_close_callback failed");
+        return FResult(E802_DEFAULT_ERROR, "register libvirt connect_close_callback failed");
     }
 
     if (virConnectSetKeepAlive(m_connPtr, 20, 1) < 0) {
-        return FResult(ERR_ERROR, "set libvirt keepalive failed");
+        return FResult(E802_DEFAULT_ERROR, "set libvirt keepalive failed");
     }
 
     if (virConnectGetLibVersion(m_connPtr, &m_libvirt_version) == 0) {
@@ -842,7 +843,7 @@ unsigned long VmClient::GetLibvirtVersion() const {
 int32_t VmClient::CreateDomain(const std::shared_ptr<TaskInfo>& taskinfo) {
     if (m_connPtr == nullptr) {
         TASK_LOG_ERROR(taskinfo->getTaskId(), "connPtr is nullptr");
-        return ERR_ERROR;
+        return E802_DEFAULT_ERROR;
     }
 
     std::string domain_name = taskinfo->getTaskId();
@@ -965,7 +966,7 @@ int32_t VmClient::CreateDomain(const std::shared_ptr<TaskInfo>& taskinfo) {
 int32_t VmClient::StartDomain(const std::string &domain_name) {
     if (m_connPtr == nullptr) {
         TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
-        return ERR_ERROR;
+        return E802_DEFAULT_ERROR;
     }
 
     virDomainPtr domainPtr = nullptr;
@@ -981,7 +982,7 @@ int32_t VmClient::StartDomain(const std::string &domain_name) {
 
         virDomainInfo info;
         if (virDomainGetInfo(domainPtr, &info) < 0) {
-            errorNum = ERR_ERROR;
+            errorNum = E802_DEFAULT_ERROR;
 
             virErrorPtr error = virGetLastError();
             TASK_LOG_ERROR(domain_name, "virDomainGetInfo error: " << (error ? error->message : ""));
@@ -990,14 +991,14 @@ int32_t VmClient::StartDomain(const std::string &domain_name) {
 
         if (info.state == VIR_DOMAIN_NOSTATE || info.state == VIR_DOMAIN_SHUTOFF) {
             if (virDomainCreate(domainPtr) < 0) {
-                errorNum = ERR_ERROR;
+                errorNum = E802_DEFAULT_ERROR;
 
                 virErrorPtr error = virGetLastError();
                 TASK_LOG_ERROR(domain_name, "virDomainCreate error: " << (error ? error->message : ""));
             }
         } else if (info.state == VIR_DOMAIN_PMSUSPENDED) {
             if (virDomainPMWakeup(domainPtr, 0) < 0) {
-                errorNum = ERR_ERROR;
+                errorNum = E802_DEFAULT_ERROR;
 
                 virErrorPtr error = virGetLastError();
                 TASK_LOG_ERROR(domain_name, "virDomainPMWakeup error: " << (error ? error->message : ""));
@@ -1015,7 +1016,7 @@ int32_t VmClient::StartDomain(const std::string &domain_name) {
 int32_t VmClient::SuspendDomain(const std::string &domain_name) {
     if (m_connPtr == nullptr) {
         TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
-        return ERR_ERROR;
+        return E802_DEFAULT_ERROR;
     }
 
     virDomainPtr domainPtr = nullptr;
@@ -1031,7 +1032,7 @@ int32_t VmClient::SuspendDomain(const std::string &domain_name) {
 
         virDomainInfo info;
         if (virDomainGetInfo(domainPtr, &info) < 0) {
-            errorNum = ERR_ERROR;
+            errorNum = E802_DEFAULT_ERROR;
 
             virErrorPtr error = virGetLastError();
             TASK_LOG_ERROR(domain_name, "virDomainGetInfo error: " << (error ? error->message : ""));
@@ -1040,7 +1041,7 @@ int32_t VmClient::SuspendDomain(const std::string &domain_name) {
 
         if (info.state == VIR_DOMAIN_RUNNING) {
             if (virDomainSuspend(domainPtr) < 0) {
-                errorNum = ERR_ERROR;
+                errorNum = E802_DEFAULT_ERROR;
 
                 virErrorPtr error = virGetLastError();
                 TASK_LOG_ERROR(domain_name, "virDomainSuspend error: " << (error ? error->message : ""));
@@ -1058,7 +1059,7 @@ int32_t VmClient::SuspendDomain(const std::string &domain_name) {
 int32_t VmClient::ResumeDomain(const std::string &domain_name) {
     if (m_connPtr == nullptr) {
         TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
-        return ERR_ERROR;
+        return E802_DEFAULT_ERROR;
     }
 
     virDomainPtr domainPtr = nullptr;
@@ -1074,7 +1075,7 @@ int32_t VmClient::ResumeDomain(const std::string &domain_name) {
 
         virDomainInfo info;
         if (virDomainGetInfo(domainPtr, &info) < 0) {
-            errorNum = ERR_ERROR;
+            errorNum = E802_DEFAULT_ERROR;
 
             virErrorPtr error = virGetLastError();
             TASK_LOG_ERROR(domain_name, "virDomainGetInfo error: " << (error ? error->message : ""));
@@ -1083,7 +1084,7 @@ int32_t VmClient::ResumeDomain(const std::string &domain_name) {
 
         if (info.state == VIR_DOMAIN_PMSUSPENDED) {
             if (virDomainResume(domainPtr) < 0) {
-                errorNum = ERR_ERROR;
+                errorNum = E802_DEFAULT_ERROR;
 
                 virErrorPtr error = virGetLastError();
                 TASK_LOG_ERROR(domain_name, "virDomainResume error: " << (error ? error->message : ""));
@@ -1101,7 +1102,7 @@ int32_t VmClient::ResumeDomain(const std::string &domain_name) {
 int32_t VmClient::RebootDomain(const std::string &domain_name) {
     if (m_connPtr == nullptr) {
         TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
-        return ERR_ERROR;
+        return E802_DEFAULT_ERROR;
     }
 
     virDomainPtr domainPtr = nullptr;
@@ -1117,7 +1118,7 @@ int32_t VmClient::RebootDomain(const std::string &domain_name) {
 
         virDomainInfo info;
         if (virDomainGetInfo(domainPtr, &info) < 0) {
-            errorNum = ERR_ERROR;
+            errorNum = E802_DEFAULT_ERROR;
 
             virErrorPtr error = virGetLastError();
             TASK_LOG_ERROR(domain_name, "virDomainGetInfo error: " << (error ? error->message : ""));
@@ -1126,7 +1127,7 @@ int32_t VmClient::RebootDomain(const std::string &domain_name) {
 
         if (info.state == VIR_DOMAIN_RUNNING) {
             if (virDomainReboot(domainPtr, VIR_DOMAIN_REBOOT_DEFAULT) < 0) {
-                errorNum = ERR_ERROR;
+                errorNum = E802_DEFAULT_ERROR;
 
                 virErrorPtr error = virGetLastError();
                 TASK_LOG_ERROR(domain_name, "virDomainReboot error: " << (error ? error->message : ""));
@@ -1144,7 +1145,7 @@ int32_t VmClient::RebootDomain(const std::string &domain_name) {
 int32_t VmClient::ShutdownDomain(const std::string &domain_name) {
     if (m_connPtr == nullptr) {
         TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
-        return ERR_ERROR;
+        return E802_DEFAULT_ERROR;
     }
 
     virDomainPtr domainPtr = nullptr;
@@ -1160,7 +1161,7 @@ int32_t VmClient::ShutdownDomain(const std::string &domain_name) {
 
         virDomainInfo info;
         if (virDomainGetInfo(domainPtr, &info) < 0) {
-            errorNum = ERR_ERROR;
+            errorNum = E802_DEFAULT_ERROR;
 
             virErrorPtr error = virGetLastError();
             TASK_LOG_ERROR(domain_name, "virDomainGetInfo error: " << (error ? error->message : ""));
@@ -1169,7 +1170,7 @@ int32_t VmClient::ShutdownDomain(const std::string &domain_name) {
 
         if (info.state == VIR_DOMAIN_RUNNING) {
             if (virDomainShutdown(domainPtr) < 0) {
-                errorNum = ERR_ERROR;
+                errorNum = E802_DEFAULT_ERROR;
 
                 virErrorPtr error = virGetLastError();
                 TASK_LOG_ERROR(domain_name, "virDomainShutdown error: " << (error ? error->message : ""));
@@ -1187,7 +1188,7 @@ int32_t VmClient::ShutdownDomain(const std::string &domain_name) {
 int32_t VmClient::DestroyDomain(const std::string &domain_name) {
     if (m_connPtr == nullptr) {
         TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
-        return ERR_ERROR;
+        return E802_DEFAULT_ERROR;
     }
 
     virDomainPtr domainPtr = nullptr;
@@ -1203,7 +1204,7 @@ int32_t VmClient::DestroyDomain(const std::string &domain_name) {
 
         virDomainInfo info;
         if (virDomainGetInfo(domainPtr, &info) < 0) {
-            errorNum = ERR_ERROR;
+            errorNum = E802_DEFAULT_ERROR;
 
             virErrorPtr error = virGetLastError();
             TASK_LOG_ERROR(domain_name, "virDomainGetInfo error: " << (error ? error->message : ""));
@@ -1212,7 +1213,7 @@ int32_t VmClient::DestroyDomain(const std::string &domain_name) {
 
         if (info.state != VIR_DOMAIN_SHUTOFF) {
             if (virDomainDestroy(domainPtr) < 0) {
-                errorNum = ERR_ERROR;
+                errorNum = E802_DEFAULT_ERROR;
 
                 virErrorPtr error = virGetLastError();
                 TASK_LOG_ERROR(domain_name, "virDomainDestroy error: " << (error ? error->message : ""));
@@ -1230,7 +1231,7 @@ int32_t VmClient::DestroyDomain(const std::string &domain_name) {
 int32_t VmClient::UndefineDomain(const std::string &domain_name) {
     if (m_connPtr == nullptr) {
         TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
-        return ERR_ERROR;
+        return E802_DEFAULT_ERROR;
     }
 
     virDomainPtr domainPtr = nullptr;
@@ -1245,7 +1246,7 @@ int32_t VmClient::UndefineDomain(const std::string &domain_name) {
         }
 
         if (virDomainUndefine(domainPtr) < 0) {
-            errorNum = ERR_ERROR;
+            errorNum = E802_DEFAULT_ERROR;
 
             virErrorPtr error = virGetLastError();
             TASK_LOG_ERROR(domain_name, "virDomainUndefine error: " << (error ? error->message : ""));
@@ -1261,12 +1262,12 @@ int32_t VmClient::UndefineDomain(const std::string &domain_name) {
 
 FResult VmClient::RedefineDomain(const std::shared_ptr<TaskInfo>& taskinfo) {
 	if (m_connPtr == nullptr) {
-		return FResult(ERR_ERROR, "libvirt disconnect");
+		return FResult(E802_DEFAULT_ERROR, "libvirt disconnect");
 	}
 
 	virDomainPtr domainPtr = virDomainLookupByName(m_connPtr, taskinfo->getTaskId().c_str());
 	if (nullptr == domainPtr) {
-        return FResult(ERR_ERROR, "task:" + taskinfo->getTaskId() + " not exist");
+        return FResult(E802_DEFAULT_ERROR, "task:" + taskinfo->getTaskId() + " not exist");
 	}
 
 	// new gpu
@@ -1297,7 +1298,7 @@ FResult VmClient::RedefineDomain(const std::shared_ptr<TaskInfo>& taskinfo) {
         tinyxml2::XMLError err = doc.Parse(pContent);
         if (err != tinyxml2::XML_SUCCESS) {
             virDomainFree(domainPtr);
-            return FResult(ERR_ERROR, "task:" + taskinfo->getTaskId() + " parse domain xml failed");
+            return FResult(E802_DEFAULT_ERROR, "task:" + taskinfo->getTaskId() + " parse domain xml failed");
         }
         tinyxml2::XMLElement* root = doc.RootElement();
         // memory
@@ -1427,7 +1428,7 @@ FResult VmClient::RedefineDomain(const std::shared_ptr<TaskInfo>& taskinfo) {
 			virErrorPtr error = virGetLastError();
 			std::string errmsg = std::string("defineXML failed: ") + error->message;
 			virDomainFree(domainPtr);
-			return FResult(ERR_ERROR, errmsg);
+			return FResult(E802_DEFAULT_ERROR, errmsg);
 		}
     }
 
@@ -1438,7 +1439,7 @@ FResult VmClient::RedefineDomain(const std::shared_ptr<TaskInfo>& taskinfo) {
 int32_t VmClient::DestroyAndUndefineDomain(const std::string &domain_name, unsigned int undefineFlags) {
     if (m_connPtr == nullptr) {
         TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
-        return ERR_ERROR;
+        return E802_DEFAULT_ERROR;
     }
 
     virDomainPtr domainPtr = nullptr;
@@ -1454,7 +1455,7 @@ int32_t VmClient::DestroyAndUndefineDomain(const std::string &domain_name, unsig
 
         virDomainInfo info;
         if (virDomainGetInfo(domainPtr, &info) < 0) {
-            errorNum = ERR_ERROR;
+            errorNum = E802_DEFAULT_ERROR;
 
             virErrorPtr error = virGetLastError();
             TASK_LOG_ERROR(domain_name, "virDomainGetInfo error: " << (error ? error->message : ""));
@@ -1463,7 +1464,7 @@ int32_t VmClient::DestroyAndUndefineDomain(const std::string &domain_name, unsig
 
         if (info.state != VIR_DOMAIN_SHUTOFF) {
             if (virDomainDestroy(domainPtr) < 0) {
-                errorNum = ERR_ERROR;
+                errorNum = E802_DEFAULT_ERROR;
 
                 virErrorPtr error = virGetLastError();
                 TASK_LOG_ERROR(domain_name, "virDomainDestroy error: " << (error ? error->message : ""));
@@ -1477,7 +1478,7 @@ int32_t VmClient::DestroyAndUndefineDomain(const std::string &domain_name, unsig
             virRet = virDomainUndefineFlags(domainPtr, undefineFlags);
         }
         if (virRet < 0) {
-            errorNum = ERR_ERROR;
+            errorNum = E802_DEFAULT_ERROR;
 
             virErrorPtr error = virGetLastError();
             TASK_LOG_ERROR(domain_name, "virDomainUndefine error: " << (error ? error->message : ""));
@@ -1494,7 +1495,7 @@ int32_t VmClient::DestroyAndUndefineDomain(const std::string &domain_name, unsig
 int32_t VmClient::ResetDomain(const std::string &domain_name) {
     if (m_connPtr == nullptr) {
         TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
-        return ERR_ERROR;
+        return E802_DEFAULT_ERROR;
     }
 
     virDomainPtr domainPtr = nullptr;
@@ -1510,7 +1511,7 @@ int32_t VmClient::ResetDomain(const std::string &domain_name) {
 
         virDomainInfo info;
         if (virDomainGetInfo(domainPtr, &info) < 0) {
-            errorNum = ERR_ERROR;
+            errorNum = E802_DEFAULT_ERROR;
 
             virErrorPtr error = virGetLastError();
             TASK_LOG_ERROR(domain_name, "virDomainGetInfo error: " << (error ? error->message : ""));
@@ -1519,7 +1520,7 @@ int32_t VmClient::ResetDomain(const std::string &domain_name) {
 
         if (info.state == VIR_DOMAIN_RUNNING) {
             if (virDomainReset(domainPtr, VIR_DOMAIN_REBOOT_DEFAULT) < 0) {
-                errorNum = ERR_ERROR;
+                errorNum = E802_DEFAULT_ERROR;
 
                 virErrorPtr error = virGetLastError();
                 TASK_LOG_ERROR(domain_name, "virDomainReset error: " << (error ? error->message : ""));
@@ -1706,15 +1707,15 @@ FResult VmClient::GetDomainLog(const std::string &domain_name, QUERY_LOG_DIRECTI
             }
         }
     } catch (const std::exception & e) {
-        return FResult(ERR_ERROR, std::string("log file error: ").append(e.what()));
+        return FResult(E700_FILE_OPERATION_FAILED, std::string("log file error: ").append(e.what()));
     } catch (const boost::exception & e) {
-        return FResult(ERR_ERROR, "log file error: " + diagnostic_information(e));
+        return FResult(E700_FILE_OPERATION_FAILED, "log file error: " + diagnostic_information(e));
     } catch (...) {
-        return FResult(ERR_ERROR, "unknowned log file error");
+        return FResult(E802_DEFAULT_ERROR, "unknowned log file error");
     }
     
     if (latest_log.empty() || max_num < 0) {
-        return FResult(ERR_ERROR, "task log not exist");
+        return FResult(E705_OBJECT_NOT_FOUND, "task log not exist");
     }
 
     log_content.clear();
@@ -1752,7 +1753,7 @@ FResult VmClient::GetDomainLog(const std::string &domain_name, QUERY_LOG_DIRECTI
         return {ERR_SUCCESS, ""};
     }
     
-    return FResult(ERR_ERROR, "open log file error");
+    return FResult(E802_DEFAULT_ERROR, "open log file error");
 }
 
 std::string VmClient::GetDomainLocalIP(const std::string &domain_name) {
@@ -1820,7 +1821,7 @@ std::string VmClient::GetDomainLocalIP(const std::string &domain_name) {
 int32_t VmClient::GetDomainInterfaceAddress(const std::string& domain_name, std::vector<dbc::virDomainInterface> &difaces, unsigned int source) {
     if (m_connPtr == nullptr) {
         TASK_LOG_ERROR(domain_name, "connPtr is nullptr");
-        return -1;
+        return E200_VM_CONNECT_ERROR;
     }
 
     virDomainPtr domainPtr = nullptr;
@@ -1873,7 +1874,7 @@ FResult VmClient::ListDomainInterface(const std::string& domain_name, std::vecto
 	do {
 		domainPtr = virDomainLookupByName(m_connPtr, domain_name.c_str());
 		if (domainPtr == nullptr) {
-			ret = FResult(ERR_ERROR, "task not exist");
+			ret = FResult(E802_DEFAULT_ERROR, "task not exist");
 			break;
 		}
 
@@ -1881,7 +1882,7 @@ FResult VmClient::ListDomainInterface(const std::string& domain_name, std::vecto
 		tinyxml2::XMLDocument doc;
 		tinyxml2::XMLError err = doc.Parse(pContent);
 		if (err != tinyxml2::XML_SUCCESS) {
-			ret = FResult(ERR_ERROR, "task parse domain xml failed");
+			ret = FResult(E802_DEFAULT_ERROR, "task parse domain xml failed");
 			break;
 		}
 		tinyxml2::XMLElement* root = doc.RootElement();
@@ -1933,7 +1934,7 @@ FResult VmClient::ListDomainInterface(const std::string& domain_name, std::vecto
 }
 
 FResult VmClient::SetDomainUserPassword(const std::string &domain_name, const std::string &username, const std::string &pwd, int max_retry_count) {
-    int ret = ERR_ERROR;
+    int ret = E802_DEFAULT_ERROR;
     std::string errmsg;
     int try_count = 0;
     int succ = -1;
@@ -2260,7 +2261,7 @@ int64_t VmClient::GetDiskVirtualSize(const std::string& domain_name, const std::
     domain_ptr = virDomainLookupByName(m_connPtr, domain_name.c_str());
     if (domain_ptr == nullptr) {
         LOG_ERROR << " lookup domain:" << domain_name << " is nullptr";
-        return 0;
+        return ERR_SUCCESS;
     }
 
     int64_t disk_size = 0;
@@ -2281,7 +2282,7 @@ FResult VmClient::AttachDisk(const std::string& domain_name, const std::string& 
     do {
         domainPtr = virDomainLookupByName(m_connPtr, domain_name.c_str());
         if (domainPtr == nullptr) {
-            ret = FResult(ERR_ERROR, "task not exist");
+            ret = FResult(E802_DEFAULT_ERROR, "task not exist");
             break;
         }
 
@@ -2289,7 +2290,7 @@ FResult VmClient::AttachDisk(const std::string& domain_name, const std::string& 
         tinyxml2::XMLDocument doc;
         tinyxml2::XMLError err = doc.Parse(pContent);
         if (err != tinyxml2::XML_SUCCESS) {
-            ret = FResult(ERR_ERROR, "task parse domain xml failed");
+            ret = FResult(E802_DEFAULT_ERROR, "task parse domain xml failed");
             break;
         }
         tinyxml2::XMLElement* root = doc.RootElement();
@@ -2319,7 +2320,7 @@ FResult VmClient::AttachDisk(const std::string& domain_name, const std::string& 
 
         domainPtr = virDomainDefineXML(m_connPtr, xml_content);
         if (domainPtr == nullptr) {
-            ret = FResult(ERR_ERROR, "domain defineXML failed");
+            ret = FResult(E802_DEFAULT_ERROR, "domain defineXML failed");
             break;
         }
     } while (0);
@@ -2336,7 +2337,7 @@ FResult VmClient::DetachDisk(const std::string& domain_name, const std::string& 
     do {
         domainPtr = virDomainLookupByName(m_connPtr, domain_name.c_str());
         if (domainPtr == nullptr) {
-            ret = FResult(ERR_ERROR, "task not exist");
+            ret = FResult(E802_DEFAULT_ERROR, "task not exist");
             break;
         }
 
@@ -2344,7 +2345,7 @@ FResult VmClient::DetachDisk(const std::string& domain_name, const std::string& 
         tinyxml2::XMLDocument doc;
         tinyxml2::XMLError err = doc.Parse(pContent);
         if (err != tinyxml2::XML_SUCCESS) {
-            ret = FResult(ERR_ERROR, "task parse domain xml failed");
+            ret = FResult(E802_DEFAULT_ERROR, "task parse domain xml failed");
             break;
         }
         tinyxml2::XMLElement* root = doc.RootElement();
@@ -2366,7 +2367,7 @@ FResult VmClient::DetachDisk(const std::string& domain_name, const std::string& 
 
         domainPtr = virDomainDefineXML(m_connPtr, xml_content);
         if (domainPtr == nullptr) {
-            ret = FResult(ERR_ERROR, "domain defineXML failed");
+            ret = FResult(E802_DEFAULT_ERROR, "domain defineXML failed");
             break;
         }
     } while (0);
@@ -2580,12 +2581,12 @@ int32_t VmClient::GetCpuTune(const std::string& domain_name, std::vector<unsigne
 
 FResult VmClient::ResetCpuTune(const std::string& domain_name, unsigned int vcpus) {
     if (m_connPtr == nullptr) {
-		return FResult(ERR_ERROR, "libvirt disconnect");
+		return FResult(E802_DEFAULT_ERROR, "libvirt disconnect");
 	}
 
 	virDomainPtr domainPtr = virDomainLookupByName(m_connPtr, domain_name.c_str());
 	if (nullptr == domainPtr) {
-        return FResult(ERR_ERROR, "task:" + domain_name + " not exist");
+        return FResult(E802_DEFAULT_ERROR, "task:" + domain_name + " not exist");
 	}
 
 	char* pContent = virDomainGetXMLDesc(domainPtr, VIR_DOMAIN_XML_SECURE | VIR_DOMAIN_XML_INACTIVE);
@@ -2595,7 +2596,7 @@ FResult VmClient::ResetCpuTune(const std::string& domain_name, unsigned int vcpu
         if (err != tinyxml2::XML_SUCCESS) {
             free(pContent);
             virDomainFree(domainPtr);
-            return FResult(ERR_ERROR, "task:" + domain_name + " parse domain xml failed");
+            return FResult(E802_DEFAULT_ERROR, "task:" + domain_name + " parse domain xml failed");
         }
         tinyxml2::XMLElement* root = doc.RootElement();
         // cpu tune
@@ -2641,7 +2642,7 @@ FResult VmClient::ResetCpuTune(const std::string& domain_name, unsigned int vcpu
 			std::string errmsg = std::string("defineXML failed: ") + error->message;
             free(pContent);
 			virDomainFree(domainPtr);
-			return FResult(ERR_ERROR, errmsg);
+			return FResult(E802_DEFAULT_ERROR, errmsg);
 		}
         free(pContent);
     }
