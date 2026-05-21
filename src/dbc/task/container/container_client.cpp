@@ -15,6 +15,8 @@
 #include "3rd/network/rapidjson/stringbuffer.h"
 #include "3rd/network/rapidjson/writer.h"
 
+#include <array>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <regex>
@@ -303,13 +305,102 @@ int32_t ContainerClient::GetContainerStatus(const std::string& task_id,
     return ERR_SUCCESS;
 }
 
+namespace {
+
+/// Build an in-memory POSIX ustar archive containing a single regular file at
+/// `path` (relative to whatever `?path=` we use on PUT /archive) with the given
+/// `content` and `mode` bits. The Docker Engine API accepts uncompressed tar
+/// streams; gzip is optional and we skip it for MVP-1.
+///
+/// The output buffer is the file's 512-byte header followed by the content
+/// padded to a 512-byte multiple, then two 512-byte zero blocks (end-of-archive
+/// marker per POSIX 1003.1-1990).
+std::vector<uint8_t> BuildTarSingleFile(
+    const std::string& path,
+    const std::string& content,
+    uint32_t mode) {
+
+    constexpr size_t kBlock = 512;
+    std::vector<uint8_t> buf;
+
+    // ---- Header ----
+    std::array<char, kBlock> hdr{};
+    auto put_octal = [&](size_t offset, size_t width, uint64_t value) {
+        // tar stores numbers as zero-padded octal, with a trailing NUL.
+        char tmp[32]; std::snprintf(tmp, sizeof(tmp), "%0*llo", static_cast<int>(width - 1),
+                                    static_cast<unsigned long long>(value));
+        std::memcpy(hdr.data() + offset, tmp, width - 1);
+        hdr[offset + width - 1] = '\0';
+    };
+    auto put_string = [&](size_t offset, size_t width, const std::string& s) {
+        std::memset(hdr.data() + offset, 0, width);
+        std::memcpy(hdr.data() + offset, s.data(), std::min(width, s.size()));
+    };
+
+    put_string(0,   100, path);                 // name
+    put_octal(100,  8,   mode & 0777);          // mode
+    put_octal(108,  8,   0);                    // uid (root)
+    put_octal(116,  8,   0);                    // gid (root)
+    put_octal(124,  12,  content.size());       // size
+    put_octal(136,  12,  0);                    // mtime (0 = epoch)
+    std::memset(hdr.data() + 148, ' ', 8);      // checksum placeholder
+    hdr[156] = '0';                             // typeflag: regular file
+    put_string(257, 6,   "ustar");              // magic
+    hdr[263] = '0'; hdr[264] = '0';             // version "00"
+    put_string(265, 32,  "root");               // uname
+    put_string(297, 32,  "root");               // gname
+
+    // Compute checksum: sum of all bytes with checksum field treated as spaces.
+    uint32_t sum = 0;
+    for (unsigned char c : hdr) sum += c;
+    char chk[8]; std::snprintf(chk, sizeof(chk), "%06o", sum);
+    std::memcpy(hdr.data() + 148, chk, 7);
+    hdr[155] = ' ';
+
+    buf.insert(buf.end(), hdr.begin(), hdr.end());
+
+    // ---- File content, padded to 512 ----
+    buf.insert(buf.end(), content.begin(), content.end());
+    size_t pad = (kBlock - (content.size() % kBlock)) % kBlock;
+    buf.insert(buf.end(), pad, 0);
+
+    // ---- End-of-archive: two zero blocks ----
+    buf.insert(buf.end(), 2 * kBlock, 0);
+    return buf;
+}
+
+}  // namespace
+
 int32_t ContainerClient::SetAuthorizedKeys(const std::string& task_id,
                                            const std::string& pubkey) {
-    // TODO(MVP-1 Week 2): build a tar stream containing /root/.ssh/authorized_keys
-    // with 0600 perms, send via PUT /containers/{id}/archive?path=/.
-    // Stub until then — for MVP-1 the rental image is responsible for accepting
-    // SSH_AUTHORIZED_KEYS as an env var and writing it itself.
-    (void)task_id; (void)pubkey;
+    if (pubkey.empty()) {
+        LOG_WARNING << "SetAuthorizedKeys called with empty pubkey for " << task_id;
+        return ERR_SUCCESS;
+    }
+    // Ensure trailing newline so additional keys append cleanly.
+    std::string content = pubkey;
+    if (content.back() != '\n') content.push_back('\n');
+
+    // Tar member path is relative to the `?path=` query parameter, which is
+    // the *container* path we extract into. We extract into /root/.ssh so the
+    // member is just "authorized_keys".
+    auto tar = BuildTarSingleFile("authorized_keys", content, /*mode=*/0600);
+
+    HttpResponse r;
+    int32_t rc = docker().PutRaw(
+        "/containers/" + task_id + "/archive?path=/root/.ssh",
+        tar,
+        "application/x-tar",
+        r);
+    if (rc != ERR_SUCCESS) return rc;
+    // 200 on success; 404 if /root/.ssh doesn't exist in image (NGC pytorch
+    // does; we don't auto-create here, fix the image).
+    if (r.status_code != 200) {
+        LOG_ERROR << "authorized_keys upload HTTP " << r.status_code
+                  << " body=" << r.body.substr(0, 200);
+        return E_DEFAULT;
+    }
+    LOG_INFO << "injected authorized_keys into container " << task_id;
     return ERR_SUCCESS;
 }
 
