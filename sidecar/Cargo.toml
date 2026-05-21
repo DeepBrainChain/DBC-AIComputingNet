@@ -19,11 +19,17 @@ subxt-signer = { version = "0.27", features = ["subxt"] }
 tokio = { version = "1", features = ["full"] }
 futures = "0.3"
 
-# JSON-RPC over Unix socket
-jsonrpsee = { version = "0.20", features = ["server", "macros"] }
+# JSON-RPC framing — line-delimited over AF_UNIX. jsonrpsee doesn't natively
+# support Unix sockets, so we implement the small JSON-RPC 2.0 envelope
+# directly on tokio::net::UnixListener (see src/rpc.rs).
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 hex = "0.4"
+libc = "0.2"
+
+# SCALE codec — used to decode ContainerModeInfo from chain storage in
+# chain.rs::query_container_info.
+parity-scale-codec = { version = "3", default-features = false, features = ["derive"] }
 
 # Persistence (nonce, last block)
 rusqlite = { version = "0.31", features = ["bundled"] }

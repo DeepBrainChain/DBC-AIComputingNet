@@ -68,13 +68,18 @@ async fn main() -> Result<()> {
     let chain = chain::ChainHandle::connect(&cfg.ws_endpoint, &cfg.key_path, state.clone()).await?;
     info!("connected to {} as {}", cfg.ws_endpoint, chain.signer_ss58());
 
-    // Start JSON-RPC server.
-    let server = rpc::serve(cfg.clone(), chain).await?;
-    info!("listening on {}", cfg.socket_path.display());
+    // Spawn the JSON-RPC server; race it against SIGTERM / SIGINT.
+    let server = tokio::spawn(rpc::serve(cfg.clone(), chain));
 
-    // Graceful shutdown on SIGTERM / SIGINT.
-    tokio::signal::ctrl_c().await?;
-    warn!("shutting down");
-    drop(server);
+    tokio::select! {
+        _ = tokio::signal::ctrl_c() => {
+            warn!("ctrl-c received; shutting down");
+        }
+        res = server => match res {
+            Ok(Ok(())) => warn!("rpc server exited cleanly"),
+            Ok(Err(e)) => warn!("rpc server returned error: {e}"),
+            Err(e) => warn!("rpc server panicked: {e}"),
+        },
+    }
     Ok(())
 }
