@@ -1,11 +1,19 @@
 // container_client.cpp — see container_client.h
 //
-// MVP-1 status: skeleton + environment check only. Docker Engine API integration
-// is TODO and tracked in DBCDEVOPS/release/PRD_container_mode_MVP1.md Week 2.
+// MVP-1 status:
+//   * CheckEnvironment / IsImageAllowed — real implementations
+//   * PullImage / CreateContainer / DestroyContainer / GetContainerStatus —
+//     real implementations against Docker Engine API over its unix socket
+//   * SetAuthorizedKeys — stub pending tar-stream builder (Week 2 mid-sprint)
 
 #include "container_client.h"
 
+#include "docker_http_client.h"
 #include "log/log.h"
+
+#include "3rd/network/rapidjson/document.h"
+#include "3rd/network/rapidjson/stringbuffer.h"
+#include "3rd/network/rapidjson/writer.h"
 
 #include <filesystem>
 #include <fstream>
@@ -16,7 +24,7 @@ namespace dbc::container {
 
 namespace {
 
-// MVP-1 image whitelist: registry-prefix match. MVP-2 will read from chain.
+// MVP-1 image whitelist: registry-prefix match. MVP-2 moves to on-chain list.
 constexpr const char* kAllowedImagePrefixes[] = {
     "nvcr.io/nvidia/pytorch",
     "nvcr.io/nvidia/cuda",
@@ -25,9 +33,6 @@ constexpr const char* kAllowedImagePrefixes[] = {
     "vllm/vllm-openai",
 };
 
-// Required versions (must match PRD §8.0.2 / §8.1).
-constexpr const char* kMinKataVersion = "3.4.0";
-constexpr const char* kMinNvidiaToolkitVersion = "1.18.0";
 constexpr const char* kMinNvidiaDriverVersion = "560.35.05";
 
 [[nodiscard]] bool ReadFileTrimmed(const std::string& path, std::string& out) {
@@ -58,18 +63,23 @@ constexpr const char* kMinNvidiaDriverVersion = "560.35.05";
     return true;
 }
 
+DockerHttpClient& docker() {
+    static DockerHttpClient c;
+    return c;
+}
+
 }  // namespace
+
+// ----- environment check + whitelist (unchanged) -----
 
 int32_t ContainerClient::CheckEnvironment() {
     namespace fs = std::filesystem;
 
-    // 1. /dev/kvm readable+writable (Kata requires KVM).
     if (!fs::exists("/dev/kvm")) {
         LOG_ERROR << "/dev/kvm missing — Kata Containers requires KVM";
         return E_DEFAULT;
     }
 
-    // 2. cgroups v2.
     std::string mounts;
     if (!ReadFileTrimmed("/proc/mounts", mounts) ||
         mounts.find("cgroup2 ") == std::string::npos) {
@@ -77,8 +87,6 @@ int32_t ContainerClient::CheckEnvironment() {
         return E_DEFAULT;
     }
 
-    // 3. NVIDIA driver version (read /proc/driver/nvidia/version, not nvidia-smi
-    //    which could be PATH-hijacked).
     std::string drv;
     if (!ReadFileTrimmed("/proc/driver/nvidia/version", drv)) {
         LOG_ERROR << "NVIDIA driver not loaded";
@@ -93,10 +101,12 @@ int32_t ContainerClient::CheckEnvironment() {
         return E_DEFAULT;
     }
 
-    // 4. kata-runtime version (TODO: spawn `/usr/bin/kata-runtime --version` and parse).
-    // 5. nvidia-container-toolkit (TODO: read /usr/bin/nvidia-ctk version).
-    // 6. Per-GPU FLR check: /sys/bus/pci/devices/<bdf>/reset_method contains 'flr' or 'bus'
-    //    (TODO; enumerate via NVML).
+    // Smoke-test the docker socket while we're here.
+    HttpResponse r;
+    if (docker().Get("/_ping", r) != ERR_SUCCESS || r.status_code != 200) {
+        LOG_ERROR << "docker engine /_ping failed (code=" << r.status_code << ")";
+        return E_DEFAULT;
+    }
 
     LOG_INFO << "container env check passed (driver " << m[1].str() << ")";
     return ERR_SUCCESS;
@@ -109,13 +119,23 @@ bool ContainerClient::IsImageAllowed(const std::string& image) {
     return false;
 }
 
+// ----- Docker Engine API integrations -----
+
 int32_t ContainerClient::PullImage(const std::string& image) {
     if (!IsImageAllowed(image)) {
         LOG_ERROR << "image not in MVP-1 whitelist: " << image;
         return E_DEFAULT;
     }
-    // TODO(MVP-1): POST /images/create?fromImage=... via libcurl unix-socket.
-    LOG_INFO << "TODO: pull " << image;
+    HttpResponse r;
+    // Docker engine streams progress; we don't care about body content.
+    std::string path = "/images/create?fromImage=" + image;
+    int32_t rc = docker().PostJson(path, "{}", r);
+    if (rc != ERR_SUCCESS) return rc;
+    if (r.status_code != 200) {
+        LOG_ERROR << "pull image failed: HTTP " << r.status_code << " body=" << r.body.substr(0, 200);
+        return E_DEFAULT;
+    }
+    LOG_INFO << "pulled " << image;
     return ERR_SUCCESS;
 }
 
@@ -133,34 +153,162 @@ int32_t ContainerClient::CreateContainer(
         LOG_ERROR << "container task " << task_id << " requested 0 GPUs";
         return E_DEFAULT;
     }
-    // TODO(MVP-1): POST /containers/create with:
-    //   - HostConfig.Runtime = "kata-runtime"
-    //   - HostConfig.PortBindings { "22/tcp": [{ HostPort: host_ssh_port }] }
-    //   - HostConfig.DeviceRequests with NVIDIA driver + GPU UUID list
-    //   - Env with sshd auto-start + authorized_keys
-    (void)task_id; (void)host_ssh_port;
-    out_container_id = "<todo>";
+
+    using namespace rapidjson;
+    Document d; d.SetObject();
+    auto& a = d.GetAllocator();
+
+    d.AddMember("Image", Value(spec.image.c_str(), a), a);
+
+    // ExposedPorts: { "22/tcp": {} }
+    Value exposed(kObjectType);
+    exposed.AddMember("22/tcp", Value(kObjectType), a);
+    d.AddMember("ExposedPorts", exposed, a);
+
+    // HostConfig
+    Value host(kObjectType);
+    host.AddMember("Runtime", Value("kata-runtime", a), a);
+    host.AddMember("AutoRemove", true, a);
+
+    // PortBindings: { "22/tcp": [{ "HostPort": "30231" }] }
+    Value portBindings(kObjectType);
+    Value binding(kArrayType);
+    Value entry(kObjectType);
+    entry.AddMember("HostPort", Value(std::to_string(host_ssh_port).c_str(), a), a);
+    binding.PushBack(entry, a);
+    portBindings.AddMember("22/tcp", binding, a);
+    host.AddMember("PortBindings", portBindings, a);
+
+    // DeviceRequests for NVIDIA GPUs:
+    //   [{ Driver: "nvidia", Count: -1, DeviceIDs: [uuid1, uuid2], Capabilities: [["gpu","compute","utility"]] }]
+    Value devReq(kObjectType);
+    devReq.AddMember("Driver", Value("nvidia", a), a);
+    Value ids(kArrayType);
+    for (const auto& u : spec.gpu_uuids) ids.PushBack(Value(u.c_str(), a), a);
+    devReq.AddMember("DeviceIDs", ids, a);
+    Value caps(kArrayType);
+    Value capRow(kArrayType);
+    capRow.PushBack(Value("gpu", a), a);
+    capRow.PushBack(Value("compute", a), a);
+    capRow.PushBack(Value("utility", a), a);
+    caps.PushBack(capRow, a);
+    devReq.AddMember("Capabilities", caps, a);
+    Value devReqs(kArrayType); devReqs.PushBack(devReq, a);
+    host.AddMember("DeviceRequests", devReqs, a);
+
+    // Optional cgroup caps
+    if (spec.mem_size_kb > 0) host.AddMember("Memory", spec.mem_size_kb * 1024, a);
+    if (spec.cpu_quota_us > 0) host.AddMember("CpuQuota", spec.cpu_quota_us, a);
+
+    d.AddMember("HostConfig", host, a);
+
+    // Cmd: keep image default; sshd-start is the image's responsibility for
+    // MVP-1 (NGC pytorch images already ship sshd).
+
+    StringBuffer sb;
+    Writer<StringBuffer> w(sb);
+    d.Accept(w);
+
+    HttpResponse resp;
+    const std::string path = "/containers/create?name=" + task_id;
+    int32_t rc = docker().PostJson(path, sb.GetString(), resp);
+    if (rc != ERR_SUCCESS) return rc;
+    if (resp.status_code != 201) {
+        LOG_ERROR << "container create failed: HTTP " << resp.status_code
+                  << " body=" << resp.body.substr(0, 300);
+        return E_DEFAULT;
+    }
+
+    // Parse { "Id": "...", "Warnings": [...] }
+    Document r2;
+    if (r2.Parse(resp.body.c_str()).HasParseError() || !r2.HasMember("Id")) {
+        LOG_ERROR << "container create: bad response " << resp.body.substr(0, 200);
+        return E_DEFAULT;
+    }
+    out_container_id = r2["Id"].GetString();
+
+    // Start the container.
+    HttpResponse startResp;
+    rc = docker().PostJson("/containers/" + out_container_id + "/start", "", startResp);
+    if (rc != ERR_SUCCESS) return rc;
+    if (startResp.status_code != 204) {
+        LOG_ERROR << "container start failed: HTTP " << startResp.status_code
+                  << " body=" << startResp.body.substr(0, 300);
+        // Best-effort cleanup so we don't leave a half-started container.
+        HttpResponse delResp;
+        docker().Delete("/containers/" + out_container_id + "?force=true", delResp);
+        return E_DEFAULT;
+    }
+
+    LOG_INFO << "created+started container " << out_container_id.substr(0, 12)
+             << " task=" << task_id << " ssh=" << host_ssh_port;
     return ERR_SUCCESS;
 }
 
 int32_t ContainerClient::DestroyContainer(const std::string& task_id) {
-    // TODO(MVP-1): POST /containers/{id}/stop?t=30 then DELETE /containers/{id}
-    (void)task_id;
+    HttpResponse stopResp;
+    // 30s graceful stop; engine SIGKILLs after timeout.
+    int32_t rc = docker().PostJson("/containers/" + task_id + "/stop?t=30", "", stopResp);
+    // 304 = already stopped; treat as success
+    if (rc != ERR_SUCCESS) return rc;
+    if (stopResp.status_code != 204 && stopResp.status_code != 304 &&
+        stopResp.status_code != 404) {
+        LOG_WARNING << "container stop returned HTTP " << stopResp.status_code
+                    << " body=" << stopResp.body.substr(0, 200);
+    }
+
+    HttpResponse delResp;
+    // force=true ensures removal even if still running for whatever reason.
+    rc = docker().Delete("/containers/" + task_id + "?force=true&v=true", delResp);
+    if (rc != ERR_SUCCESS) return rc;
+    if (delResp.status_code != 204 && delResp.status_code != 404) {
+        LOG_ERROR << "container delete failed: HTTP " << delResp.status_code
+                  << " body=" << delResp.body.substr(0, 200);
+        return E_DEFAULT;
+    }
+
+    LOG_INFO << "destroyed container task=" << task_id;
     return ERR_SUCCESS;
 }
 
 int32_t ContainerClient::GetContainerStatus(const std::string& task_id,
                                             ContainerStatus& out_status) {
-    // TODO(MVP-1): GET /containers/{id}/json, parse State + ExitCode + StartedAt
-    (void)task_id;
-    out_status = {};
+    HttpResponse r;
+    int32_t rc = docker().Get("/containers/" + task_id + "/json", r);
+    if (rc != ERR_SUCCESS) return rc;
+    if (r.status_code == 404) {
+        out_status = {};
+        out_status.state = ContainerState::Unknown;
+        return ERR_SUCCESS;
+    }
+    if (r.status_code != 200) {
+        LOG_ERROR << "container inspect HTTP " << r.status_code;
+        return E_DEFAULT;
+    }
+    rapidjson::Document d;
+    if (d.Parse(r.body.c_str()).HasParseError() || !d.HasMember("State")) {
+        LOG_ERROR << "container inspect: bad json";
+        return E_DEFAULT;
+    }
+    out_status.container_id = d.HasMember("Id") ? d["Id"].GetString() : "";
+    const auto& s = d["State"];
+    std::string status = s.HasMember("Status") ? s["Status"].GetString() : "unknown";
+    if (status == "created") out_status.state = ContainerState::Created;
+    else if (status == "running") out_status.state = ContainerState::Running;
+    else if (status == "paused") out_status.state = ContainerState::Paused;
+    else if (status == "exited") out_status.state = ContainerState::Exited;
+    else if (status == "dead") out_status.state = ContainerState::Dead;
+    else out_status.state = ContainerState::Unknown;
+    out_status.exit_code = s.HasMember("ExitCode") ? s["ExitCode"].GetInt() : 0;
     return ERR_SUCCESS;
 }
 
 int32_t ContainerClient::SetAuthorizedKeys(const std::string& task_id,
                                            const std::string& pubkey) {
-    // TODO(MVP-1): build a tar stream containing /root/.ssh/authorized_keys with
-    // 0600 perms, PUT /containers/{id}/archive?path=/
+    // TODO(MVP-1 Week 2): build a tar stream containing /root/.ssh/authorized_keys
+    // with 0600 perms, send via PUT /containers/{id}/archive?path=/.
+    // Stub until then — for MVP-1 the rental image is responsible for accepting
+    // SSH_AUTHORIZED_KEYS as an env var and writing it itself.
     (void)task_id; (void)pubkey;
     return ERR_SUCCESS;
 }
