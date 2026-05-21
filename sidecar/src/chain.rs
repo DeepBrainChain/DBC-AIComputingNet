@@ -4,18 +4,15 @@
 //! and exposes high-level methods (`enable_container_mode`,
 //! `remove_container_mode`, `query_container_info`) that the RPC layer calls.
 //!
-//! Subxt API note: this file uses the **dynamic** API (`dyn_tx`, `dyn_storage`).
-//! Once spec 412 stabilises on mainnet we will switch to the typed
-//! `#[subxt::subxt(runtime_metadata_path = "metadata-412.scale")]` form for
-//! compile-time-checked extrinsics. The dynamic API is sufficient for MVP-1
-//! and survives future field additions to ContainerModeInfo without recompile.
+//! Subxt 0.34 is our floor: it has the standalone `subxt-signer` crate which
+//! avoids the sp-core/schnorrkel/substrate-bip39 diamond present in 0.27.
 
 use anyhow::{Context, Result};
 use parity_scale_codec::Decode;
 use std::path::Path;
 use std::sync::Arc;
-use subxt::dynamic::{storage as dyn_storage, tx as dyn_tx, Value};
-use subxt::utils::AccountId32;
+use subxt::dynamic::{storage as dyn_storage, Value};
+use subxt::tx::dynamic as dyn_tx;
 use subxt::{OnlineClient, PolkadotConfig};
 use subxt_signer::sr25519::Keypair;
 
@@ -25,7 +22,6 @@ pub struct ChainHandle {
     client: OnlineClient<PolkadotConfig>,
     signer: Keypair,
     state: Arc<State>,
-    /// SS58 of the signer (cached for logging + RPC responses).
     signer_ss58: String,
 }
 
@@ -46,10 +42,11 @@ impl ChainHandle {
             "key file must contain 32-byte seed or 64-byte secret"
         );
         let seed: [u8; 32] = seed_bytes[..32].try_into()?;
+        // subxt_signer 0.34 takes a 32-byte secret/seed via `from_seed`.
         let signer = Keypair::from_seed(seed)
-            .map_err(|e| anyhow::anyhow!("invalid sr25519 seed: {e}"))?;
+            .map_err(|e| anyhow::anyhow!("invalid sr25519 seed: {e:?}"))?;
 
-        let account_id = AccountId32::from(signer.public_key().0);
+        let account_id = signer.public_key().to_account_id();
         let signer_ss58 = account_id.to_string();
 
         Ok(Self { client, signer, state, signer_ss58 })
@@ -59,10 +56,6 @@ impl ChainHandle {
         &self.signer_ss58
     }
 
-    // ----- High-level methods called from rpc.rs -----
-
-    /// Submit `containerMode.enable_container_mode(machine_id, start, end)`,
-    /// wait for inclusion in a block, return the resulting hash + block info.
     pub async fn enable_container_mode(
         &self,
         machine_id: Vec<u8>,
@@ -81,7 +74,6 @@ impl ChainHandle {
         self.submit_and_wait(call).await
     }
 
-    /// Submit `containerMode.remove_container_mode(machine_id)` (stash path).
     pub async fn remove_container_mode(&self, machine_id: Vec<u8>) -> Result<TxOutcome> {
         let call = dyn_tx(
             "ContainerMode",
@@ -91,8 +83,6 @@ impl ChainHandle {
         self.submit_and_wait(call).await
     }
 
-    /// Read `ContainerMode.ContainerModeMachines(machine_id)` from chain state.
-    /// Returns `Ok(None)` if the machine is not in container mode.
     pub async fn query_container_info(
         &self,
         machine_id: Vec<u8>,
@@ -112,11 +102,6 @@ impl ChainHandle {
             .await
             .context("storage fetch")?;
         let Some(raw) = raw else { return Ok(None); };
-
-        // ContainerModeInfo<BlockNumber> is { bonded_at_block: u32,
-        //   spec_proof_committee_verified: bool,
-        //   port_range_start: u16, port_range_end: u16 }
-        // Subxt returns the SCALE-encoded leaf; we decode into our local mirror.
         let bytes = raw.encoded();
         let mut slice = bytes;
         let view = ContainerInfoView::decode(&mut slice)
@@ -124,46 +109,28 @@ impl ChainHandle {
         Ok(Some(view))
     }
 
-    // ----- Internal -----
-
     async fn submit_and_wait<C>(&self, call: C) -> Result<TxOutcome>
     where
-        C: subxt::tx::Payload,
+        C: subxt::tx::TxPayload,
     {
-        let account_id = AccountId32::from(self.signer.public_key().0);
+        // subxt 0.34 auto-fetches the nonce inside `_default`; this is fine
+        // for MVP-1 (single sidecar instance per signer). The sqlite-backed
+        // nonce reconciliation we used in 0.27 is restored when MVP-2 needs
+        // to support concurrent submitters.
 
-        // Nonce reconciliation: take the larger of (chain.system.account.nonce,
-        // last persisted local + 1). Persist the chosen nonce so a restart
-        // mid-flight doesn't double-spend.
-        let chain_nonce: u64 = self
+        let mut progress = self
             .client
             .tx()
-            .account_nonce(&account_id)
+            .sign_and_submit_then_watch_default(&call, &self.signer)
             .await
-            .context("fetch system.account.nonce")?;
-        let local_nonce = self
-            .state
-            .get_nonce(&self.signer_ss58)?
-            .map(|n| n.saturating_add(1))
-            .unwrap_or(chain_nonce);
-        let nonce = std::cmp::max(chain_nonce, local_nonce);
-        self.state.set_nonce(&self.signer_ss58, nonce)?;
+            .context("sign + submit")?;
 
-        let params = subxt::config::polkadot::PolkadotExtrinsicParamsBuilder::new()
-            .nonce(nonce)
-            .build();
-
-        let in_block = self
-            .client
-            .tx()
-            .sign_and_submit_then_watch(&call, &self.signer, params)
+        let events = progress
+            .wait_for_finalized_success()
             .await
-            .context("sign + submit")?
-            .wait_for_in_block()
-            .await
-            .context("wait in_block")?;
+            .context("wait for finalized success")?;
 
-        let block_hash = in_block.block_hash();
+        let block_hash = events.block_hash();
         let block_number = self
             .client
             .blocks()
@@ -173,8 +140,8 @@ impl ChainHandle {
             .number();
 
         Ok(TxOutcome {
-            tx_hash: format!("{:?}", in_block.extrinsic_hash()),
-            block_hash: format!("{:?}", block_hash),
+            tx_hash: format!("{:?}", events.extrinsic_hash()),
+            block_hash: format!("{block_hash:?}"),
             block_number,
         })
     }

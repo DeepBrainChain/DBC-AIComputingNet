@@ -11,9 +11,14 @@ name = "dbc-chain-sidecar"
 path = "src/main.rs"
 
 [dependencies]
-# Substrate / subxt — matches polkadot-v0.9.43 chain (DBC mainnet spec 412)
-subxt = "0.27"
-subxt-signer = { version = "0.27", features = ["subxt"] }
+# Substrate / subxt — DBC mainnet runs polkadot-v0.9.43 metadata V14, which
+# any subxt 0.32+ understands. We pin 0.34 (Jan 2024 release) because:
+#   * it has the standalone `subxt-signer` crate, so we don't need sp-core
+#     or sp-runtime as a direct dep — that side-steps the schnorrkel /
+#     substrate-bip39 diamond that bites subxt 0.27 + sp-core 16.
+#   * its dynamic API (subxt::dynamic::*) is stable and matches our usage.
+subxt = "0.34"
+subxt-signer = { version = "0.34", features = ["subxt", "sr25519"] }
 
 # Async runtime
 tokio = { version = "1", features = ["full"] }
@@ -27,8 +32,8 @@ serde_json = "1"
 hex = "0.4"
 libc = "0.2"
 
-# SCALE codec — used to decode ContainerModeInfo from chain storage in
-# chain.rs::query_container_info.
+# SCALE codec — used to decode ContainerModeInfo from chain storage. Pin
+# against the version subxt 0.34 re-exports.
 parity-scale-codec = { version = "3", default-features = false, features = ["derive"] }
 
 # Persistence (nonce, last block)
