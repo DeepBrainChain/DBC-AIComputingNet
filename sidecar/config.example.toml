@@ -1,0 +1,19 @@
+# dbc-chain-sidecar example configuration.
+# Copy to /etc/dbc-chain-sidecar/config.toml and chmod 0600.
+
+# DBC mainnet substrate WS endpoint.
+# For Galaxy Race testnet (spec 412 fork), use ws://47.128.74.45:8132 instead.
+ws_endpoint = "wss://rpc.dbcwallet.io"
+
+# sr25519 keypair (32-byte raw seed, 0600). MVP-1 only. MVP-2 will switch to
+# TPM-sealed credentials via systemd-creds.
+key_path = "/etc/dbc-chain-sidecar/signer.seed"
+
+# Unix-socket path for the JSON-RPC server. dbc-node (C++) connects here.
+socket_path = "/var/run/dbc-node/sidecar.sock"
+
+# Nonce + last-seen-block persistence.
+state_db = "/var/lib/dbc-chain-sidecar/state.db"
+
+# Allowed peer UIDs. Defaults to the uid running dbc-chain-sidecar.
+# allowed_uids = [1001]

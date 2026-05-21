@@ -1,0 +1,44 @@
+[package]
+name = "dbc-chain-sidecar"
+version = "0.1.0"
+edition = "2021"
+authors = ["DeepBrainChain Foundation"]
+license = "Apache-2.0"
+description = "Rust subxt sidecar exposing local JSON-RPC for dbc-node (C++)"
+
+[[bin]]
+name = "dbc-chain-sidecar"
+path = "src/main.rs"
+
+[dependencies]
+# Substrate / subxt — matches polkadot-v0.9.43 chain (DBC mainnet spec 412)
+subxt = "0.27"
+subxt-signer = { version = "0.27", features = ["subxt"] }
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+futures = "0.3"
+
+# JSON-RPC over Unix socket
+jsonrpsee = { version = "0.20", features = ["server", "macros"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+hex = "0.4"
+
+# Persistence (nonce, last block)
+rusqlite = { version = "0.31", features = ["bundled"] }
+
+# Logging + config
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+toml = "0.8"
+clap = { version = "4", features = ["derive"] }
+
+# Error handling
+anyhow = "1"
+thiserror = "1"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = true
