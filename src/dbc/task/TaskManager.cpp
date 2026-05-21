@@ -8,6 +8,7 @@
 #include <regex>
 
 #include "config/conf_manager.h"
+#include "container/container_task.h"
 #include "detail/VxlanManager.h"
 #include "detail/cpu/CpuTuneManager.h"
 #include "detail/rent_order/RentOrderManager.h"
@@ -745,6 +746,85 @@ FResult TaskManager::createTask(
     auto ev = std::make_shared<CreateTaskEvent>(task_id);
     ev->bios_mode = create_params.bios_mode;
     this->pushTaskEvent(ev);
+
+    return FResultOk;
+}
+
+// ===== Container-mode entry (MVP-1) =====
+//
+// Routed here when the rest layer detects "task_type":"container" in the
+// rent_machine additional blob. Reuses parse_create_params for the shared
+// fields (image / gpus / etc.) and bypasses everything VM/qcow2-specific.
+//
+// On success: container is running, host SSH port is allocated, TaskInfo
+// persisted with TS_Task_Running. DDN heartbeat picks it up from there.
+FResult TaskManager::createContainerTask(
+    const std::string& wallet,
+    const std::shared_ptr<dbc::node_create_task_req_data>& data,
+    USER_ROLE role,
+    std::string& task_id) {
+
+    CreateTaskParams create_params;
+    FResult fret = parse_create_params(data->additional, role, create_params,
+                                       wallet, data->rent_order);
+    if (fret.errcode != ERR_SUCCESS) {
+        return fret;
+    }
+    task_id = create_params.task_id;
+    dbclog::instance().add_task_log_backend(task_id);
+
+    // Translate CreateTaskParams to ContainerTaskRequest. NB: gpus is a
+    // map<gpu_id, list<device_id>>; for container mode we feed the device
+    // UUIDs (the inner list) to nvidia-container-toolkit. MVP-1 expects
+    // integer cards (no MIG), so we flatten.
+    dbc::container::ContainerTaskRequest req;
+    req.task_id = task_id;
+    req.image = create_params.image_name;
+    for (const auto& g : create_params.gpus) {
+        for (const auto& uuid : g.second) {
+            req.gpu_uuids.push_back(uuid);
+        }
+    }
+    req.mem_size_kb = create_params.mem_size;
+    req.cpu_quota_us = 0;  // MVP-1: no CPU cap; image / k8s-like throttle later.
+    // SSH key arrives via聪图云 backend in `additional` JSON; populated by
+    // parse_create_params if present. (Field added to CreateTaskParams in a
+    // follow-up commit — for now the empty default is acceptable as the
+    // rental image accepts SSH_AUTHORIZED_KEYS via env.)
+    req.ssh_authorized_keys = create_params.login_password;
+
+    dbc::container::ContainerTaskResult result;
+    int32_t rc = dbc::container::ContainerTask::Start(req, result);
+    if (rc != ERR_SUCCESS) {
+        return FResult(rc, "container task start failed");
+    }
+
+    // Persist TaskInfo (shared with VM-mode lookups so dbcscan / 聪图云 see
+    // both kinds the same way). We mark the assigned ssh_port so the HTTP
+    // layer can return it to the renter.
+    std::shared_ptr<TaskInfo> taskinfo = std::make_shared<TaskInfo>();
+    taskinfo->setTaskId(task_id);
+    taskinfo->setImageName(create_params.image_name);
+    taskinfo->setDesc(create_params.desc);
+    taskinfo->setSSHPort(result.host_ssh_port);
+    taskinfo->setMemSize(create_params.mem_size);
+    taskinfo->setOrderId(data->rent_order);
+    taskinfo->setRenterWallet(wallet);
+    taskinfo->setCreateTime(time(nullptr));
+    taskinfo->setTaskStatus(TaskStatus::TS_Task_Running);
+    TaskInfoMgr::instance().add(taskinfo);
+
+    // GPU bookkeeping (same as createTask).
+    for (auto iter_gpu : create_params.gpus) {
+        auto gpuinfo = std::make_shared<GpuInfo>();
+        gpuinfo->setId(iter_gpu.first);
+        for (auto& device : iter_gpu.second) gpuinfo->addDeviceId(device);
+        TaskGpuMgr::instance().add(task_id, gpuinfo);
+    }
+
+    int64_t rent_end =
+        RentOrderManager::instance().GetRentEnd(data->rent_order, wallet);
+    WalletRentTaskMgr::instance().add(wallet, task_id, rent_end);
 
     return FResultOk;
 }

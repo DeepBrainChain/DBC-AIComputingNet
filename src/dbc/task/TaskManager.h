@@ -94,6 +94,19 @@ public:
         const std::shared_ptr<dbc::node_create_task_req_data>& data,
         USER_ROLE role, std::string& task_id);
 
+    // Container-mode task entry. Skips the VM/qcow2/libvirt path entirely;
+    // routes to dbc::container::ContainerTask which manages Kata containers
+    // via the Docker Engine API. Parses the same `additional` JSON blob as
+    // createTask() but expects a `"task_type":"container"` discriminator.
+    //
+    // MVP-1 only. VM-mode rentals continue to go through createTask().
+    // See DBCDEVOPS/release/DBC_NODE_CONTAINER_MODE_DESIGN.md §7 for the
+    // dispatch rationale.
+    FResult createContainerTask(
+        const std::string& wallet,
+        const std::shared_ptr<dbc::node_create_task_req_data>& data,
+        USER_ROLE role, std::string& task_id);
+
     FResult startTask(const std::string& wallet, const std::string& rent_order,
                       const std::string& task_id);
 
