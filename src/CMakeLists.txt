@@ -5,7 +5,8 @@ set(CMAKE_CXX_FLAGS "-fPIC -w -DEVENT__HAVE_OPENSSL")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -g")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O2")
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/output)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/output)
@@ -70,6 +71,7 @@ set(service_src_dir
         dbc/task/detail/rent_order
         dbc/task/detail/wallet_rent_task
         dbc/task/detail/wallet_session_id
+        dbc/task/container
         dbc/task
         dbc/service_info
         dbc/service/http_request_service
@@ -78,6 +80,8 @@ set(service_src_dir
         dbc/service/peer_request_service
         dbc/service/peer_request_service/multicast
         dbc/service/peer_request_service/socket_channel_handler
+        dbc/service/ddn_client
+        dbc/service/chain_sidecar_client
         dbc/service
 )
 
