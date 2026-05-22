@@ -169,7 +169,12 @@ int32_t ContainerClient::CreateContainer(
 
     // HostConfig
     Value host(kObjectType);
-    host.AddMember("Runtime", Value("kata-runtime", a), a);
+    // MVP-1 smoke test on 122.99.183.52 (no Kata installed) sets
+    // DBC_CONTAINER_RUNTIME=runc. Production = "kata-runtime" (default).
+    const char* runtime_env = std::getenv("DBC_CONTAINER_RUNTIME");
+    const std::string runtime = (runtime_env && runtime_env[0])
+        ? std::string(runtime_env) : std::string("kata-runtime");
+    host.AddMember("Runtime", Value(runtime.c_str(), a), a);
     host.AddMember("AutoRemove", true, a);
 
     // PortBindings: { "22/tcp": [{ "HostPort": "30231" }] }
