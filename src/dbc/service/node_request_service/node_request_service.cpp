@@ -1280,8 +1280,23 @@ void node_request_service::task_create(
     std::string ret_msg = "ok";
 
     std::string task_id;
-    auto fresult = TaskMgr::instance().createTask(result.rent_wallet, data,
-                                                  result.user_role, task_id);
+    // Dispatch container vs VM mode via additional.task_type. Malformed JSON
+    // or missing field falls back to VM (createTask) to preserve legacy behavior.
+    bool is_container = false;
+    if (!data->additional.empty()) {
+        rapidjson::Document doc;
+        if (!doc.Parse(data->additional.c_str()).HasParseError() &&
+            doc.IsObject() && doc.HasMember("task_type") &&
+            doc["task_type"].IsString() &&
+            std::string(doc["task_type"].GetString()) == "container") {
+            is_container = true;
+        }
+    }
+    auto fresult = is_container
+        ? TaskMgr::instance().createContainerTask(result.rent_wallet, data,
+                                                  result.user_role, task_id)
+        : TaskMgr::instance().createTask(result.rent_wallet, data,
+                                         result.user_role, task_id);
     ret_code = fresult.errcode;
     ret_msg = fresult.errmsg;
 
