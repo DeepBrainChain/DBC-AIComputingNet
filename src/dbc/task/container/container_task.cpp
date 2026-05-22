@@ -14,7 +14,7 @@ int32_t ContainerTask::Start(const ContainerTaskRequest& req,
     out = {};
 
     // 1. Reserve a host port for the renter's SSH ingress.
-    auto ports = PortAllocator::GetInstance().Allocate(/*count=*/1);
+    auto ports = PortAllocator::instance().Allocate(/*count=*/1);
     if (ports.empty()) {
         LOG_ERROR << "container task " << req.task_id
                   << ": port pool exhausted";
@@ -23,8 +23,8 @@ int32_t ContainerTask::Start(const ContainerTaskRequest& req,
     const uint16_t host_ssh_port = ports[0];
 
     // 2. Pull image (idempotent — Docker engine returns 200 even if cached).
-    if (ContainerClient::GetInstance().PullImage(req.image) != ERR_SUCCESS) {
-        PortAllocator::GetInstance().Release(ports);
+    if (ContainerClient::instance().PullImage(req.image) != ERR_SUCCESS) {
+        PortAllocator::instance().Release(ports);
         return E_DEFAULT;
     }
 
@@ -37,21 +37,21 @@ int32_t ContainerTask::Start(const ContainerTaskRequest& req,
     spec.ssh_authorized_keys = req.ssh_authorized_keys;
 
     std::string container_id;
-    if (ContainerClient::GetInstance().CreateContainer(
+    if (ContainerClient::instance().CreateContainer(
             req.task_id, host_ssh_port, spec, container_id) != ERR_SUCCESS) {
-        PortAllocator::GetInstance().Release(ports);
+        PortAllocator::instance().Release(ports);
         return E_DEFAULT;
     }
 
     // 4. Inject SSH pubkey. On failure we tear down the container so we don't
     //    leave the renter with no way in.
     if (!req.ssh_authorized_keys.empty()) {
-        if (ContainerClient::GetInstance().SetAuthorizedKeys(
+        if (ContainerClient::instance().SetAuthorizedKeys(
                 req.task_id, req.ssh_authorized_keys) != ERR_SUCCESS) {
             LOG_ERROR << "container task " << req.task_id
                       << ": SetAuthorizedKeys failed; rolling back";
-            ContainerClient::GetInstance().DestroyContainer(req.task_id);
-            PortAllocator::GetInstance().Release(ports);
+            ContainerClient::instance().DestroyContainer(req.task_id);
+            PortAllocator::instance().Release(ports);
             return E_DEFAULT;
         }
     }
@@ -64,11 +64,11 @@ int32_t ContainerTask::Start(const ContainerTaskRequest& req,
 }
 
 int32_t ContainerTask::Stop(const std::string& task_id, uint16_t allocated_port) {
-    int32_t rc = ContainerClient::GetInstance().DestroyContainer(task_id);
+    int32_t rc = ContainerClient::instance().DestroyContainer(task_id);
     // Release the port regardless of destroy result; we don't want orphaned
     // reservations on the host.
     if (allocated_port != 0) {
-        PortAllocator::GetInstance().Release({ allocated_port });
+        PortAllocator::instance().Release({ allocated_port });
     }
     return rc;
 }

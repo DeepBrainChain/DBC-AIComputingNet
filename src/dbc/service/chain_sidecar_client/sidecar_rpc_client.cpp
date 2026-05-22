@@ -8,7 +8,7 @@
 
 #include "log/log.h"
 
-#include "3rd/network/rapidjson/document.h"
+#include "rapidjson/document.h"
 
 #include <atomic>
 #include <cerrno>

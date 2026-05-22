@@ -11,9 +11,9 @@
 #include "docker_http_client.h"
 #include "log/log.h"
 
-#include "3rd/network/rapidjson/document.h"
-#include "3rd/network/rapidjson/stringbuffer.h"
-#include "3rd/network/rapidjson/writer.h"
+#include "rapidjson/document.h"
+#include "rapidjson/stringbuffer.h"
+#include "rapidjson/writer.h"
 
 #include <array>
 #include <cstring>

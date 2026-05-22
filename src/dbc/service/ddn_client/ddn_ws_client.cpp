@@ -22,7 +22,7 @@
 #include <websocketpp/client.hpp>
 #include <websocketpp/config/asio_client.hpp>
 
-#include "3rd/network/rapidjson/document.h"
+#include "rapidjson/document.h"
 
 #include <chrono>
 #include <memory>
