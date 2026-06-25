@@ -12,28 +12,24 @@
 #include "tweetnacl/tweetnacl.h"
 #include "util/crypto/utilstrencodings.h"
 
-// DNS seeds are preferred: future seed-IP changes only need a DNS update,
-// not a client recompile/redistribution. Each entry is "host:port"
-// (see p2p_net_service::add_dns_seeds, which resolves host and dials port).
+// Only the production "mainnet" P2P network (port 5001) is in use; the old
+// mainnet_test / netcongtu / netcongtu_test nets (5011/5021/5031) were retired
+// in the 2026-06 migration. mainnet runs on two AWS seed hosts for redundancy.
+//
+// DNS seeds are preferred: future seed-IP changes only need a DNS update, not a
+// client recompile/redistribution. Each entry is "host:port" (see
+// p2p_net_service::add_dns_seeds, which resolves host and dials the port).
 // seed1 -> AWS Singapore (DDN), seed2 -> AWS Seoul (rpc4).
 static std::string g_internal_dns_seeds[] = {
-    "seed1.dbcwallet.io:5001", "seed1.dbcwallet.io:5011",
-    "seed1.dbcwallet.io:5021", "seed1.dbcwallet.io:5031",
-
-    "seed2.dbcwallet.io:5001", "seed2.dbcwallet.io:5011",
-    "seed2.dbcwallet.io:5021", "seed2.dbcwallet.io:5031"};
+    "seed1.dbcwallet.io:5001",   // AWS Singapore (DDN)
+    "seed2.dbcwallet.io:5001"};  // AWS Seoul (rpc4)
 
 // IP seeds are the hardcoded fallback used when DNS is unavailable.
-// 2026-06 migration: the old Chengdu/8.214 seeds were retired, replaced by
-// two AWS seed hosts. Keep these in sync with the seed1/seed2 DNS records above.
+// Replaces the dead old seeds 8.214.55.62 + 112.192.16.27. Keep in sync with
+// the seed1/seed2 DNS records above.
 static std::string g_internal_ip_seeds[] = {
-    // AWS Singapore (DDN), replaces dead 8.214.55.62
-    "47.130.164.32:5001", "47.130.164.32:5011",
-    "47.130.164.32:5021", "47.130.164.32:5031",
-
-    // AWS Seoul (rpc4), replaces dead 112.192.16.27
-    "52.79.41.196:5001",  "52.79.41.196:5011",
-    "52.79.41.196:5021",  "52.79.41.196:5031"};
+    "47.130.164.32:5001",   // AWS Singapore (DDN)
+    "52.79.41.196:5001"};   // AWS Seoul (rpc4)
 
 ConfManager::ConfManager() {
     m_proto_capacity.add(network::matrix_capacity::THRIFT_BINARY_C_NAME);
