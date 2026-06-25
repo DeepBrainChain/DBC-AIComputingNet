@@ -12,16 +12,28 @@
 #include "tweetnacl/tweetnacl.h"
 #include "util/crypto/utilstrencodings.h"
 
+// DNS seeds are preferred: future seed-IP changes only need a DNS update,
+// not a client recompile/redistribution. Each entry is "host:port"
+// (see p2p_net_service::add_dns_seeds, which resolves host and dials port).
+// seed1 -> AWS Singapore (DDN), seed2 -> AWS Seoul (rpc4).
 static std::string g_internal_dns_seeds[] = {
+    "seed1.dbcwallet.io:5001", "seed1.dbcwallet.io:5011",
+    "seed1.dbcwallet.io:5021", "seed1.dbcwallet.io:5031",
 
-};
+    "seed2.dbcwallet.io:5001", "seed2.dbcwallet.io:5011",
+    "seed2.dbcwallet.io:5021", "seed2.dbcwallet.io:5031"};
 
+// IP seeds are the hardcoded fallback used when DNS is unavailable.
+// 2026-06 migration: the old Chengdu/8.214 seeds were retired, replaced by
+// two AWS seed hosts. Keep these in sync with the seed1/seed2 DNS records above.
 static std::string g_internal_ip_seeds[] = {
-    "8.214.55.62:5001",   "8.214.55.62:5011",
-    "8.214.55.62:5021",   "8.214.55.62:5031",
+    // AWS Singapore (DDN), replaces dead 8.214.55.62
+    "47.130.164.32:5001", "47.130.164.32:5011",
+    "47.130.164.32:5021", "47.130.164.32:5031",
 
-    "112.192.16.27:5001", "112.192.16.27:5011",
-    "112.192.16.27:5021", "112.192.16.27:5031"};
+    // AWS Seoul (rpc4), replaces dead 112.192.16.27
+    "52.79.41.196:5001",  "52.79.41.196:5011",
+    "52.79.41.196:5021",  "52.79.41.196:5031"};
 
 ConfManager::ConfManager() {
     m_proto_capacity.add(network::matrix_capacity::THRIFT_BINARY_C_NAME);

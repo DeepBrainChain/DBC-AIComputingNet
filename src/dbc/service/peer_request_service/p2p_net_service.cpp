@@ -616,18 +616,36 @@ void p2p_net_service::add_dns_seeds() {
         std::string dns_seed = m_dns_seeds.front();
         m_dns_seeds.pop_front();
 
+        // dns_seed is "hostname:port" (e.g. "seed1.dbcwallet.io:5001").
+        // Resolve the hostname and dial the explicit port, mirroring
+        // add_ip_seeds(). Previously the port was hard-coded to 80, so the
+        // DNS-seed path could never reach a dbc seed listening on 5001-5031
+        // (which is why g_internal_dns_seeds had to be left empty).
+        std::vector<std::string> vec;
+        util::split(dns_seed, ":", vec);
+        if (vec.size() != 2) {
+            LOG_ERROR << "invalid dns seed, expect host:port: " << dns_seed;
+            return;
+        }
+        std::string host = vec[0];
+        util::trim(host);
+        std::string str_port = vec[1];
+        util::trim(str_port);
+        uint16_t port = (uint16_t)atoi(str_port.c_str());
+
         io_service ios;
         ip::tcp::resolver rslv(ios);
-        ip::tcp::resolver::query qry(dns_seed,
-                                     boost::lexical_cast<std::string>(80));
+        ip::tcp::resolver::query qry(host, str_port);
         ip::tcp::resolver::iterator it = rslv.resolve(qry);
         ip::tcp::resolver::iterator end;
         for (; it != end; it++) {
-            tcp::endpoint ep(it->endpoint().address(), it->endpoint().port());
+            tcp::endpoint ep(it->endpoint().address(), port);
             add_peer_candidate(ep, ns_idle, PEER_SEED_NODE);
         }
     } catch (const boost::exception& e) {
         LOG_ERROR << "add_dns_seeds exception: " << diagnostic_information(e);
+    } catch (const std::exception& e) {
+        LOG_ERROR << "add_dns_seeds exception: " << e.what();
     }
 }
 
